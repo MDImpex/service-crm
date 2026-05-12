@@ -28,22 +28,32 @@ function App() {
 
   async function fetchData() {
     setLoading(true)
-    const { data, error } = await supabase.from('equipment').select('*').order('id', { ascending: true })
+    const { data, error } = await supabase.rpc('siusti_pilna_ataskaita');
     if (error) console.error('Klaida:', error)
     else setEquipment(data || [])
     setLoading(false)
   }
 
   const handleSendReport = async () => {
-    if (!window.confirm("Ar siųsti vėluojančių patikrų ataskaitą el. paštu?")) return;
-    try {
-      const { data, error } = await supabase.rpc('send_ataskaita_final');
-      if (error) alert("Klaida: " + error.message);
-      else alert("Ataskaita sėkmingai išsiųsta!");
-    } catch (error) {
-      alert("Sistemos klaida: " + error.message);
+  if (!window.confirm("Ar siųsti ataskaitą?")) return;
+  
+  console.log("Siuntimas pradedamas..."); // Patikrinimui konsolėje
+  
+  try {
+    const { data, error } = await supabase.rpc('siusti_galutine');
+    
+    if (error) {
+      console.error("Supabase klaida:", error);
+      alert("Klaida: " + error.message);
+    } else {
+      console.log("Serverio atsakymas:", data);
+      alert("Sistemos pranešimas: " + data); 
     }
-  };
+  } catch (err) {
+    console.error("Sistemos klaida:", err);
+    alert("Klaida programėlėje: " + err.message);
+  }
+};
 
   const onMouseDown = (e, index) => {
     const startX = e.pageX;
