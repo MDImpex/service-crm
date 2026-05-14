@@ -20,14 +20,15 @@ function App() {
     { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
     { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
     { label: "KOMENTARAS", key: "Komentaras", visible: true },
-    { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true }
+    { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
+    { label: "ATLIKTA", key: "Atlikta", visible: true } // Sugrąžintas stulpelis automatizacijai
   ]);
 
   const [widths, setWidths] = useState({
     "Montavimo data": 120, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 160,
     "Adresas": 180, "Įrangos pavadinimas": 160, "Serijos numeris": 120,
     "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110, 
-    "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120
+    "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120, "Atlikta": 100
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
@@ -67,6 +68,7 @@ function App() {
     let updates = { [field]: value };
     const currentItem = equipment.find(item => item.id === id);
 
+    // Automatizacijos logika veikia čia
     if (field === "Atlikta" && value === "Taip") {
       const today = new Date();
       updates["Patikros data"] = today.toISOString().split('T')[0];
@@ -85,6 +87,7 @@ function App() {
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      // Atnaujiname vietinę būseną (State) su visais susijusiais pakeitimais (datos perskaičiavimu)
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { console.error(err) }
@@ -202,7 +205,6 @@ function App() {
         
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
         
-        /* GRĄŽINTOS SPALVŲ KLASĖS */
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
@@ -259,7 +261,6 @@ function App() {
                 <tr><td colSpan={visibleCols.length + 2} style={{textAlign: 'center', padding: '50px'}}>KRAUNAMA...</td></tr>
               ) : (
                 filteredData.map((item, index) => {
-                  {/* Patikriname, ar sekanti patikra jau vėluoja */}
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
                   return (
                     <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
@@ -268,13 +269,39 @@ function App() {
                         <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
                           <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                              <input 
-                                autoFocus 
-                                className="cell-edit" 
-                                defaultValue={item[col.key]} 
-                                onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
-                              />
+                              /* TINKAMŲ ĮVESTIES LAUKŲ VALDYMAS (Kuris iškrenta dukart paspaudus) */
+                              col.key === "Sutartis YRA/NĖRA" ? (
+                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                  <option value="">—</option>
+                                  <option value="YES">YES</option>
+                                  <option value="NO">NO</option>
+                                </select>
+                              ) : col.key === "Atlikta" ? (
+                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                  <option value="Ne">Ne</option>
+                                  <option value="Taip">Taip</option>
+                                </select>
+                              ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
+                                /* IŠKRENTANTIS KALENDORIUS DATOMS */
+                                <input 
+                                  autoFocus 
+                                  type="date"
+                                  className="cell-edit" 
+                                  defaultValue={item[col.key]} 
+                                  onBlur={e => handleSave(item.id, col.key, e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                                />
+                              ) : (
+                                /* Paprastas tekstas kitiems laukams */
+                                <input 
+                                  autoFocus 
+                                  type="text"
+                                  className="cell-edit" 
+                                  defaultValue={item[col.key]} 
+                                  onBlur={e => handleSave(item.id, col.key, e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                                />
+                              )
                             ) : (item[col.key] || '—')}
                           </div>
                         </td>
