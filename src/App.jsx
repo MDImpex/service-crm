@@ -38,13 +38,33 @@ function App() {
   async function fetchData() {
     setLoading(true)
     try {
-      const response = await fetch(`${BASE_URL}?select=*&order=id.asc`, { 
+      const response = await fetch(`${BASE_URL}?select=*&order=id.desc`, { 
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
       })
       const data = await response.json()
       setEquipment(data || [])
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
+
+  // NAUJA: Veikianti pridėjimo funkcija
+  const handleAddRow = async () => {
+    try {
+      const res = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: { 
+          'apikey': API_KEY, 
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS..." })
+      });
+      if (res.ok) {
+        const [newItem] = await res.json();
+        setEquipment([newItem, ...equipment]); // Pridedam į viršų
+      }
+    } catch (err) { alert("Nepavyko pridėti: " + err.message) }
+  };
 
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
@@ -59,7 +79,7 @@ function App() {
   };
 
   const deleteColumn = (key) => {
-    if (window.confirm(`Ar tikrai norite visam laikui pašalinti stulpelį iš vaizdo?`)) {
+    if (window.confirm(`Ar tikrai pašalinti stulpelį?`)) {
       setColumns(columns.filter(c => c.key !== key));
     }
   };
@@ -127,28 +147,33 @@ function App() {
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
         
-        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; flex-wrap: nowrap; }
-        .action-btns { display: flex; gap: 10px; align-items: center; }
-        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        /* PATAISYTA JUOSTA */
+        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
+        .search-field { width: 250px; padding: 8px; borderRadius: 4px; border: none; fontFamily: inherit; }
+        .action-btns { display: flex; gap: 8px; }
+        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
         .btn-main:hover { background: #f1f5f9; }
         
-        .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 4px; font-weight: bold; }
-        .del-col-btn { color: #ef4444; cursor: pointer; margin-left: auto; font-size: 14px; padding: 2px 5px; }
+        .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 2px; }
+        .del-col-btn { color: #ef4444; cursor: pointer; margin-left: auto; font-size: 14px; }
       `}</style>
 
-      {/* VIRŠUTINĖ JUOSTA SU VISU TURINIU */}
       <div className="top-bar">
-        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', minWidth: '80px' }}>MD CRM</h2>
+        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>MD CRM</h2>
         
+        {/* SIAURESNIS PAIEŠKOS LAUKAS */}
         <input 
-          placeholder="Paieška pagal klientą..." 
-          style={{ flex: 1, minWidth: '150px', padding: '8px', borderRadius: '4px', border: 'none', fontFamily: 'inherit' }} 
+          className="search-field"
+          placeholder="Ieškoti kliento..." 
           onChange={e => setSearchTerm(e.target.value)} 
         />
 
         <div className="action-btns">
-          {/* ČIA GALI ĮRAŠYTI SAVO SENUS MYGTUKUS */}
-          <button className="btn-main" onClick={() => alert('Čia pridėsite įrašą')}>+ PRIDĖTI</button>
+          {/* DABAR VEIKIANTIS MYGTUKAS */}
+          <button className="btn-main" onClick={handleAddRow}>+ PRIDĖTI ĮRAŠĄ</button>
+          
+          {/* ČIA GALI ĮDĖTI KITUS SAVO MYGTUKUS (Eksportas, Importas ir t.t.) */}
+          <button className="btn-main" onClick={() => window.print()}>SPAUSDINTI</button>
           
           <button 
             className="btn-main" 
@@ -161,16 +186,16 @@ function App() {
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ position: 'absolute', top: '55px', right: '10px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Rodyti stulpelius</h4>
+        <div className="col-manager" style={{ position: 'absolute', top: '55px', right: '10px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '200px' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', borderBottom: '1px solid #eee' }}>Nustatymai</h4>
           {columns.map(col => (
-            <div key={col.key} style={{ padding: '5px 0', display: 'flex', alignItems: 'center' }}>
+            <div key={col.key} style={{ padding: '4px 0', display: 'flex', alignItems: 'center' }}>
                 <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{ marginRight: '8px' }} /> 
-                <span style={{ fontSize: '13px', flex: 1 }}>{col.label}</span>
+                <span style={{ fontSize: '12px', flex: 1 }}>{col.label}</span>
                 <span className="del-col-btn" onClick={() => deleteColumn(col.key)}>🗑️</span>
             </div>
           ))}
-          <button onClick={() => setShowColManager(false)} style={{marginTop: '15px', width: '100%', cursor: 'pointer', padding: '8px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '4px'}}>Uždaryti</button>
+          <button onClick={() => setShowColManager(false)} style={{marginTop: '10px', width: '100%', cursor: 'pointer', padding: '5px'}}>Uždaryti</button>
         </div>
       )}
 
