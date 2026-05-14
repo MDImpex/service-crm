@@ -6,7 +6,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [editingCell, setEditingCell] = useState(null)
   
-  // Pradiniai pločiai (padidinti, kad būtų patogiau iškart)
+  // Išsaugota stulpelių pločių konfigūracija
   const [widths, setWidths] = useState({
     "Montavimo data": 130,
     "Kliento įmonės kodas": 120,
@@ -29,6 +29,7 @@ function App() {
 
   useEffect(() => { fetchData() }, [])
 
+  // 1. DUOMENŲ GAVIMAS
   async function fetchData() {
     setLoading(true)
     try {
@@ -40,23 +41,23 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // PATOBULINTA TEMPIMO LOGIKA
+  // 2. STULPELIŲ TAMPYMO LOGIKA (Išsaugota konfigūracija)
   const resizerRef = useRef({ x: 0, width: 0, key: null });
 
   const onMouseDown = (e, key) => {
-    e.preventDefault(); // Neleidžia žymėti teksto tempiant
+    e.preventDefault();
     resizerRef.current = { x: e.clientX, width: widths[key], key };
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
     document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none'; // Išjungia teksto žymėjimą
+    document.body.style.userSelect = 'none';
   };
 
   const onMouseMove = (e) => {
     if (!resizerRef.current.key) return;
     const { x, width, key } = resizerRef.current;
     const delta = e.clientX - x;
-    const newWidth = Math.max(80, width + delta); // Neleidžia susiaurinti mažiau nei 80px
+    const newWidth = Math.max(80, width + delta);
     setWidths(prev => ({ ...prev, [key]: newWidth }));
   };
 
@@ -68,27 +69,56 @@ function App() {
     document.body.style.userSelect = 'auto';
   };
 
+  // 3. ATASKAITOS SIUNTIMAS
   const handleSendReport = async () => {
-    if (!window.confirm("Siųsti ataskaitą?")) return;
+    if (!window.confirm("Siųsti vėluojančių patikrų ataskaitą?")) return;
     try {
       const res = await fetch(RPC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       const result = await res.json();
-      alert(result.rasta_irenginiu > 0 ? `Rasta: ${result.rasta_irenginiu}` : "Vėluojančių nėra.");
-    } catch (err) { alert(err.message) }
+      if (result.rasta_irenginiu > 0) {
+        alert(`SĖKMĖ: Rasta ir ataskaitai paruošta ${result.rasta_irenginiu} vėluojančių patikrų!`);
+      } else {
+        alert("INFORMACIJA: Vėluojančių patikrų nerasta.");
+      }
+    } catch (err) { alert("Klaida: " + err.message) }
   };
 
+  // 4. DUOMENŲ BAZĖS KOPIJA (BACKUP)
+  const downloadBackupCSV = () => {
+    if (equipment.length === 0) return alert("Nėra duomenų kopijai.");
+    const header = columns.map(col => `"${col.label}"`).join(",");
+    const rows = equipment.map(item => 
+      columns.map(col => `"${(item[col.key] || '').toString().replace(/"/g, '""')}"`).join(",")
+    );
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `CRM_Backup_${date}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 5. IŠSAUGOJIMAS PO REDAGAVIMO
   const handleSave = async (id, field, value) => {
     try {
       const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
         method: 'PATCH',
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+        headers: { 
+          'apikey': API_KEY, 
+          'Authorization': `Bearer ${API_KEY}`, 
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ [field]: value })
       });
       if (res.ok) {
         setEquipment(equipment.map(item => item.id === id ? { ...item, [field]: value } : item));
         setEditingCell(null);
       }
-    } catch (err) { alert(err.message) }
+    } catch (err) { alert("Klaida saugant: " + err.message) }
   }
 
   const columns = [
@@ -116,45 +146,38 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
-        
-        /* FIX: Užtikriname, kad lentelė paklustų nustatytiems pločiams */
-        table { 
-          border-collapse: separate; 
-          border-spacing: 0; 
-          table-layout: fixed; 
-          width: fit-content; 
-        }
-
+        table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: fit-content; }
         th { 
           background: #0f172a; color: white; padding: 12px; font-size: 11px; 
           position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155;
           text-align: left; position: relative;
         }
-
-        /* Tempimo juostelė */
         .resizer {
           position: absolute; right: 0; top: 0; height: 100%; width: 6px;
           cursor: col-resize; z-index: 20;
         }
         .resizer:hover { background: rgba(59, 130, 246, 0.5); }
-
         td { 
           padding: 8px 12px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; 
           font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
-        .top-bar { display: flex; padding: 15px 25px; gap: 20px; background: #2563eb; align-items: center; color: white; }
+        .top-bar { display: flex; padding: 15px 25px; gap: 15px; background: #2563eb; align-items: center; color: white; }
+        .btn { border: none; padding: 10px 18px; borderRadius: 5px; color: white; fontWeight: bold; cursor: pointer; transition: 0.2s; }
       `}</style>
 
       <div className="top-bar">
         <h2 style={{ margin: 0, fontSize: '18px' }}>MD IMPEX CRM</h2>
         <input 
           placeholder="Paieška..." 
-          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none', color: '#000' }} 
+          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none', color: '#000', outline: 'none' }} 
           onChange={(e) => setSearchTerm(e.target.value)} 
         />
-        <button onClick={handleSendReport} style={{ background: '#f59e0b', border: 'none', padding: '10px 20px', borderRadius: '5px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
+        <button className="btn" onClick={downloadBackupCSV} style={{ background: '#10b981' }}>
+          backup (CSV)
+        </button>
+        <button className="btn" onClick={handleSendReport} style={{ background: '#f59e0b' }}>
           SIŲSTI ATASKAITĄ
         </button>
       </div>
@@ -182,10 +205,11 @@ function App() {
                         {editingCell?.id === item.id && editingCell?.field === col.key ? (
                           <input 
                             autoFocus
-                            style={{ width: '90%' }}
+                            style={{ width: '90%', padding: '4px' }}
                             type={(col.key.includes('data') || col.key === "Sekanti patikra") ? "date" : "text"}
                             defaultValue={item[col.key]}
                             onBlur={(e) => handleSave(item.id, col.key, e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
                           />
                         ) : (item[col.key] || '—')}
                       </td>
