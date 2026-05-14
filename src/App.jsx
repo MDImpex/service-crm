@@ -58,9 +58,8 @@ function App() {
     setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
   };
 
-  // NAUJA FUNKCIJA: Ištrinti stulpelį iš sąrašo
   const deleteColumn = (key) => {
-    if (window.confirm(`Ar tikrai norite visam laikui pašalinti stulpelį?`)) {
+    if (window.confirm(`Ar tikrai norite visam laikui pašalinti stulpelį iš vaizdo?`)) {
       setColumns(columns.filter(c => c.key !== key));
     }
   };
@@ -120,7 +119,16 @@ function App() {
         .table-container { flex: 1; overflow: auto; background: white; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
         th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; overflow: hidden; }
-        th { background: #0f172a; color: white !important; position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155; font-size: 11px; text-transform: uppercase; }
+        th { 
+          background: #0f172a; 
+          color: white !important; 
+          position: sticky; 
+          top: 0; 
+          zIndex: 10; 
+          border-right: 1px solid #334155; 
+          font-size: 11px; 
+          text-transform: uppercase; 
+        }
         .header-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 5px 0; }
         .cell-content { padding: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; display: block; font-size: 13px; color: #1e293b; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
@@ -129,17 +137,8 @@ function App() {
         .overdue { background: #fee2e2; }
         .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
         .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 4px; font-weight: bold; }
-        
-        /* Stilius šiukšliadėžei stulpelių lange */
-        .del-col-btn { 
-          color: #ef4444; 
-          cursor: pointer; 
-          margin-left: auto; 
-          font-size: 12px; 
-          padding: 2px 5px; 
-          border-radius: 4px;
-        }
-        .del-col-btn:hover { background: #fee2e2; }
+        .del-col-btn { color: #ef4444; cursor: pointer; margin-left: auto; font-size: 14px; padding: 2px 5px; }
+        .del-col-btn:hover { background: #fee2e2; border-radius: 4px; }
       `}</style>
 
       <div className="top-bar">
@@ -149,13 +148,13 @@ function App() {
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ position: 'absolute', top: '50px', right: '20px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '200px' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Valdyti stulpelius</h4>
+        <div className="col-manager" style={{ position: 'absolute', top: '50px', right: '20px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Rodyti stulpelius</h4>
           {columns.map(col => (
-            <div key={col.key} style={{ padding: '5px 0', display: 'flex', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
+            <div key={col.key} style={{ padding: '5px 0', display: 'flex', alignItems: 'center' }}>
                 <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{ marginRight: '8px' }} /> 
-                <span style={{ fontSize: '13px' }}>{col.label}</span>
-                <span className="del-col-btn" onClick={() => deleteColumn(col.key)} title="Pašalinti stulpelį">🗑️</span>
+                <span style={{ fontSize: '13px', flex: 1 }}>{col.label}</span>
+                <span className="del-col-btn" onClick={() => deleteColumn(col.key)}>🗑️</span>
             </div>
           ))}
           <button onClick={() => setShowColManager(false)} style={{marginTop: '15px', width: '100%', cursor: 'pointer', padding: '8px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '4px'}}>Uždaryti</button>
@@ -185,7 +184,9 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map(item => (
+            {loading ? (
+              <tr><td colSpan={visibleCols.length + 1} style={{ padding: '20px', textAlign: 'center' }}>Kraunama...</td></tr>
+            ) : filteredData.map(item => (
               <tr key={item.id} className={item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date() ? 'overdue' : ''}>
                 <td>
                   <div className="cell-content" style={{width: '40px', textAlign: 'center'}}>
