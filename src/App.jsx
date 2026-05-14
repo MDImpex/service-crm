@@ -26,7 +26,7 @@ function App() {
   const [widths, setWidths] = useState({
     "Montavimo data": 100, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 180,
     "Adresas": 180, "Įrangos pavadinimas": 180, "Serijos numeris": 120,
-    "Prižiūri": 100, "Patikr. Periodiškumas": 80, "Sutartis YRA/NĖRA": 80,
+    "Prižiūri": 100, "Patikr. Periodiškumas": 120, "Sutartis YRA/NĖRA": 80,
     "Atlikta": 80, "Patikros data": 100, "Sekanti patikra": 110, "Komentaras": 200
   });
 
@@ -46,7 +46,6 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // NAUJA: Veikianti pridėjimo funkcija
   const handleAddRow = async () => {
     try {
       const res = await fetch(BASE_URL, {
@@ -57,13 +56,53 @@ function App() {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS..." })
+        body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS...", "Atlikta": "Ne" })
       });
       if (res.ok) {
         const [newItem] = await res.json();
-        setEquipment([newItem, ...equipment]); // Pridedam į viršų
+        setEquipment([newItem, ...equipment]);
       }
-    } catch (err) { alert("Nepavyko pridėti: " + err.message) }
+    } catch (err) { alert(err.message) }
+  };
+
+  const handleSave = async (id, field, value) => {
+    let updates = { [field]: value };
+    const currentItem = equipment.find(item => item.id === id);
+
+    if (field === "Atlikta" && value === "Taip") {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      updates["Patikros data"] = todayStr;
+
+      const period = currentItem["Patikr. Periodiškumas"]?.toString().toLowerCase() || "";
+      let nextDate = new Date(today);
+      
+      if (period.includes("1") || period.includes("metus") || period.includes("12")) {
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+      } else if (period.includes("2") || period.includes("6")) {
+        nextDate.setMonth(nextDate.getMonth() + 6);
+      } else if (period.includes("4") || period.includes("3")) {
+        nextDate.setMonth(nextDate.getMonth() + 3);
+      } else {
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+      }
+      
+      updates["Sekanti patikra"] = nextDate.toISOString().split('T')[0];
+    }
+
+    try {
+      await fetch(`${BASE_URL}?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { 
+          'apikey': API_KEY, 
+          'Authorization': `Bearer ${API_KEY}`, 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(updates)
+      });
+      setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
+      setEditingCell(null);
+    } catch (err) { console.error(err) }
   };
 
   const moveColumn = (index, direction) => {
@@ -74,58 +113,33 @@ function App() {
     setColumns(newCols);
   };
 
-  const toggleColumn = (key) => {
-    setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
-  };
-
-  const deleteColumn = (key) => {
-    if (window.confirm(`Ar tikrai pašalinti stulpelį?`)) {
-      setColumns(columns.filter(c => c.key !== key));
-    }
-  };
-
+  const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
+  const deleteColumn = (key) => window.confirm(`Pašalinti stulpelį?`) && setColumns(columns.filter(c => c.key !== key));
+  
   const handleDeleteRow = async (id) => {
     if (!window.confirm("Ištrinti įrašą?")) return;
-    try {
-      const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-      });
-      if (res.ok) setEquipment(prev => prev.filter(item => item.id !== id));
-    } catch (err) { alert(err.message) }
+    await fetch(`${BASE_URL}?id=eq.${id}`, { 
+      method: 'DELETE', 
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
+    });
+    setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
   const resizerRef = useRef({ x: 0, width: 0, key: null });
   const onMouseDown = (e, key) => {
-    e.preventDefault();
     resizerRef.current = { x: e.clientX, width: widths[key], key };
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-    document.body.style.cursor = 'col-resize';
   };
   const onMouseMove = (e) => {
     if (!resizerRef.current.key) return;
-    const { x, width, key } = resizerRef.current;
-    const newWidth = Math.max(30, width + (e.clientX - x));
-    setWidths(prev => ({ ...prev, [key]: newWidth }));
+    const newWidth = Math.max(30, resizerRef.current.width + (e.clientX - resizerRef.current.x));
+    setWidths(prev => ({ ...prev, [resizerRef.current.key]: newWidth }));
   };
   const onMouseUp = () => {
-    resizerRef.current = { x: 0, width: 0, key: null };
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
-    document.body.style.cursor = 'default';
-  };
-
-  const handleSave = async (id, field, value) => {
-    try {
-      await fetch(`${BASE_URL}?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value })
-      });
-      setEquipment(equipment.map(item => item.id === id ? { ...item, [field]: value } : item));
-      setEditingCell(null);
-    } catch (err) { console.error(err) }
+    resizerRef.current.key = null;
   };
 
   const visibleCols = columns.filter(c => c.visible);
@@ -134,68 +148,47 @@ function App() {
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: '"Segoe UI", Roboto, sans-serif' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: 'sans-serif' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; overflow: hidden; }
-        th { background: #0f172a; color: white !important; position: sticky; top: 0; zIndex: 10; border-right: 1px solid #334155; font-size: 11px; text-transform: uppercase; }
-        .header-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 5px 0; }
-        .cell-content { padding: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; display: block; font-size: 13px; color: #1e293b; }
+        th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; position: relative; }
+        th { background: #0f172a; color: white !important; position: sticky; top: 0; zIndex: 10; font-size: 11px; text-transform: uppercase; }
+        .header-inner { display: flex; flex-direction: column; align-items: center; padding: 5px 0; }
+        .cell-content { padding: 8px; font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .date-overdue { color: #ef4444 !important; font-weight: bold; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
-        .resizer:hover { background: #3b82f6; }
         tr:hover { background: #f8fafc; }
-        .overdue { background: #fee2e2; }
-        
-        /* PATAISYTA JUOSTA */
-        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
-        .search-field { width: 250px; padding: 8px; borderRadius: 4px; border: none; fontFamily: inherit; }
-        .action-btns { display: flex; gap: 8px; }
-        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
-        .btn-main:hover { background: #f1f5f9; }
-        
-        .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 2px; }
-        .del-col-btn { color: #ef4444; cursor: pointer; margin-left: auto; font-size: 14px; }
+        .top-bar { display: flex; padding: 10px; gap: 15px; background: #2563eb; align-items: center; color: white; }
+        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 3px; }
+        .cell-edit { width: 100%; border: 1px solid #2563eb; padding: 4px; font-size: 13px; outline: none; }
       `}</style>
 
       <div className="top-bar">
-        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>MD CRM</h2>
-        
-        {/* SIAURESNIS PAIEŠKOS LAUKAS */}
+        <h2 style={{ margin: 0, fontSize: '18px' }}>MD CRM</h2>
         <input 
-          className="search-field"
+          style={{ width: '220px', padding: '8px', borderRadius: '4px', border: 'none', outline: 'none' }} 
           placeholder="Ieškoti kliento..." 
           onChange={e => setSearchTerm(e.target.value)} 
         />
-
-        <div className="action-btns">
-          {/* DABAR VEIKIANTIS MYGTUKAS */}
+        <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn-main" onClick={handleAddRow}>+ PRIDĖTI ĮRAŠĄ</button>
-          
-          {/* ČIA GALI ĮDĖTI KITUS SAVO MYGTUKUS (Eksportas, Importas ir t.t.) */}
-          <button className="btn-main" onClick={() => window.print()}>SPAUSDINTI</button>
-          
-          <button 
-            className="btn-main" 
-            style={{ background: '#0f172a', color: 'white' }}
-            onClick={() => setShowColManager(!showColManager)}
-          >
-            STULPELIAI
-          </button>
+          <button className="btn-main" style={{ background: '#0f172a', color: 'white' }} onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
         </div>
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ position: 'absolute', top: '55px', right: '10px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '200px' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', borderBottom: '1px solid #eee' }}>Nustatymai</h4>
+        <div style={{ position: 'absolute', top: '60px', right: '15px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
+          <h4 style={{ margin: '0 0 10px 0', borderBottom: '1px solid #eee' }}>Nustatymai</h4>
           {columns.map(col => (
-            <div key={col.key} style={{ padding: '4px 0', display: 'flex', alignItems: 'center' }}>
-                <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{ marginRight: '8px' }} /> 
-                <span style={{ fontSize: '12px', flex: 1 }}>{col.label}</span>
-                <span className="del-col-btn" onClick={() => deleteColumn(col.key)}>🗑️</span>
+            <div key={col.key} style={{ display: 'flex', alignItems: 'center', padding: '5px 0' }}>
+              <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
+              <span style={{ flex: 1, marginLeft: '10px', fontSize: '13px' }}>{col.label}</span>
+              <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: '16px' }} onClick={() => deleteColumn(col.key)}>🗑️</span>
             </div>
           ))}
-          <button onClick={() => setShowColManager(false)} style={{marginTop: '10px', width: '100%', cursor: 'pointer', padding: '5px'}}>Uždaryti</button>
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', cursor: 'pointer', background: '#f1f5f9', border: '1px solid #ccc', borderRadius: '4px' }}>Uždaryti</button>
         </div>
       )}
 
@@ -203,50 +196,60 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th style={{ width: '40px' }}><div className="cell-content" style={{width: '40px', color: 'white'}}>#</div></th>
-              {visibleCols.map((col) => {
-                const globalIdx = columns.findIndex(c => c.key === col.key);
-                return (
-                  <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
-                    <div className="header-inner" style={{ width: `${widths[col.key]}px` }}>
-                      <div style={{ marginBottom: '2px' }}>
-                        <span className="btn-arrow" onClick={() => moveColumn(globalIdx, -1)}>←</span>
-                        <span className="btn-arrow" onClick={() => moveColumn(globalIdx, 1)}>→</span>
-                      </div>
-                      <span style={{ color: 'white', fontWeight: 'bold' }}>{col.label}</span>
+              <th style={{ width: '50px' }}><div className="cell-content" style={{textAlign: 'center'}}>#</div></th>
+              {visibleCols.map(col => (
+                <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
+                  <div className="header-inner">
+                    <div>
+                      <span className="btn-arrow" onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>←</span>
+                      <span className="btn-arrow" onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>→</span>
                     </div>
-                    <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
-                  </th>
-                );
-              })}
+                    {col.label}
+                  </div>
+                  <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={visibleCols.length + 1} style={{ padding: '20px', textAlign: 'center' }}>Kraunama...</td></tr>
-            ) : filteredData.map(item => (
-              <tr key={item.id} className={item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date() ? 'overdue' : ''}>
-                <td>
-                  <div className="cell-content" style={{width: '40px', textAlign: 'center'}}>
-                    <button onClick={() => handleDeleteRow(item.id)} style={{border: 'none', background: 'none', cursor: 'pointer'}}>🗑️</button>
-                  </div>
-                </td>
-                {visibleCols.map(col => (
-                  <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
-                    <div className="cell-content" style={{ width: `${widths[col.key]}px` }}>
-                      {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                        <input 
-                          autoFocus 
-                          defaultValue={item[col.key]} 
-                          onBlur={e => handleSave(item.id, col.key, e.target.value)} 
-                          style={{width: '100%', border: '1px solid #2563eb', padding: '2px', fontFamily: 'inherit'}} 
-                        />
-                      ) : (item[col.key] || '—')}
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            ))}
+              <tr><td colSpan={visibleCols.length + 1} style={{textAlign: 'center', padding: '50px'}}>Kraunama...</td></tr>
+            ) : filteredData.map(item => {
+              const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
+              return (
+                <tr key={item.id}>
+                  <td><div className="cell-content" style={{ textAlign: 'center' }}><button onClick={() => handleDeleteRow(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}>🗑️</button></div></td>
+                  {visibleCols.map(col => (
+                    <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                      <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'date-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
+                        {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                          col.key === "Atlikta" ? (
+                            <select 
+                              className="cell-edit" 
+                              autoFocus 
+                              defaultValue={item[col.key]} 
+                              onBlur={() => setEditingCell(null)}
+                              onChange={e => handleSave(item.id, col.key, e.target.value)}
+                            >
+                              <option value="Ne">Ne</option>
+                              <option value="Taip">Taip</option>
+                            </select>
+                          ) : (
+                            <input 
+                              autoFocus 
+                              className="cell-edit" 
+                              defaultValue={item[col.key]} 
+                              onBlur={e => handleSave(item.id, col.key, e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                            />
+                          )
+                        ) : (item[col.key] || '—')}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
