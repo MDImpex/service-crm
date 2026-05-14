@@ -24,10 +24,10 @@ function App() {
   ]);
 
   const [widths, setWidths] = useState({
-    "Montavimo data": 100, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 180,
+    "Montavimo data": 110, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 180,
     "Adresas": 180, "Įrangos pavadinimas": 180, "Serijos numeris": 120,
     "Prižiūri": 100, "Patikr. Periodiškumas": 120, "Sutartis YRA/NĖRA": 80,
-    "Atlikta": 80, "Patikros data": 100, "Sekanti patikra": 110, "Komentaras": 200
+    "Atlikta": 80, "Patikros data": 110, "Sekanti patikra": 110, "Komentaras": 200
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
@@ -50,12 +50,7 @@ function App() {
     try {
       const res = await fetch(BASE_URL, {
         method: 'POST',
-        headers: { 
-          'apikey': API_KEY, 
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS...", "Atlikta": "Ne" })
       });
       if (res.ok) {
@@ -86,18 +81,13 @@ function App() {
       } else {
         nextDate.setFullYear(nextDate.getFullYear() + 1);
       }
-      
       updates["Sekanti patikra"] = nextDate.toISOString().split('T')[0];
     }
 
     try {
       await fetch(`${BASE_URL}?id=eq.${id}`, {
         method: 'PATCH',
-        headers: { 
-          'apikey': API_KEY, 
-          'Authorization': `Bearer ${API_KEY}`, 
-          'Content-Type': 'application/json' 
-        },
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
@@ -118,10 +108,7 @@ function App() {
   
   const handleDeleteRow = async (id) => {
     if (!window.confirm("Ištrinti įrašą?")) return;
-    await fetch(`${BASE_URL}?id=eq.${id}`, { 
-      method: 'DELETE', 
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
-    });
+    await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
@@ -143,54 +130,41 @@ function App() {
   };
 
   const visibleCols = columns.filter(c => c.visible);
-  const filteredData = equipment.filter(item => 
-    (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
+  const filteredData = equipment.filter(item => (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: 'sans-serif' }}>
       <style>{`
-        .table-container { flex: 1; overflow: auto; background: white; }
+        .table-container { 
+          flex: 1; 
+          overflow: auto; /* Tai užtikrina, kad šliaužiklis būtų konteinerio apačioje */
+          background: white; 
+          border-top: 1px solid #cbd5e1;
+        }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
         th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; position: relative; }
         th { background: #0f172a; color: white !important; position: sticky; top: 0; zIndex: 10; font-size: 11px; text-transform: uppercase; }
         .header-inner { display: flex; flex-direction: column; align-items: center; padding: 5px 0; }
         .cell-content { padding: 8px; font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        
+        /* EILUTĖS SPALVA KAI PRADELSTA */
+        .row-overdue { background: #fee2e2 !important; }
         .date-overdue { color: #ef4444 !important; font-weight: bold; }
+        
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
         tr:hover { background: #f8fafc; }
-        .top-bar { display: flex; padding: 10px; gap: 15px; background: #2563eb; align-items: center; color: white; }
+        .top-bar { display: flex; padding: 10px; gap: 15px; background: #2563eb; align-items: center; color: white; flex-shrink: 0; }
         .btn-main { background: white; color: #2563eb; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 3px; }
-        .cell-edit { width: 100%; border: 1px solid #2563eb; padding: 4px; font-size: 13px; outline: none; }
+        .cell-edit { width: 100%; border: 1px solid #2563eb; padding: 4px; font-size: 13px; outline: none; box-sizing: border-box; }
       `}</style>
 
       <div className="top-bar">
         <h2 style={{ margin: 0, fontSize: '18px' }}>MD CRM</h2>
-        <input 
-          style={{ width: '220px', padding: '8px', borderRadius: '4px', border: 'none', outline: 'none' }} 
-          placeholder="Ieškoti kliento..." 
-          onChange={e => setSearchTerm(e.target.value)} 
-        />
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn-main" onClick={handleAddRow}>+ PRIDĖTI ĮRAŠĄ</button>
-          <button className="btn-main" style={{ background: '#0f172a', color: 'white' }} onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
-        </div>
+        <input style={{ width: '220px', padding: '8px', borderRadius: '4px', border: 'none' }} placeholder="Ieškoti..." onChange={e => setSearchTerm(e.target.value)} />
+        <button className="btn-main" onClick={handleAddRow}>+ PRIDĖTI</button>
+        <button className="btn-main" style={{ background: '#0f172a', color: 'white' }} onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
       </div>
-
-      {showColManager && (
-        <div style={{ position: 'absolute', top: '60px', right: '15px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
-          <h4 style={{ margin: '0 0 10px 0', borderBottom: '1px solid #eee' }}>Nustatymai</h4>
-          {columns.map(col => (
-            <div key={col.key} style={{ display: 'flex', alignItems: 'center', padding: '5px 0' }}>
-              <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
-              <span style={{ flex: 1, marginLeft: '10px', fontSize: '13px' }}>{col.label}</span>
-              <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: '16px' }} onClick={() => deleteColumn(col.key)}>🗑️</span>
-            </div>
-          ))}
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', cursor: 'pointer', background: '#f1f5f9', border: '1px solid #ccc', borderRadius: '4px' }}>Uždaryti</button>
-        </div>
-      )}
 
       <div className="table-container">
         <table>
@@ -217,26 +191,21 @@ function App() {
             ) : filteredData.map(item => {
               const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
               return (
-                <tr key={item.id}>
+                <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
                   <td><div className="cell-content" style={{ textAlign: 'center' }}><button onClick={() => handleDeleteRow(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}>🗑️</button></div></td>
                   {visibleCols.map(col => (
                     <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
                       <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'date-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
                         {editingCell?.id === item.id && editingCell?.field === col.key ? (
                           col.key === "Atlikta" ? (
-                            <select 
-                              className="cell-edit" 
-                              autoFocus 
-                              defaultValue={item[col.key]} 
-                              onBlur={() => setEditingCell(null)}
-                              onChange={e => handleSave(item.id, col.key, e.target.value)}
-                            >
+                            <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
                               <option value="Ne">Ne</option>
                               <option value="Taip">Taip</option>
                             </select>
                           ) : (
                             <input 
                               autoFocus 
+                              type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? "date" : "text"}
                               className="cell-edit" 
                               defaultValue={item[col.key]} 
                               onBlur={e => handleSave(item.id, col.key, e.target.value)}
@@ -253,6 +222,19 @@ function App() {
           </tbody>
         </table>
       </div>
+
+      {showColManager && (
+        <div style={{ position: 'absolute', top: '60px', right: '15px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', zIndex: 100, color: 'black', border: '1px solid #ccc' }}>
+          {columns.map(col => (
+            <div key={col.key} style={{ display: 'flex', alignItems: 'center', padding: '5px 0' }}>
+              <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
+              <span style={{ flex: 1, marginLeft: '10px', fontSize: '13px' }}>{col.label}</span>
+              <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: '16px' }} onClick={() => deleteColumn(col.key)}>🗑️</span>
+            </div>
+          ))}
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '10px', padding: '5px' }}>Uždaryti</button>
+        </div>
+      )}
     </div>
   );
 }
