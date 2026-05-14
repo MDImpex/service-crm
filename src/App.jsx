@@ -133,29 +133,43 @@ function App() {
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff', overflow: 'hidden', position: 'fixed', fontFamily: 'Arial, sans-serif' }}>
       <style>{`
+        /* Žalias Meniu Baras pagal image_94dad1.png */
         .main-header { 
-          height: 80px; 
+          height: 85px; 
           display: flex; 
-          padding: 0 30px; 
-          background: #1c4e43; 
+          padding: 0 35px; 
+          background: #113c32; /* Tiksli gili žalia spalva */
           align-items: center; 
           flex-shrink: 0;
         }
 
-        .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 13px; font-weight: bold; align-items: center; width: 100%; }
-        .nav-item { cursor: pointer; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-item:hover { opacity: 1; color: #b39359; }
-        .nav-separator { color: rgba(255,255,255,0.3); }
+        .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
+        
+        .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
+        .nav-item:hover { opacity: 0.8; }
+        .btn-add-gold { color: #b4965d !important; } /* Tiksli auksinė spalva įrašui */
+        .nav-separator { color: rgba(255,255,255,0.2); font-weight: normal; }
 
-        .search-container-right { margin-left: auto; display: flex; align-items: center; }
+        /* Pilkas paieškos laukelis su tamsesniu rėmeliu */
         .search-box-embedded {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid rgba(255,255,255,0.25);
-          padding: 8px 15px;
+          background: #194a3f;
+          border: 1px solid #235d51;
+          padding: 9px 15px;
           color: white;
           font-size: 13px;
           outline: none;
-          width: 280px;
+          width: 300px;
+          margin-left: 10px;
+        }
+        .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* Didelis dešinės pusės tekstas */
+        .crm-title-right {
+          margin-left: auto;
+          color: #ffffff;
+          font-size: 22px;
+          font-weight: normal;
+          letter-spacing: 1px;
         }
 
         .crm-card-wrapper {
@@ -176,7 +190,7 @@ function App() {
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
         
         th { 
-          background: #232323; 
+          background: #1e1e1e; 
           color: #ffffff !important; 
           position: sticky; 
           top: 0; 
@@ -184,36 +198,43 @@ function App() {
           font-size: 11px; 
           font-weight: bold;
           text-align: center;
-          padding: 15px 5px;
-          border-right: 1px solid #3d3d3d;
-          border-bottom: 2px solid #111111;
+          padding: 16px 5px;
+          border-right: 1px solid #333333;
+          border-bottom: 2px solid #000000;
+          text-transform: uppercase;
         }
         
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
-        tr:nth-child(even) td { background-color: #f7f9fa; }
+        tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
-        .cell-edit { width: 100%; border: 2px solid #1c4e43; padding: 6px; font-size: 12px; outline: none; box-sizing: border-box; }
+        .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 12px; outline: none; box-sizing: border-box; }
         
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #555555; }
       `}</style>
 
+      {/* Žalias Meniu Baras pagal nuotrauką */}
       <div className="main-header">
         <div className="nav-menu">
           <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIAI</span>
           <span className="nav-separator">|</span>
-          <span className="nav-item" onClick={handleAddRow} style={{ color: '#b39359' }}>+ NAUJAS ĮRAŠAS</span>
+          <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
-          <div className="search-container-right">
-            <input className="search-box-embedded" placeholder="🔍 Filtruoti klientą..." onChange={e => setSearchTerm(e.target.value)} />
-          </div>
+          <input 
+            className="search-box-embedded" 
+            placeholder="🔍 Filtruoti klientą..." 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
+
+          <div className="crm-title-right">MD Impex CRM</div>
         </div>
       </div>
 
+      {/* CRM Lentelės Rėmas */}
       <div className="crm-card-wrapper">
         <div className="table-wrap">
           <table>
@@ -225,8 +246,8 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
@@ -272,7 +293,7 @@ function App() {
       </div>
 
       {showColManager && (
-        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #1c4e43', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
           <h4 style={{marginTop: 0, fontSize: '12px'}}>STULPELIŲ VALDYMAS</h4>
           <div style={{maxHeight: '300px', overflowY: 'auto'}}>
             {columns.map(col => (
@@ -282,7 +303,7 @@ function App() {
               </div>
             ))}
           </div>
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', background: '#1c4e43', color: 'white', border: 'none', cursor: 'pointer' }}>UŽDARYTI</button>
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer' }}>UŽDARYTI</button>
         </div>
       )}
     </div>
