@@ -107,7 +107,6 @@ function App() {
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
-  // Pataisyta resizerRef logika, kad atitiktų griežtus reikalavimus
   const resizerRef = useRef({ x: 0, width: 0, key: null });
 
   const onMouseMove = (e) => {
@@ -141,7 +140,21 @@ function App() {
         .btn-cols { background: transparent; color: #b39359; border: 1px solid #b39359; padding: 9px 15px; cursor: pointer; text-transform: uppercase; font-size: 12px; }
         .table-wrap { flex: 1; overflow: auto; background: white; width: 100vw; height: calc(100vh - 82px); }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        th { background: #1a1a1a; color: #b39359 !important; position: sticky; top: 0; zIndex: 30; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; border-right: 1px solid #333; border-bottom: 2px solid #b39359; }
+        
+        /* PATAISYTA: Balta antraščių spalva */
+        th { 
+          background: #1a1a1a; 
+          color: #ffffff !important; 
+          position: sticky; 
+          top: 0; 
+          zIndex: 30; 
+          font-size: 11px; 
+          letter-spacing: 1px; 
+          text-transform: uppercase; 
+          border-right: 1px solid #333; 
+          border-bottom: 2px solid #b39359; 
+        }
+        
         td { padding: 0; border-right: 1px solid #e8e4db; border-bottom: 1px solid #e8e4db; position: relative; background: white; }
         .row-overdue td { background-color: #fff5f5 !important; }
         .text-overdue { color: #d32f2f !important; font-weight: bold; }
@@ -150,6 +163,17 @@ function App() {
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
         .cell-edit { width: 100%; border: 2px solid #214f43; padding: 6px; font-size: 13px; outline: none; box-sizing: border-box; }
         .search-input { background: rgba(255,255,255,0.1); border: 1px solid #b39359; color: white; padding: 10px 15px; width: 280px; outline: none; }
+        
+        /* Šiukšliadėžės stilius */
+        .btn-delete { 
+          border: none; 
+          background: none; 
+          cursor: pointer; 
+          font-size: 16px; 
+          color: #e30613; /* Raudona */
+          transition: transform 0.2s;
+        }
+        .btn-delete:hover { transform: scale(1.2); }
       `}</style>
 
       <div className="top-bar">
@@ -191,7 +215,7 @@ function App() {
                   <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
                     <td>
                       <div className="cell-content" style={{ textAlign: 'center' }}>
-                        <button onClick={() => handleDeleteRow(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>🗑️</button>
+                        <button className="btn-delete" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                       </div>
                     </td>
                     {visibleCols.map(col => (
