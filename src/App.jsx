@@ -4,10 +4,10 @@ function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchEquipment, setSearchEquipment] = useState('') // NAUJAS: Būsena įrangos filtravimui
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
-  // 1. Užkrauname stulpelius iš localStorage, jei jų nėra - naudojame pradinius duomenis
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
@@ -28,7 +28,6 @@ function App() {
     ]
   });
 
-  // 2. Užkrauname stulpelių pločius iš localStorage
   const [widths, setWidths] = useState(() => {
     const savedWidths = localStorage.getItem('crm_widths')
     return savedWidths ? JSON.parse(savedWidths) : {
@@ -42,12 +41,10 @@ function App() {
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
 
-  // 3. Automatiškai išsaugome stulpelių tvarką/matomumą, kai jie pasikeičia
   useEffect(() => {
     localStorage.setItem('crm_columns', JSON.stringify(columns))
   }, [columns])
 
-  // 4. Automatiškai išsaugome pločius, kai jie pasikeičia
   useEffect(() => {
     localStorage.setItem('crm_widths', JSON.stringify(widths))
   }, [widths])
@@ -118,7 +115,6 @@ function App() {
   };
 
   const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
-  const deleteColumn = (key) => window.confirm(`Pašalinti stulpelį?`) && setColumns(columns.filter(c => c.key !== key));
   
   const handleDeleteRow = async (id) => {
     if (!window.confirm("Ištrinti įrašą?")) return;
@@ -147,7 +143,13 @@ function App() {
   };
 
   const visibleCols = columns.filter(c => c.visible);
-  const filteredData = equipment.filter(item => (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
+
+  {/* ATNAUJINTA: Dvigubas filtravimas (pagal klientą IR pagal įrangą) */}
+  const filteredData = equipment.filter(item => {
+    const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
+    return matchesClient && matchesEquipment;
+  });
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff', overflow: 'hidden', position: 'fixed', fontFamily: 'Arial, sans-serif' }}>
@@ -174,7 +176,7 @@ function App() {
           color: white;
           font-size: 13px;
           outline: none;
-          width: 300px;
+          width: 220px; /* Šiek tiek susiaurinta, kad tilptų abu laukeliai */
           margin-left: 10px;
         }
         .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
@@ -241,10 +243,18 @@ function App() {
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
+          {/* Filtras 1: Pagal Klientą */}
           <input 
             className="search-box-embedded" 
             placeholder="🔍 Filtruoti klientą..." 
             onChange={e => setSearchTerm(e.target.value)} 
+          />
+
+          {/* Filtras 2: Pagal Įrangą */}
+          <input 
+            className="search-box-embedded" 
+            placeholder="⚙️ Filtruoti įrangą..." 
+            onChange={e => setSearchEquipment(e.target.value)} 
           />
 
           <div className="crm-title-right">MD Impex CRM</div>
