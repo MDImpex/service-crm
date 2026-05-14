@@ -10,7 +10,6 @@ function App() {
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
   
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
-  // Perduodame raktą tiesiai URL pabaigoje: ?apikey=...
   const RPC_URL = `https://enucrtrjaoakachsrubi.supabase.co/rest/v1/rpc/siusti_pilna_ataskaita?apikey=${API_KEY}`
 
   const headers = {
@@ -38,16 +37,13 @@ function App() {
     }
   }
 
-  // 2. ATASKAITOS SIUNTIMAS (Raktas perduodamas per URL, o ne per Headers)
+  // 2. ATASKAITOS SIUNTIMAS
   const handleSendReport = async () => {
     if (!window.confirm("Ar siųsti vėluojančių patikrų ataskaitą?")) return;
     try {
       const response = await fetch(RPC_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-          // Sąmoningai išimame 'apikey' ir 'Authorization' iš čia, nes įdėjome į RPC_URL viršuje
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}) 
       });
 
@@ -55,7 +51,6 @@ function App() {
         alert("Ataskaita sėkmingai išsiųsta!");
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Išsami serverio klaida:", errorData);
         alert(`Klaida siunčiant: ${errorData.message || response.statusText}`);
       }
     } catch (err) {
@@ -63,17 +58,20 @@ function App() {
     }
   };
 
-  // 3. PAGALBINĖS DATŲ FUNKCIJOS
+  // 3. SUTVARKYTOS DATŲ FUNKCIJOS (Naudojame standartinį YYYY-MM-DD formatą)
   const toDbFormat = (dateStr) => {
-    if (!dateStr || !dateStr.includes('-')) return dateStr;
-    const [y, m, d] = dateStr.split('-');
-    return `${parseInt(m)}/${parseInt(d)}/${y}`;
+    if (!dateStr) return null;
+    return dateStr; // Grąžiname švarų YYYY-MM-DD formatą tiesiai į DB
   }
 
   const toInputFormat = (dbStr) => {
-    if (!dbStr || !dbStr.includes('/')) return '';
-    const [m, d, y] = dbStr.split('/');
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    if (!dbStr) return '';
+    // Jei DB netyčia yra senas "M/D/YYYY" formatas, paverčiame į YYYY-MM-DD kalendoriui
+    if (dbStr.includes('/')) {
+      const [m, d, y] = dbStr.split('/');
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    return dbStr;
   }
 
   // 4. DUOMENŲ ATNAUJINIMAS
@@ -84,7 +82,11 @@ function App() {
     try {
       const response = await fetch(`${BASE_URL}?id=eq.${id}`, {
         method: 'PATCH',
-        headers: headers,
+        headers: {
+          'apikey': API_KEY,
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ [field]: finalValue })
       });
 
