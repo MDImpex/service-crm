@@ -119,36 +119,49 @@ function App() {
         .table-container { flex: 1; overflow: auto; background: white; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
         th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; overflow: hidden; }
-        th { 
-          background: #0f172a; 
-          color: white !important; 
-          position: sticky; 
-          top: 0; 
-          zIndex: 10; 
-          border-right: 1px solid #334155; 
-          font-size: 11px; 
-          text-transform: uppercase; 
-        }
+        th { background: #0f172a; color: white !important; position: sticky; top: 0; zIndex: 10; border-right: 1px solid #334155; font-size: 11px; text-transform: uppercase; }
         .header-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 5px 0; }
         .cell-content { padding: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; display: block; font-size: 13px; color: #1e293b; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
         .resizer:hover { background: #3b82f6; }
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
-        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
+        
+        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; flex-wrap: nowrap; }
+        .action-btns { display: flex; gap: 10px; align-items: center; }
+        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .btn-main:hover { background: #f1f5f9; }
+        
         .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 4px; font-weight: bold; }
         .del-col-btn { color: #ef4444; cursor: pointer; margin-left: auto; font-size: 14px; padding: 2px 5px; }
-        .del-col-btn:hover { background: #fee2e2; border-radius: 4px; }
       `}</style>
 
+      {/* VIRŠUTINĖ JUOSTA SU VISU TURINIU */}
       <div className="top-bar">
-        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>MD CRM</h2>
-        <input placeholder="Paieška..." style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none', fontFamily: 'inherit' }} onChange={e => setSearchTerm(e.target.value)} />
-        <button onClick={() => setShowColManager(!showColManager)} style={{ cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}>STULPELIAI</button>
+        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', minWidth: '80px' }}>MD CRM</h2>
+        
+        <input 
+          placeholder="Paieška pagal klientą..." 
+          style={{ flex: 1, minWidth: '150px', padding: '8px', borderRadius: '4px', border: 'none', fontFamily: 'inherit' }} 
+          onChange={e => setSearchTerm(e.target.value)} 
+        />
+
+        <div className="action-btns">
+          {/* ČIA GALI ĮRAŠYTI SAVO SENUS MYGTUKUS */}
+          <button className="btn-main" onClick={() => alert('Čia pridėsite įrašą')}>+ PRIDĖTI</button>
+          
+          <button 
+            className="btn-main" 
+            style={{ background: '#0f172a', color: 'white' }}
+            onClick={() => setShowColManager(!showColManager)}
+          >
+            STULPELIAI
+          </button>
+        </div>
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ position: 'absolute', top: '50px', right: '20px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
+        <div className="col-manager" style={{ position: 'absolute', top: '55px', right: '10px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', zIndex: 100, color: 'black', border: '1px solid #ccc', minWidth: '220px' }}>
           <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Rodyti stulpelius</h4>
           {columns.map(col => (
             <div key={col.key} style={{ padding: '5px 0', display: 'flex', alignItems: 'center' }}>
