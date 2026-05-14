@@ -130,16 +130,31 @@ function App() {
         /* ANTRAŠČIŲ STILIUS */
         th { 
           background: #0f172a; 
-          color: white; 
+          color: #ffffff;           /* PAKEISTA: Gryna balta spalva tekstui */
           position: sticky; 
           top: 0; 
           z-index: 10; 
           border-right: 1px solid #334155;
           font-size: 11px;
           text-transform: uppercase;
-          font-weight: 600;
+          font-weight: 800;         /* PAKEISTA: Ryškesnis (stambesnis) šriftas */
         }
 
+        .col-header-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+          color: #ffffff;           /* PRIDĖTA: Užtikrina balta spalvą viduje */
+        }
+
+        .btn-arrow { 
+          cursor: pointer; 
+          color: #3b82f6;           /* PAKEISTA: Rodyklės dabar bus ryškiai mėlynos, kad matytųsi */
+          font-size: 14px; 
+          margin: 0 4px; 
+          font-weight: bold;
+        }
         /* LANGELIŲ TURINIO STILIUS (SVARBIAUSIA VIETA) */
         .cell-content {
           padding: 8px;
