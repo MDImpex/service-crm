@@ -108,54 +108,26 @@ function App() {
   );
 
   return (
-    /* EILUTĖ ŽEMIAU: Pagrindinis šriftas visai programai */
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: '"Segoe UI", Roboto, sans-serif' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
         
-        table { 
-          border-collapse: separate; 
-          border-spacing: 0; 
-          table-layout: fixed; 
-          width: max-content;
-        }
+        table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
         
-        th, td { 
-          padding: 0;
-          border-right: 1px solid #e2e8f0; 
-          border-bottom: 1px solid #e2e8f0;
-          overflow: hidden;
-        }
+        th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; overflow: hidden; }
 
-        /* ANTRAŠČIŲ STILIUS */
         th { 
           background: #0f172a; 
-          color: #ffffff;           /* PAKEISTA: Gryna balta spalva tekstui */
+          color: #ffffff !important; 
           position: sticky; 
           top: 0; 
           z-index: 10; 
           border-right: 1px solid #334155;
           font-size: 11px;
           text-transform: uppercase;
-          font-weight: 800;         /* PAKEISTA: Ryškesnis (stambesnis) šriftas */
+          font-weight: 900;
         }
 
-        .col-header-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 100%;
-          color: #ffffff;           /* PRIDĖTA: Užtikrina balta spalvą viduje */
-        }
-
-        .btn-arrow { 
-          cursor: pointer; 
-          color: #3b82f6;           /* PAKEISTA: Rodyklės dabar bus ryškiai mėlynos, kad matytųsi */
-          font-size: 14px; 
-          margin: 0 4px; 
-          font-weight: bold;
-        }
-        /* LANGELIŲ TURINIO STILIUS (SVARBIAUSIA VIETA) */
         .cell-content {
           padding: 8px;
           overflow: hidden;
@@ -163,8 +135,19 @@ function App() {
           white-space: nowrap;
           box-sizing: border-box;
           display: block;
-          font-size: 13px; /* Keisk teksto dydį čia */
-          color: #1e293b;  /* Keisk teksto spalvą čia */
+          font-size: 13px;
+          color: #1e293b;
+        }
+
+        /* ANTRAŠTĖS KONTEINERIS UŽTIKRINANTIS BALTĄ SPALVĄ */
+        .header-inner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          color: #ffffff !important; 
+          padding: 5px 0;
         }
 
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
@@ -174,8 +157,16 @@ function App() {
         .overdue { background: #fee2e2; }
 
         .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
-        .col-manager { position: absolute; top: 50px; right: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100; color: black; border: 1px solid #ccc; }
-        .btn-arrow { cursor: pointer; color: #94a3b8; font-size: 12px; margin: 0 4px; }
+        
+        /* PATAISYTA RODYKLIŲ SPALVA */
+        .btn-arrow { 
+          cursor: pointer; 
+          color: #60a5fa !important; 
+          font-size: 14px; 
+          margin: 0 4px; 
+          font-weight: bold; 
+        }
+        .btn-arrow:hover { color: #ffffff !important; }
       `}</style>
 
       <div className="top-bar">
@@ -185,7 +176,7 @@ function App() {
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ fontFamily: 'inherit' }}>
+        <div className="col-manager" style={{ position: 'absolute', top: '50px', right: '20px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', z-index: 100, color: 'black', border: '1px solid #ccc' }}>
           {columns.map(col => (
             <div key={col.key} style={{ padding: '3px 0' }}>
                 <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}
@@ -199,17 +190,17 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th style={{ width: '40px' }}><div className="cell-content" style={{width: '40px'}}>#</div></th>
+              <th style={{ width: '40px' }}><div className="cell-content" style={{width: '40px', color: 'white'}}>#</div></th>
               {visibleCols.map((col) => {
                 const globalIdx = columns.findIndex(c => c.key === col.key);
                 return (
                   <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
-                    <div className="cell-content" style={{ width: `${widths[col.key]}px`, textAlign: 'center' }}>
-                      <div style={{fontSize: '10px', marginBottom: '2px'}}>
+                    <div className="header-inner" style={{ width: `${widths[col.key]}px` }}>
+                      <div style={{ marginBottom: '2px' }}>
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, -1)}>←</span>
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, 1)}>→</span>
                       </div>
-                      {col.label}
+                      <span style={{ color: 'white', fontWeight: '900' }}>{col.label}</span>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
                   </th>
