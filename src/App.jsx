@@ -7,7 +7,6 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
-  // 1. STULPELIŲ KONFIGŪRACIJA
   const [columns, setColumns] = useState([
     { label: "Montavimas", key: "Montavimo data", visible: true },
     { label: "Įm. Kodas", key: "Kliento įmonės kodas", visible: true },
@@ -24,12 +23,11 @@ function App() {
     { label: "Komentaras", key: "Komentaras", visible: true }
   ]);
 
-  // Pradiniai pločiai
   const [widths, setWidths] = useState({
-    "Montavimo data": 100, "Kliento įmonės kodas": 80, "Kliento pavadinimas": 150,
-    "Adresas": 150, "Įrangos pavadinimas": 150, "Serijos numeris": 100,
+    "Montavimo data": 100, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 180,
+    "Adresas": 180, "Įrangos pavadinimas": 180, "Serijos numeris": 120,
     "Prižiūri": 100, "Patikr. Periodiškumas": 80, "Sutartis YRA/NĖRA": 80,
-    "Atlikta": 80, "Patikros data": 100, "Sekanti patikra": 100, "Komentaras": 150
+    "Atlikta": 80, "Patikros data": 100, "Sekanti patikra": 110, "Komentaras": 200
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
@@ -48,7 +46,6 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // STULPELIŲ VALDYMAS
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
     const targetIndex = index + direction;
@@ -72,11 +69,10 @@ function App() {
     } catch (err) { alert(err.message) }
   };
 
-  // PATOBULINTA TEMPIMO LOGIKA (leidžia siaurinti nepriklausomai nuo teksto)
   const resizerRef = useRef({ x: 0, width: 0, key: null });
   const onMouseDown = (e, key) => {
     e.preventDefault();
-    resizerRef.current = { x: e.clientX, width: widths[key] || 100, key };
+    resizerRef.current = { x: e.clientX, width: widths[key], key };
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
     document.body.style.cursor = 'col-resize';
@@ -84,7 +80,7 @@ function App() {
   const onMouseMove = (e) => {
     if (!resizerRef.current.key) return;
     const { x, width, key } = resizerRef.current;
-    const newWidth = Math.max(20, width + (e.clientX - x)); // Leidžia susiaurinti iki 20px
+    const newWidth = Math.max(30, width + (e.clientX - x));
     setWidths(prev => ({ ...prev, [key]: newWidth }));
   };
   const onMouseUp = () => {
@@ -119,77 +115,50 @@ function App() {
         table { 
           border-collapse: separate; 
           border-spacing: 0; 
-          table-layout: fixed; /* BŪTINA plotams valdyti */
-          width: max-content; 
+          table-layout: fixed; 
+          width: max-content;
         }
         
-        th { 
-          background: #0f172a; 
-          color: white; 
-          padding: 8px; 
-          font-size: 11px; 
-          position: sticky; 
-          top: 0; 
-          z-index: 10; 
-          border-right: 1px solid #334155;
-          overflow: hidden; /* Slepia tekstą, jei stulpelis per siauras */
-        }
-
-        .col-header-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 100%;
-        }
-
-        .resizer { 
-          position: absolute; 
-          right: 0; 
-          top: 0; 
-          height: 100%; 
-          width: 6px; 
-          cursor: col-resize; 
-          z-index: 11;
-        }
-        .resizer:hover { background: #3b82f6; }
-
-        td { 
-          padding: 8px; 
+        th, td { 
+          padding: 0; /* Vidinis paddingas perkeliamas į div */
           border-right: 1px solid #e2e8f0; 
-          border-bottom: 1px solid #e2e8f0; 
-          font-size: 13px; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis; /* Prideda daugtaškį, jei tekstas netelpa */
-          min-width: 0; /* Leidžia siaurinti nepriklausomai nuo turinio */
+          border-bottom: 1px solid #e2e8f0;
+          overflow: hidden;
         }
+
+        th { background: #0f172a; color: white; position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155; }
+
+        /* PAGRINDINIS TRIUKAS: div nustato griežtą plotį */
+        .cell-content {
+          padding: 8px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          box-sizing: border-box;
+          display: block;
+        }
+
+        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
+        .resizer:hover { background: #3b82f6; }
 
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
 
-        .top-bar { display: flex; padding: 10px 20px; gap: 10px; background: #2563eb; align-items: center; color: white; }
+        .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
         .col-manager { position: absolute; top: 50px; right: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100; color: black; border: 1px solid #ccc; }
-        .btn-arrow { cursor: pointer; padding: 0 5px; color: #94a3b8; font-size: 14px; }
-        .btn-arrow:hover { color: white; }
+        .btn-arrow { cursor: pointer; color: #94a3b8; font-size: 12px; margin: 0 4px; }
       `}</style>
 
       <div className="top-bar">
         <h2 style={{ margin: 0, fontSize: '16px' }}>MD CRM</h2>
-        <input 
-          placeholder="Paieška..." 
-          style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none' }} 
-          onChange={e => setSearchTerm(e.target.value)} 
-        />
-        <button onClick={() => setShowColManager(!showColManager)} style={{ cursor: 'pointer', padding: '8px' }}>STULPELIAI</button>
+        <input placeholder="Paieška..." style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none' }} onChange={e => setSearchTerm(e.target.value)} />
+        <button onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
       </div>
 
       {showColManager && (
         <div className="col-manager">
-          <h4 style={{marginTop: 0}}>Matomi stulpeliai:</h4>
           {columns.map(col => (
-            <div key={col.key}>
-              <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}
-            </div>
+            <div key={col.key}><input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}</div>
           ))}
           <button onClick={() => setShowColManager(false)} style={{marginTop: '10px', width: '100%'}}>Uždaryti</button>
         </div>
@@ -199,19 +168,17 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th style={{ width: '40px' }}></th>
-              {visibleCols.map((col, idx) => {
+              <th style={{ width: '40px' }}><div className="cell-content" style={{width: '40px'}}>#</div></th>
+              {visibleCols.map((col) => {
                 const globalIdx = columns.findIndex(c => c.key === col.key);
                 return (
                   <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
-                    <div className="col-header-content">
-                      <div style={{display: 'flex', gap: '10px'}}>
+                    <div className="cell-content" style={{ width: `${widths[col.key]}px`, textAlign: 'center' }}>
+                      <div style={{fontSize: '10px', marginBottom: '2px'}}>
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, -1)}>←</span>
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, 1)}>→</span>
                       </div>
-                      <span style={{overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center'}}>
-                        {col.label}
-                      </span>
+                      {col.label}
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
                   </th>
@@ -222,19 +189,23 @@ function App() {
           <tbody>
             {filteredData.map(item => (
               <tr key={item.id} className={item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date() ? 'overdue' : ''}>
-                <td style={{ textAlign: 'center' }}>
-                  <button onClick={() => handleDeleteRow(item.id)} style={{border: 'none', background: 'none', cursor: 'pointer'}}>🗑️</button>
+                <td>
+                  <div className="cell-content" style={{width: '40px', textAlign: 'center'}}>
+                    <button onClick={() => handleDeleteRow(item.id)} style={{border: 'none', background: 'none', cursor: 'pointer'}}>🗑️</button>
+                  </div>
                 </td>
                 {visibleCols.map(col => (
                   <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
-                    {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                      <input 
-                        autoFocus 
-                        defaultValue={item[col.key]} 
-                        onBlur={e => handleSave(item.id, col.key, e.target.value)} 
-                        style={{width: '100%'}} 
-                      />
-                    ) : (item[col.key] || '—')}
+                    <div className="cell-content" style={{ width: `${widths[col.key]}px` }}>
+                      {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                        <input 
+                          autoFocus 
+                          defaultValue={item[col.key]} 
+                          onBlur={e => handleSave(item.id, col.key, e.target.value)} 
+                          style={{width: '100%', border: '1px solid #2563eb'}} 
+                        />
+                      ) : (item[col.key] || '—')}
+                    </div>
                   </td>
                 ))}
               </tr>
