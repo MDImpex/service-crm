@@ -7,50 +7,32 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
-  // 1. Užkrauname stulpelius iš localStorage, jei jų nėra - naudojame pradinius duomenis
-  const [columns, setColumns] = useState(() => {
-    const savedCols = localStorage.getItem('crm_columns')
-    return savedCols ? JSON.parse(savedCols) : [
-      { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-      { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
-      { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
-      { label: "ADRESAS", key: "Adresas", visible: true },
-      { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
-      { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true },
-      { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
-      { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
-      { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
-      { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
-      { label: "KOMENTARAS", key: "Komentaras", visible: true },
-      { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
-      { label: "ATLIKTA", key: "Atlikta", visible: true }
-    ]
-  });
+  const [columns, setColumns] = useState([
+    { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
+    { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
+    { label: "ADRESAS", key: "Adresas", visible: true },
+    { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
+    { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
+    { label: "PRIŽIŪRI", key: "Prižiūri", visible: true },
+    { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
+    { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
+    { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
+    { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
+    { label: "KOMENTARAS", key: "Komentaras", visible: true },
+    { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
+    { label: "ATLIKTA", key: "Atlikta", visible: true } // Sugrąžintas stulpelis automatizacijai
+  ]);
 
-  // 2. Užkrauname stulpelių pločius iš localStorage
-  const [widths, setWidths] = useState(() => {
-    const savedWidths = localStorage.getItem('crm_widths')
-    return savedWidths ? JSON.parse(savedWidths) : {
-      "Montavimo data": 120, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 160,
-      "Adresas": 180, "Įrangos pavadinimas": 160, "Serijos numeris": 120,
-      "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110, 
-      "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120, "Atlikta": 100
-    }
+  const [widths, setWidths] = useState({
+    "Montavimo data": 120, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 160,
+    "Adresas": 180, "Įrangos pavadinimas": 160, "Serijos numeris": 120,
+    "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110, 
+    "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120, "Atlikta": 100
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
-
-  // 3. Automatiškai išsaugome stulpelių tvarką/matomumą, kai jie pasikeičia
-  useEffect(() => {
-    localStorage.setItem('crm_columns', JSON.stringify(columns))
-  }, [columns])
-
-  // 4. Automatiškai išsaugome pločius, kai jie pasikeičia
-  useEffect(() => {
-    localStorage.setItem('crm_widths', JSON.stringify(widths))
-  }, [widths])
 
   useEffect(() => { 
     fetchData() 
@@ -86,6 +68,7 @@ function App() {
     let updates = { [field]: value };
     const currentItem = equipment.find(item => item.id === id);
 
+    // Automatizacijos logika veikia čia
     if (field === "Atlikta" && value === "Taip") {
       const today = new Date();
       updates["Patikros data"] = today.toISOString().split('T')[0];
@@ -104,6 +87,7 @@ function App() {
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
+      // Atnaujiname vietinę būseną (State) su visais susijusiais pakeitimais (datos perskaičiavimu)
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { console.error(err) }
@@ -285,6 +269,7 @@ function App() {
                         <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
                           <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                              /* TINKAMŲ ĮVESTIES LAUKŲ VALDYMAS (Kuris iškrenta dukart paspaudus) */
                               col.key === "Sutartis YRA/NĖRA" ? (
                                 <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
                                   <option value="">—</option>
@@ -297,6 +282,7 @@ function App() {
                                   <option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
+                                /* IŠKRENTANTIS KALENDORIUS DATOMS */
                                 <input 
                                   autoFocus 
                                   type="date"
@@ -306,6 +292,7 @@ function App() {
                                   onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
                                 />
                               ) : (
+                                /* Paprastas tekstas kitiems laukams */
                                 <input 
                                   autoFocus 
                                   type="text"
