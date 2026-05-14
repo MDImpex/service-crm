@@ -5,10 +5,8 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingCell, setEditingCell] = useState(null)
-  const [colWidths] = useState([100, 90, 180, 180, 180, 100, 100, 100, 80, 70, 100, 120, 250]);
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
-  
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
   const RPC_URL = `https://enucrtrjaoakachsrubi.supabase.co/rest/v1/rpc/siusti_pilna_ataskaita?apikey=${API_KEY}`
 
@@ -37,7 +35,7 @@ function App() {
     }
   }
 
-  // 2. ATASKAITOS SIUNTIMAS
+  // 2. ATASKAITOS SIUNTIMAS (Su informatyviu pranešimu)
   const handleSendReport = async () => {
     if (!window.confirm("Ar generuoti vėluojančių patikrų ataskaitą?")) return;
     try {
@@ -49,32 +47,25 @@ function App() {
 
       if (response.ok) {
         const result = await response.json();
-        
-        // Jei funkcija rado vėluojančių įrenginių
         if (result.rasta_irenginiu > 0) {
           alert(`SĖKMĖ: Rasta ir ataskaitai paruošta ${result.rasta_irenginiu} vėluojančių patikrų!`);
         } else {
-          alert("INFORMACIJA: Vėluojančių patikrų šiuo metu nerasta. Viskas atlikta laiku.");
+          alert("INFORMACIJA: Vėluojančių patikrų šiuo metu nerasta. Visi įrenginiai patikrinti laiku.");
         }
-        
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(`Klaida: ${errorData.message || response.statusText}`);
+        alert(`Klaida siunčiant: ${errorData.message || response.statusText}`);
       }
     } catch (err) {
       alert("Netikėta klaida: " + err.message);
     }
   };
 
-  // 3. SUTVARKYTOS DATŲ FUNKCIJOS (Naudojame standartinį YYYY-MM-DD formatą)
-  const toDbFormat = (dateStr) => {
-    if (!dateStr) return null;
-    return dateStr; // Grąžiname švarų YYYY-MM-DD formatą tiesiai į DB
-  }
+  // 3. DATŲ FORMATAVIMAS
+  const toDbFormat = (dateStr) => dateStr || null;
 
   const toInputFormat = (dbStr) => {
     if (!dbStr) return '';
-    // Jei DB netyčia yra senas "M/D/YYYY" formatas, paverčiame į YYYY-MM-DD kalendoriui
     if (dbStr.includes('/')) {
       const [m, d, y] = dbStr.split('/');
       return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
@@ -82,7 +73,7 @@ function App() {
     return dbStr;
   }
 
-  // 4. DUOMENŲ ATNAUJINIMAS
+  // 4. DUOMENŲ IŠSAUGOJIMAS
   const handleSave = async (id, field, value) => {
     const isDateCol = field.includes('data') || field === "Sekanti patikra";
     const finalValue = isDateCol ? toDbFormat(value) : value;
@@ -138,32 +129,69 @@ function App() {
         table { 
           border-collapse: separate; 
           border-spacing: 0; 
-          width: 100%; 
-          table-layout: auto; /* Leidžia turiniui diktuoti plotį */
+          width: max-content; 
+          min-width: 100%;
+          table-layout: auto; 
         }
-        th, td { 
+        th { 
+          background: #0f172a; 
+          color: white; 
+          padding: 12px 15px; 
+          font-size: 11px; 
+          position: sticky; 
+          top: 0; 
+          z-index: 10; 
+          border-right: 1px solid #334155;
+          text-align: left;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        td { 
           padding: 10px 15px; 
           border-right: 1px solid #e2e8f0; 
           border-bottom: 1px solid #e2e8f0; 
           font-size: 13px; 
-          white-space: nowrap; /* Svarbu: neleidžia tekstui lūžti, todėl stulpelis PRIVALO išsiplėsti */
-          min-width: fit-content; 
+          white-space: nowrap; 
+          min-width: 120px;
         }
-         tr:hover { background: #f8fafc; }
+        tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
-        input { padding: 4px; border: 1px solid #3b82f6; border-radius: 4px; }
+        input.edit-input { 
+          padding: 6px; 
+          border: 1px solid #3b82f6; 
+          border-radius: 4px; 
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .top-bar { 
+          display: flex; 
+          padding: 15px 25px; 
+          gap: 20px; 
+          background: #2563eb; 
+          align-items: center; 
+          color: white; 
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
       `}</style>
 
-      <div style={{ display: 'flex', padding: '15px 25px', gap: '20px', background: '#2563eb', alignItems: 'center', color: 'white' }}>
-        <h2 style={{ margin: 0 }}>MD IMPEX CRM</h2>
+      <div className="top-bar">
+        <h2 style={{ margin: 0, fontSize: '18px' }}>MD IMPEX CRM</h2>
         <input 
-          placeholder="Paieška..." 
-          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none' }} 
+          placeholder="Paieška pagal klientą arba įrangą..." 
+          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none', outline: 'none' }} 
           onChange={(e) => setSearchTerm(e.target.value)} 
         />
         <button 
           onClick={handleSendReport}
-          style={{ background: '#f59e0b', border: 'none', padding: '10px 20px', borderRadius: '5px', color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
+          style={{ 
+            background: '#f59e0b', 
+            border: 'none', 
+            padding: '10px 20px', 
+            borderRadius: '5px', 
+            color: 'white', 
+            fontWeight: 'bold', 
+            cursor: 'pointer' 
+          }}
         >
           SIŲSTI ATASKAITĄ
         </button>
@@ -174,7 +202,7 @@ function App() {
           <table>
             <thead>
               <tr>
-                {columns.map((col, i) => <th key={i} >{col.label}</th>)}
+                {columns.map((col, i) => <th key={i}>{col.label}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -186,6 +214,7 @@ function App() {
                       <td key={i} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
                         {editingCell?.id === item.id && editingCell?.field === col.key ? (
                           <input 
+                            className="edit-input"
                             autoFocus
                             type={(col.key.includes('data') || col.key === "Sekanti patikra") ? "date" : "text"}
                             defaultValue={(col.key.includes('data') || col.key === "Sekanti patikra") ? toInputFormat(item[col.key]) : item[col.key]}
