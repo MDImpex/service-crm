@@ -118,14 +118,22 @@ function App() {
 
         th { 
           background: #0f172a; 
-          color: #ffffff !important; 
+          color: white !important; 
           position: sticky; 
           top: 0; 
           z-index: 10; 
           border-right: 1px solid #334155;
           font-size: 11px;
           text-transform: uppercase;
-          font-weight: 900;
+        }
+
+        .header-inner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          padding: 5px 0;
         }
 
         .cell-content {
@@ -139,17 +147,6 @@ function App() {
           color: #1e293b;
         }
 
-        /* ANTRAŠTĖS KONTEINERIS UŽTIKRINANTIS BALTĄ SPALVĄ */
-        .header-inner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          color: #ffffff !important; 
-          padding: 5px 0;
-        }
-
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
         .resizer:hover { background: #3b82f6; }
 
@@ -158,7 +155,6 @@ function App() {
 
         .top-bar { display: flex; padding: 10px; gap: 10px; background: #2563eb; align-items: center; color: white; }
         
-        /* PATAISYTA RODYKLIŲ SPALVA */
         .btn-arrow { 
           cursor: pointer; 
           color: #60a5fa !important; 
@@ -166,7 +162,6 @@ function App() {
           margin: 0 4px; 
           font-weight: bold; 
         }
-        .btn-arrow:hover { color: #ffffff !important; }
       `}</style>
 
       <div className="top-bar">
@@ -176,7 +171,18 @@ function App() {
       </div>
 
       {showColManager && (
-        <div className="col-manager" style={{ position: 'absolute', top: '50px', right: '20px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', z-index: 100, color: 'black', border: '1px solid #ccc' }}>
+        <div className="col-manager" style={{ 
+          position: 'absolute', 
+          top: '50px', 
+          right: '20px', 
+          background: 'white', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          boxShadow: '0 5px 20px rgba(0,0,0,0.2)', 
+          zIndex: 100, // PATAISYTA: iš z-index į zIndex
+          color: 'black', 
+          border: '1px solid #ccc' 
+        }}>
           {columns.map(col => (
             <div key={col.key} style={{ padding: '3px 0' }}>
                 <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}
@@ -200,7 +206,7 @@ function App() {
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, -1)}>←</span>
                         <span className="btn-arrow" onClick={() => moveColumn(globalIdx, 1)}>→</span>
                       </div>
-                      <span style={{ color: 'white', fontWeight: '900' }}>{col.label}</span>
+                      <span style={{ color: 'white', fontWeight: 'bold' }}>{col.label}</span>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
                   </th>
