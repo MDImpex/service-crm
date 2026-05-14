@@ -33,7 +33,10 @@ function App() {
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { 
+    fetchData() 
+    // eslint-disable-next-line
+  }, [])
 
   async function fetchData() {
     setLoading(true)
@@ -66,21 +69,13 @@ function App() {
 
     if (field === "Atlikta" && value === "Taip") {
       const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
-      updates["Patikros data"] = todayStr;
-
+      updates["Patikros data"] = today.toISOString().split('T')[0];
       const period = currentItem["Patikr. Periodiškumas"]?.toString().toLowerCase() || "";
       let nextDate = new Date(today);
-      
-      if (period.includes("1") || period.includes("metus") || period.includes("12")) {
-        nextDate.setFullYear(nextDate.getFullYear() + 1);
-      } else if (period.includes("2") || period.includes("6")) {
-        nextDate.setMonth(nextDate.getMonth() + 6);
-      } else if (period.includes("4") || period.includes("3")) {
-        nextDate.setMonth(nextDate.getMonth() + 3);
-      } else {
-        nextDate.setFullYear(nextDate.getFullYear() + 1);
-      }
+      if (period.includes("1") || period.includes("metus") || period.includes("12")) nextDate.setFullYear(nextDate.getFullYear() + 1);
+      else if (period.includes("2") || period.includes("6")) nextDate.setMonth(nextDate.getMonth() + 6);
+      else if (period.includes("4") || period.includes("3")) nextDate.setMonth(nextDate.getMonth() + 3);
+      else nextDate.setFullYear(nextDate.getFullYear() + 1);
       updates["Sekanti patikra"] = nextDate.toISOString().split('T')[0];
     }
 
@@ -112,71 +107,72 @@ function App() {
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
+  // Pataisyta resizerRef logika, kad atitiktų griežtus reikalavimus
   const resizerRef = useRef({ x: 0, width: 0, key: null });
-  const onMouseDown = (e, key) => {
-    resizerRef.current = { x: e.clientX, width: widths[key], key };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
+
   const onMouseMove = (e) => {
     if (!resizerRef.current.key) return;
     const newWidth = Math.max(30, resizerRef.current.width + (e.clientX - resizerRef.current.x));
     setWidths(prev => ({ ...prev, [resizerRef.current.key]: newWidth }));
   };
+
   const onMouseUp = () => {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
     resizerRef.current.key = null;
   };
 
+  const onMouseDown = (e, key) => {
+    resizerRef.current = { x: e.clientX, width: widths[key], key };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
   const visibleCols = columns.filter(c => c.visible);
   const filteredData = equipment.filter(item => (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: 'sans-serif' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f4f1ea', overflow: 'hidden', position: 'fixed' }}>
       <style>{`
-        .table-container { 
-          flex: 1; 
-          overflow: auto; /* Tai užtikrina, kad šliaužiklis būtų konteinerio apačioje */
-          background: white; 
-          border-top: 1px solid #cbd5e1;
-        }
+        .top-bar { height: 80px; display: flex; padding: 0 30px; gap: 20px; background: #214f43; align-items: center; color: #f4f1ea; flex-shrink: 0; border-bottom: 2px solid #b39359; }
+        .logo-box { border: 1px solid #b39359; padding: 5px 12px; color: #b39359; font-weight: bold; letter-spacing: 2px; }
+        .btn-add { background: #b39359; color: white; border: none; padding: 10px 22px; border-radius: 0; font-weight: 600; cursor: pointer; text-transform: uppercase; transition: background 0.3s; }
+        .btn-add:hover { background: #927848; }
+        .btn-cols { background: transparent; color: #b39359; border: 1px solid #b39359; padding: 9px 15px; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .table-wrap { flex: 1; overflow: auto; background: white; width: 100vw; height: calc(100vh - 82px); }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        th, td { padding: 0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; position: relative; }
-        th { background: #0f172a; color: white !important; position: sticky; top: 0; zIndex: 10; font-size: 11px; text-transform: uppercase; }
-        .header-inner { display: flex; flex-direction: column; align-items: center; padding: 5px 0; }
-        .cell-content { padding: 8px; font-size: 13px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        
-        /* EILUTĖS SPALVA KAI PRADELSTA */
-        .row-overdue { background: #fee2e2 !important; }
-        .date-overdue { color: #ef4444 !important; font-weight: bold; }
-        
-        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
-        tr:hover { background: #f8fafc; }
-        .top-bar { display: flex; padding: 10px; gap: 15px; background: #2563eb; align-items: center; color: white; flex-shrink: 0; }
-        .btn-main { background: white; color: #2563eb; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .btn-arrow { cursor: pointer; color: #60a5fa !important; font-size: 14px; margin: 0 3px; }
-        .cell-edit { width: 100%; border: 1px solid #2563eb; padding: 4px; font-size: 13px; outline: none; box-sizing: border-box; }
+        th { background: #1a1a1a; color: #b39359 !important; position: sticky; top: 0; zIndex: 30; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; border-right: 1px solid #333; border-bottom: 2px solid #b39359; }
+        td { padding: 0; border-right: 1px solid #e8e4db; border-bottom: 1px solid #e8e4db; position: relative; background: white; }
+        .row-overdue td { background-color: #fff5f5 !important; }
+        .text-overdue { color: #d32f2f !important; font-weight: bold; }
+        tr:hover td { background-color: #fcfaf5 !important; }
+        .cell-content { padding: 12px 10px; font-size: 13px; color: #2c2c2c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
+        .cell-edit { width: 100%; border: 2px solid #214f43; padding: 6px; font-size: 13px; outline: none; box-sizing: border-box; }
+        .search-input { background: rgba(255,255,255,0.1); border: 1px solid #b39359; color: white; padding: 10px 15px; width: 280px; outline: none; }
       `}</style>
 
       <div className="top-bar">
-        <h2 style={{ margin: 0, fontSize: '18px' }}>MD CRM</h2>
-        <input style={{ width: '220px', padding: '8px', borderRadius: '4px', border: 'none' }} placeholder="Ieškoti..." onChange={e => setSearchTerm(e.target.value)} />
-        <button className="btn-main" onClick={handleAddRow}>+ PRIDĖTI</button>
-        <button className="btn-main" style={{ background: '#0f172a', color: 'white' }} onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
+        <div className="logo-box">MD IMPEX</div>
+        <div style={{ fontSize: '12px', letterSpacing: '2px', fontWeight: '300', color: '#b39359' }}>SERVICE CENTER</div>
+        <input className="search-input" placeholder="Ieškoti..." onChange={e => setSearchTerm(e.target.value)} />
+        <div style={{ display: 'flex', gap: '15px', marginLeft: 'auto' }}>
+          <button className="btn-cols" onClick={() => setShowColManager(!showColManager)}>Stulpeliai</button>
+          <button className="btn-add" onClick={handleAddRow}>+ Naujas Įrašas</button>
+        </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-wrap">
         <table>
           <thead>
             <tr>
               <th style={{ width: '50px' }}><div className="cell-content" style={{textAlign: 'center'}}>#</div></th>
               {visibleCols.map(col => (
                 <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
-                  <div className="header-inner">
-                    <div>
-                      <span className="btn-arrow" onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>←</span>
-                      <span className="btn-arrow" onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>→</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0' }}>
+                    <div style={{ marginBottom: '5px' }}>
+                      <span style={{cursor:'pointer', margin:'0 6px', color:'#b39359'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>←</span>
+                      <span style={{cursor:'pointer', margin:'0 6px', color:'#b39359'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>→</span>
                     </div>
                     {col.label}
                   </div>
@@ -187,52 +183,61 @@ function App() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={visibleCols.length + 1} style={{textAlign: 'center', padding: '50px'}}>Kraunama...</td></tr>
-            ) : filteredData.map(item => {
-              const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
-              return (
-                <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
-                  <td><div className="cell-content" style={{ textAlign: 'center' }}><button onClick={() => handleDeleteRow(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}>🗑️</button></div></td>
-                  {visibleCols.map(col => (
-                    <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
-                      <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'date-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
-                        {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                          col.key === "Atlikta" ? (
-                            <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
-                              <option value="Ne">Ne</option>
-                              <option value="Taip">Taip</option>
-                            </select>
-                          ) : (
-                            <input 
-                              autoFocus 
-                              type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? "date" : "text"}
-                              className="cell-edit" 
-                              defaultValue={item[col.key]} 
-                              onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
-                            />
-                          )
-                        ) : (item[col.key] || '—')}
+              <tr><td colSpan={visibleCols.length + 1} style={{textAlign: 'center', padding: '100px', color: '#b39359'}}>SINCHRONIZING...</td></tr>
+            ) : (
+              filteredData.map(item => {
+                const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
+                return (
+                  <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
+                    <td>
+                      <div className="cell-content" style={{ textAlign: 'center' }}>
+                        <button onClick={() => handleDeleteRow(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>🗑️</button>
                       </div>
                     </td>
-                  ))}
-                </tr>
-              );
-            })}
+                    {visibleCols.map(col => (
+                      <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                        <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
+                          {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                            col.key === "Atlikta" ? (
+                              <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                <option value="Ne">Ne</option>
+                                <option value="Taip">Taip</option>
+                              </select>
+                            ) : (
+                              <input 
+                                autoFocus 
+                                type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? "date" : "text"}
+                                className="cell-edit" 
+                                defaultValue={item[col.key]} 
+                                onBlur={e => handleSave(item.id, col.key, e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                              />
+                            )
+                          ) : (item[col.key] || '—')}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       {showColManager && (
-        <div style={{ position: 'absolute', top: '60px', right: '15px', background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', zIndex: 100, color: 'black', border: '1px solid #ccc' }}>
-          {columns.map(col => (
-            <div key={col.key} style={{ display: 'flex', alignItems: 'center', padding: '5px 0' }}>
-              <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
-              <span style={{ flex: 1, marginLeft: '10px', fontSize: '13px' }}>{col.label}</span>
-              <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: '16px' }} onClick={() => deleteColumn(col.key)}>🗑️</span>
-            </div>
-          ))}
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '10px', padding: '5px' }}>Uždaryti</button>
+        <div style={{ position: 'absolute', top: '85px', right: '30px', background: 'white', padding: '25px', zIndex: 100, border: '1px solid #b39359', minWidth: '280px' }}>
+          <h4 style={{margin:'0 0 20px 0', textTransform: 'uppercase', fontSize: '11px', color: '#214f43'}}>Stulpeliai</h4>
+          <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+            {columns.map(col => (
+              <div key={col.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
+                <span style={{ flex: 1, marginLeft: '15px', fontSize: '13px' }}>{col.label}</span>
+                <span style={{ cursor: 'pointer', color: '#d32f2f', fontSize: '12px' }} onClick={() => deleteColumn(col.key)}>Išimti</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '20px', padding: '12px', background: '#214f43', color: 'white', border: 'none', cursor: 'pointer' }}>Išsaugoti</button>
         </div>
       )}
     </div>
