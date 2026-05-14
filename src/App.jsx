@@ -1,103 +1,94 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingCell, setEditingCell] = useState(null)
+  
+  // Pradiniai pločiai (padidinti, kad būtų patogiau iškart)
+  const [widths, setWidths] = useState({
+    "Montavimo data": 130,
+    "Kliento įmonės kodas": 120,
+    "Kliento pavadinimas": 250,
+    "Adresas": 250,
+    "Įrangos pavadinimas": 250,
+    "Serijos numeris": 150,
+    "Prižiūri": 130,
+    "Patikr. Periodiškumas": 100,
+    "Sutartis YRA/NĖRA": 100,
+    "Atlikta": 100,
+    "Patikros data": 130,
+    "Sekanti patikra": 140,
+    "Komentaras": 300
+  });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
   const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
   const RPC_URL = `https://enucrtrjaoakachsrubi.supabase.co/rest/v1/rpc/siusti_pilna_ataskaita?apikey=${API_KEY}`
 
-  const headers = {
-    'apikey': API_KEY,
-    'Authorization': `Bearer ${API_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  }
+  useEffect(() => { fetchData() }, [])
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  // 1. DUOMENŲ GAVIMAS
   async function fetchData() {
     setLoading(true)
     try {
-      const response = await fetch(`${BASE_URL}?select=*&order=id.asc`, { headers })
+      const response = await fetch(`${BASE_URL}?select=*&order=id.asc`, { 
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
+      })
       const data = await response.json()
       setEquipment(data || [])
-    } catch (err) {
-      console.error('Klaida kraunant:', err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // 2. ATASKAITOS SIUNTIMAS (Su informatyviu pranešimu)
-  const handleSendReport = async () => {
-    if (!window.confirm("Ar generuoti vėluojančių patikrų ataskaitą?")) return;
-    try {
-      const response = await fetch(RPC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}) 
-      });
+  // PATOBULINTA TEMPIMO LOGIKA
+  const resizerRef = useRef({ x: 0, width: 0, key: null });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.rasta_irenginiu > 0) {
-          alert(`SĖKMĖ: Rasta ir ataskaitai paruošta ${result.rasta_irenginiu} vėluojančių patikrų!`);
-        } else {
-          alert("INFORMACIJA: Vėluojančių patikrų šiuo metu nerasta. Visi įrenginiai patikrinti laiku.");
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(`Klaida siunčiant: ${errorData.message || response.statusText}`);
-      }
-    } catch (err) {
-      alert("Netikėta klaida: " + err.message);
-    }
+  const onMouseDown = (e, key) => {
+    e.preventDefault(); // Neleidžia žymėti teksto tempiant
+    resizerRef.current = { x: e.clientX, width: widths[key], key };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none'; // Išjungia teksto žymėjimą
   };
 
-  // 3. DATŲ FORMATAVIMAS
-  const toDbFormat = (dateStr) => dateStr || null;
+  const onMouseMove = (e) => {
+    if (!resizerRef.current.key) return;
+    const { x, width, key } = resizerRef.current;
+    const delta = e.clientX - x;
+    const newWidth = Math.max(80, width + delta); // Neleidžia susiaurinti mažiau nei 80px
+    setWidths(prev => ({ ...prev, [key]: newWidth }));
+  };
 
-  const toInputFormat = (dbStr) => {
-    if (!dbStr) return '';
-    if (dbStr.includes('/')) {
-      const [m, d, y] = dbStr.split('/');
-      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-    }
-    return dbStr;
-  }
+  const onMouseUp = () => {
+    resizerRef.current = { x: 0, width: 0, key: null };
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'default';
+    document.body.style.userSelect = 'auto';
+  };
 
-  // 4. DUOMENŲ IŠSAUGOJIMAS
-  const handleSave = async (id, field, value) => {
-    const isDateCol = field.includes('data') || field === "Sekanti patikra";
-    const finalValue = isDateCol ? toDbFormat(value) : value;
-
+  const handleSendReport = async () => {
+    if (!window.confirm("Siųsti ataskaitą?")) return;
     try {
-      const response = await fetch(`${BASE_URL}?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': API_KEY,
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ [field]: finalValue })
-      });
+      const res = await fetch(RPC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const result = await res.json();
+      alert(result.rasta_irenginiu > 0 ? `Rasta: ${result.rasta_irenginiu}` : "Vėluojančių nėra.");
+    } catch (err) { alert(err.message) }
+  };
 
-      if (response.ok) {
-        setEquipment(equipment.map(item => item.id === id ? { ...item, [field]: finalValue } : item))
-        setEditingCell(null)
-      } else {
-        alert("Nepavyko išsaugoti.");
+  const handleSave = async (id, field, value) => {
+    try {
+      const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      if (res.ok) {
+        setEquipment(equipment.map(item => item.id === id ? { ...item, [field]: value } : item));
+        setEditingCell(null);
       }
-    } catch (err) {
-      alert("Klaida: " + err.message);
-    }
+    } catch (err) { alert(err.message) }
   }
 
   const columns = [
@@ -116,83 +107,54 @@ function App() {
     { label: "Komentaras", key: "Komentaras" }
   ];
 
-  const filteredData = equipment.filter(item => {
-    const s = searchTerm.toLowerCase()
-    return (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(s) || 
-           (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(s)
-  });
+  const filteredData = equipment.filter(item => 
+    (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+    (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, background: '#f1f5f9', fontFamily: 'sans-serif' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
+        
+        /* FIX: Užtikriname, kad lentelė paklustų nustatytiems pločiams */
         table { 
           border-collapse: separate; 
           border-spacing: 0; 
-          width: max-content; 
-          min-width: 100%;
-          table-layout: auto; 
+          table-layout: fixed; 
+          width: fit-content; 
         }
+
         th { 
-          background: #0f172a; 
-          color: white; 
-          padding: 12px 15px; 
-          font-size: 11px; 
-          position: sticky; 
-          top: 0; 
-          z-index: 10; 
-          border-right: 1px solid #334155;
-          text-align: left;
-          text-transform: uppercase;
-          white-space: nowrap;
+          background: #0f172a; color: white; padding: 12px; font-size: 11px; 
+          position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155;
+          text-align: left; position: relative;
         }
+
+        /* Tempimo juostelė */
+        .resizer {
+          position: absolute; right: 0; top: 0; height: 100%; width: 6px;
+          cursor: col-resize; z-index: 20;
+        }
+        .resizer:hover { background: rgba(59, 130, 246, 0.5); }
+
         td { 
-          padding: 10px 15px; 
-          border-right: 1px solid #e2e8f0; 
-          border-bottom: 1px solid #e2e8f0; 
-          font-size: 13px; 
-          white-space: nowrap; 
-          min-width: 120px;
+          padding: 8px 12px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; 
+          font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
-        input.edit-input { 
-          padding: 6px; 
-          border: 1px solid #3b82f6; 
-          border-radius: 4px; 
-          width: 100%;
-          box-sizing: border-box;
-        }
-        .top-bar { 
-          display: flex; 
-          padding: 15px 25px; 
-          gap: 20px; 
-          background: #2563eb; 
-          align-items: center; 
-          color: white; 
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        .top-bar { display: flex; padding: 15px 25px; gap: 20px; background: #2563eb; align-items: center; color: white; }
       `}</style>
 
       <div className="top-bar">
         <h2 style={{ margin: 0, fontSize: '18px' }}>MD IMPEX CRM</h2>
         <input 
-          placeholder="Paieška pagal klientą arba įrangą..." 
-          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none', outline: 'none' }} 
+          placeholder="Paieška..." 
+          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none', color: '#000' }} 
           onChange={(e) => setSearchTerm(e.target.value)} 
         />
-        <button 
-          onClick={handleSendReport}
-          style={{ 
-            background: '#f59e0b', 
-            border: 'none', 
-            padding: '10px 20px', 
-            borderRadius: '5px', 
-            color: 'white', 
-            fontWeight: 'bold', 
-            cursor: 'pointer' 
-          }}
-        >
+        <button onClick={handleSendReport} style={{ background: '#f59e0b', border: 'none', padding: '10px 20px', borderRadius: '5px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
           SIŲSTI ATASKAITĄ
         </button>
       </div>
@@ -202,7 +164,12 @@ function App() {
           <table>
             <thead>
               <tr>
-                {columns.map((col, i) => <th key={i}>{col.label}</th>)}
+                {columns.map((col) => (
+                  <th key={col.key} style={{ width: `${widths[col.key]}px` }}>
+                    {col.label}
+                    <div className="resizer" onMouseDown={(e) => onMouseDown(e, col.key)} />
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -210,29 +177,28 @@ function App() {
                 const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
                 return (
                   <tr key={item.id} className={isOverdue ? 'overdue' : ''}>
-                    {columns.map((col, i) => (
-                      <td key={i} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                    {columns.map((col) => (
+                      <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
                         {editingCell?.id === item.id && editingCell?.field === col.key ? (
                           <input 
-                            className="edit-input"
                             autoFocus
+                            style={{ width: '90%' }}
                             type={(col.key.includes('data') || col.key === "Sekanti patikra") ? "date" : "text"}
-                            defaultValue={(col.key.includes('data') || col.key === "Sekanti patikra") ? toInputFormat(item[col.key]) : item[col.key]}
+                            defaultValue={item[col.key]}
                             onBlur={(e) => handleSave(item.id, col.key, e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
                           />
                         ) : (item[col.key] || '—')}
                       </td>
                     ))}
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export default App;
