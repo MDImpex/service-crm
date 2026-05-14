@@ -108,7 +108,8 @@ function App() {
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden' }}>
+    /* EILUTĖ ŽEMIAU: Pagrindinis šriftas visai programai */
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', overflow: 'hidden', fontFamily: '"Segoe UI", Roboto, sans-serif' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
         
@@ -120,15 +121,26 @@ function App() {
         }
         
         th, td { 
-          padding: 0; /* Vidinis paddingas perkeliamas į div */
+          padding: 0;
           border-right: 1px solid #e2e8f0; 
           border-bottom: 1px solid #e2e8f0;
           overflow: hidden;
         }
 
-        th { background: #0f172a; color: white; position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155; }
+        /* ANTRAŠČIŲ STILIUS */
+        th { 
+          background: #0f172a; 
+          color: white; 
+          position: sticky; 
+          top: 0; 
+          z-index: 10; 
+          border-right: 1px solid #334155;
+          font-size: 11px;
+          text-transform: uppercase;
+          font-weight: 600;
+        }
 
-        /* PAGRINDINIS TRIUKAS: div nustato griežtą plotį */
+        /* LANGELIŲ TURINIO STILIUS (SVARBIAUSIA VIETA) */
         .cell-content {
           padding: 8px;
           overflow: hidden;
@@ -136,6 +148,8 @@ function App() {
           white-space: nowrap;
           box-sizing: border-box;
           display: block;
+          font-size: 13px; /* Keisk teksto dydį čia */
+          color: #1e293b;  /* Keisk teksto spalvą čia */
         }
 
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 11; }
@@ -150,17 +164,19 @@ function App() {
       `}</style>
 
       <div className="top-bar">
-        <h2 style={{ margin: 0, fontSize: '16px' }}>MD CRM</h2>
-        <input placeholder="Paieška..." style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none' }} onChange={e => setSearchTerm(e.target.value)} />
-        <button onClick={() => setShowColManager(!showColManager)}>STULPELIAI</button>
+        <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>MD CRM</h2>
+        <input placeholder="Paieška..." style={{ flex: 1, padding: '8px', borderRadius: '4px', border: 'none', fontFamily: 'inherit' }} onChange={e => setSearchTerm(e.target.value)} />
+        <button onClick={() => setShowColManager(!showColManager)} style={{ cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}>STULPELIAI</button>
       </div>
 
       {showColManager && (
-        <div className="col-manager">
+        <div className="col-manager" style={{ fontFamily: 'inherit' }}>
           {columns.map(col => (
-            <div key={col.key}><input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}</div>
+            <div key={col.key} style={{ padding: '3px 0' }}>
+                <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} /> {col.label}
+            </div>
           ))}
-          <button onClick={() => setShowColManager(false)} style={{marginTop: '10px', width: '100%'}}>Uždaryti</button>
+          <button onClick={() => setShowColManager(false)} style={{marginTop: '10px', width: '100%', cursor: 'pointer'}}>Uždaryti</button>
         </div>
       )}
 
@@ -202,7 +218,7 @@ function App() {
                           autoFocus 
                           defaultValue={item[col.key]} 
                           onBlur={e => handleSave(item.id, col.key, e.target.value)} 
-                          style={{width: '100%', border: '1px solid #2563eb'}} 
+                          style={{width: '100%', border: '1px solid #2563eb', padding: '2px', fontFamily: 'inherit'}} 
                         />
                       ) : (item[col.key] || '—')}
                     </div>
