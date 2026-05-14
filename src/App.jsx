@@ -135,9 +135,23 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, background: '#f1f5f9', fontFamily: 'sans-serif' }}>
       <style>{`
         .table-container { flex: 1; overflow: auto; background: white; }
-        table { border-collapse: separate; border-spacing: 0; width: max-content; }
-        th { background: #0f172a; color: white; padding: 12px; font-size: 11px; position: sticky; top: 0; z-index: 10; border-right: 1px solid #334155; }
-        td { padding: 8px 12px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; font-size: 13px; white-space: nowrap; }
+        table { 
+  border-collapse: separate; 
+  border-spacing: 0; 
+  width: 100%; /* Leidžiame lentelei užimti visą plotį */
+  table-layout: auto; /* Svarbu: leidžia stulpeliams plėstis pagal turinį */
+}
+        th, td { 
+  padding: 8px 12px; 
+  border-right: 1px solid #e2e8f0; 
+  border-bottom: 1px solid #e2e8f0; 
+  font-size: 13px; 
+  white-space: normal; /* Leidžia tekstui lūžti į kitą eilutę, jei jis per ilgas */
+  min-width: 100px; /* Neleidžia stulpeliams susispausti iki nulio */
+  max-width: 300px; /* Neleidžia vienam stulpeliui užimti viso ekrano */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
         tr:hover { background: #f8fafc; }
         .overdue { background: #fee2e2; }
         input { padding: 4px; border: 1px solid #3b82f6; border-radius: 4px; }
@@ -163,7 +177,7 @@ function App() {
           <table>
             <thead>
               <tr>
-                {columns.map((col, i) => <th key={i} style={{ width: colWidths[i] }}>{col.label}</th>)}
+                {columns.map((col, i) => <th key={i} >{col.label}</th>)}
               </tr>
             </thead>
             <tbody>
