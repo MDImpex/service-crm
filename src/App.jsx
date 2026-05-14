@@ -133,24 +133,21 @@ function App() {
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff', overflow: 'hidden', position: 'fixed', fontFamily: 'Arial, sans-serif' }}>
       <style>{`
-        /* Žalias Meniu Baras pagal image_94dad1.png */
         .main-header { 
           height: 85px; 
           display: flex; 
           padding: 0 35px; 
-          background: #113c32; /* Tiksli gili žalia spalva */
+          background: #113c32; 
           align-items: center; 
           flex-shrink: 0;
         }
 
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
-        
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
         .nav-item:hover { opacity: 0.8; }
-        .btn-add-gold { color: #b4965d !important; } /* Tiksli auksinė spalva įrašui */
+        .btn-add-gold { color: #b4965d !important; }
         .nav-separator { color: rgba(255,255,255,0.2); font-weight: normal; }
 
-        /* Pilkas paieškos laukelis su tamsesniu rėmeliu */
         .search-box-embedded {
           background: #194a3f;
           border: 1px solid #235d51;
@@ -163,7 +160,6 @@ function App() {
         }
         .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
 
-        /* Didelis dešinės pusės tekstas */
         .crm-title-right {
           margin-left: auto;
           color: #ffffff;
@@ -205,8 +201,12 @@ function App() {
         }
         
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
+        
+        /* GRĄŽINTOS SPALVŲ KLASĖS */
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
+        .row-overdue td { background-color: #fff0f0 !important; }
+        .text-overdue { color: #e30613 !important; font-weight: bold; }
         
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
@@ -217,7 +217,6 @@ function App() {
         .btn-edit-icon { color: #555555; }
       `}</style>
 
-      {/* Žalias Meniu Baras pagal nuotrauką */}
       <div className="main-header">
         <div className="nav-menu">
           <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIAI</span>
@@ -234,7 +233,6 @@ function App() {
         </div>
       </div>
 
-      {/* CRM Lentelės Rėmas */}
       <div className="crm-card-wrapper">
         <div className="table-wrap">
           <table>
@@ -260,32 +258,36 @@ function App() {
               {loading ? (
                 <tr><td colSpan={visibleCols.length + 2} style={{textAlign: 'center', padding: '50px'}}>KRAUNAMA...</td></tr>
               ) : (
-                filteredData.map((item, index) => (
-                  <tr key={item.id}>
-                    <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
-                    {visibleCols.map(col => (
-                      <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
-                        <div className="cell-content" style={{ width: `${widths[col.key]}px` }}>
-                          {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                            <input 
-                              autoFocus 
-                              className="cell-edit" 
-                              defaultValue={item[col.key]} 
-                              onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
-                            />
-                          ) : (item[col.key] || '—')}
+                filteredData.map((item, index) => {
+                  {/* Patikriname, ar sekanti patikra jau vėluoja */}
+                  const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
+                  return (
+                    <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
+                      <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
+                      {visibleCols.map(col => (
+                        <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                          <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
+                            {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                              <input 
+                                autoFocus 
+                                className="cell-edit" 
+                                defaultValue={item[col.key]} 
+                                onBlur={e => handleSave(item.id, col.key, e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                              />
+                            ) : (item[col.key] || '—')}
+                          </div>
+                        </td>
+                      ))}
+                      <td>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: visibleCols[0].key })}>✏️</button>
+                          <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
-                    ))}
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: visibleCols[0].key })}>✏️</button>
-                        <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
