@@ -39,7 +39,7 @@ function App() {
 
   // 2. ATASKAITOS SIUNTIMAS
   const handleSendReport = async () => {
-    if (!window.confirm("Ar siųsti vėluojančių patikrų ataskaitą?")) return;
+    if (!window.confirm("Ar generuoti vėluojančių patikrų ataskaitą?")) return;
     try {
       const response = await fetch(RPC_URL, {
         method: 'POST',
@@ -48,10 +48,18 @@ function App() {
       });
 
       if (response.ok) {
-        alert("Ataskaita sėkmingai išsiųsta!");
+        const result = await response.json();
+        
+        // Jei funkcija rado vėluojančių įrenginių
+        if (result.rasta_irenginiu > 0) {
+          alert(`SĖKMĖ: Rasta ir ataskaitai paruošta ${result.rasta_irenginiu} vėluojančių patikrų!`);
+        } else {
+          alert("INFORMACIJA: Vėluojančių patikrų šiuo metu nerasta. Viskas atlikta laiku.");
+        }
+        
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(`Klaida siunčiant: ${errorData.message || response.statusText}`);
+        alert(`Klaida: ${errorData.message || response.statusText}`);
       }
     } catch (err) {
       alert("Netikėta klaida: " + err.message);
