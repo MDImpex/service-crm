@@ -187,7 +187,6 @@ function App() {
           font-size: 22px;
           font-weight: normal;
           letter-spacing: 1px;
-          font-family: 'Candara', serif;
         }
 
         .crm-card-wrapper {
