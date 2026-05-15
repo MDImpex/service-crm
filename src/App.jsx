@@ -183,7 +183,7 @@ function App() {
 
         .crm-title-right {
           margin-left: auto;
-          color: #ffffff;
+          color: #acca23;
           font-size: 22px;
           font-weight: normal;
           letter-spacing: 1px;
