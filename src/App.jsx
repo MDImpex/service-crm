@@ -178,7 +178,7 @@ function App() {
           color: white;
           font-size: 13px;
           outline: none;
-          width: 220px; /* Šiek tiek susiaurinta, kad tilptų abu laukeliai */
+          width: 220px;
           margin-left: 10px;
         }
         .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
@@ -205,6 +205,7 @@ function App() {
           flex: 1; 
           overflow: auto; 
           width: 100vw;
+          -webkit-overflow-scrolling: touch; /* Švelnus skrolas iOS įrenginiuose */
         }
 
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
@@ -238,6 +239,40 @@ function App() {
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #555555; }
+
+        /* NAUJAS: Prisitaikymas mobiliesiems telefonams (ekranams iki 768px) */
+        @media (max-width: 768px) {
+          .main-header {
+            height: auto;
+            padding: 15px 15px;
+          }
+          .nav-menu {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .nav-separator {
+            display: none; /* Paslepiame brūkšnelius telefone */
+          }
+          .crm-title-right {
+            margin-left: 0;
+            text-align: center;
+            order: -1; /* Nukeliame pavadinimą į patį viršų telefone */
+            font-size: 18px;
+            margin-bottom: 5px;
+          }
+          .search-box-embedded {
+            width: 100%;
+            margin-left: 0;
+            box-sizing: border-box;
+          }
+          .nav-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+          }
+        }
       `}</style>
 
       <div className="main-header">
