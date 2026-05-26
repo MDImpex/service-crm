@@ -81,8 +81,31 @@ function App() {
   };
 
   const handleSave = async (id, field, value) => {
-    let updates = { [field]: value };
     const currentItem = equipment.find(item => item.id === id);
+    const oldValue = currentItem ? currentItem[field] : '';
+
+    // SAUGIKLIS 1: Jei reikšmė tuščia, bet seniau kažkas buvo įrašyta, paklausiame vartotojo ar tikrai ištrinti
+    if (!value || value.trim() === "") {
+      if (oldValue && oldValue !== '—') {
+        const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
+        if (!confirmDeleteValue) {
+          setEditingCell(null);
+          return; // Atšaukiame trynimą ir paliekame seną reikšmę
+        }
+      } else {
+        // Jei seniau nieko nebuvo ir paliko tuščią - tiesiog uždarome redagavimą nieko nekeisdami
+        setEditingCell(null);
+        return;
+      }
+    }
+
+    // Jei reikšmė visiškai nepasikeitė, duomenų bazės netrukdome
+    if (value === oldValue) {
+      setEditingCell(null);
+      return;
+    }
+
+    let updates = { [field]: value };
 
     if (field === "Atlikta" && value === "Taip") {
       const today = new Date();
@@ -118,7 +141,7 @@ function App() {
   const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
   
   const handleDeleteRow = async (id) => {
-    if (!window.confirm("Ištrinti įrašą?")) return;
+    if (!window.confirm("Ar tikrai norite VISIŠKAI IŠTRINTI šį CRM įrašą? Šio veiksmo atšaukti nebus galima.")) return;
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
@@ -252,12 +275,12 @@ function App() {
             gap: 10px;
           }
           .nav-separator {
-            display: none; /* Paslepiame brūkšnelius telefone */
+            display: none;
           }
           .crm-title-right {
             margin-left: 0;
             text-align: center;
-            order: -1; /* Nukeliame pavadinimą į patį viršų telefone */
+            order: -1;
             font-size: 18px;
             margin-bottom: 5px;
           }
@@ -358,7 +381,10 @@ function App() {
                                   className="cell-edit" 
                                   defaultValue={item[col.key]} 
                                   onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                                  onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value);
+                                    if (e.key === 'Escape') setEditingCell(null); // Paspaudus ESC - atšaukia redagavimą
+                                  }}
                                 />
                               ) : (
                                 <input 
@@ -367,7 +393,10 @@ function App() {
                                   className="cell-edit" 
                                   defaultValue={item[col.key]} 
                                   onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                                  onKeyDown={e => e.key === 'Enter' && handleSave(item.id, col.key, e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value);
+                                    if (e.key === 'Escape') setEditingCell(null);
+                                  }}
                                 />
                               )
                             ) : (item[col.key] || '—')}
