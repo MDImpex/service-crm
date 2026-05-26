@@ -5,6 +5,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchEquipment, setSearchEquipment] = useState('') // NAUJAS: Būsena įrangos filtravimui
+  const [searchAddress, setSearchAddress] = useState('') // NAUJAS: Būsena adreso filtravimui
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
@@ -144,11 +145,12 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
-  {/* ATNAUJINTA: Dvigubas filtravimas (pagal klientą IR pagal įrangą) */}
+  {/* ATNAUJINTA: Trigubas filtravimas (pagal klientą IR pagal įrangą IR pagal adresą) */}
   const filteredData = equipment.filter(item => {
     const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
-    return matchesClient && matchesEquipment;
+    const matchesAddress = (item["Adresas"]?.toLowerCase() || '').includes(searchAddress.toLowerCase());
+    return matchesClient && matchesEquipment && matchesAddress;
   });
 
   return (
@@ -256,6 +258,13 @@ function App() {
             className="search-box-embedded" 
             placeholder="⚙️ Filtruoti įrangą..." 
             onChange={e => setSearchEquipment(e.target.value)} 
+          />
+
+          {/* NAUJAS Filtras 3: Pagal Adresą */}
+          <input 
+            className="search-box-embedded" 
+            placeholder="📍 Filtruoti adresą..." 
+            onChange={e => setSearchAddress(e.target.value)} 
           />
 
           <div className="crm-title-right">MD Impex CRM</div>
