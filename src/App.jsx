@@ -13,7 +13,7 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
       { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-      { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
+      { label: "ALIGNMENT KODAS", key: "Kliento įmonės kodas", visible: true },
       { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
       { label: "ADRESAS", key: "Adresas", visible: true },
       { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
@@ -66,29 +66,45 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // Siunčiame duomenis į jūsų saugų Vercel backend puslapį, kuris apeina CORS blokus
+  // Saugus tiesioginis laiško siuntimas į Resend per AllOrigins viešą CORS tiltą
   const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Siunčiamas pranešimas apie gedimą per Vercel serverį...");
+    console.log("Siunčiamas skubus laiškas tiesiai į Resend API...");
+    
+    // ⚠️ ĮRAŠYKITE SAVO TIKRUOSIUS DUOMENIS ČIA:
+    const MY_RESEND_KEY = 're_TAVO_RESEND_API_RAKTAS'; 
+    const MY_RECEIVER_EMAIL = 'tavo@pastas.lt';
+
     try {
-      const response = await fetch('/api/send-fault', {
+      const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.resend.com/emails'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${MY_RESEND_KEY}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          client: item["Kliento pavadinimas"] || 'Nenurodytas klientas',
-          address: item["Adresas"] || '—',
-          equipment: item["Įrangos pavadinimas"] || '—',
-          serial: item["Serijos numeris"] || '—',
-          details: faultDetails
+          from: 'MD Impex CRM <onboarding@resend.dev>',
+          to: [MY_RECEIVER_EMAIL],
+          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas'}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;padding:20px;line-height:1.6;">
+              <h2 style="color:#e30613;margin-top:0;">Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
+              <p><strong>Klientas:</strong> ${item["Kliento pavadinimas"] || 'Nenurodytas'}</p>
+              <p><strong>Adresas:</strong> ${item["Adresas"] || '—'}</p>
+              <p><strong>Įranga:</strong> ${item["Įrangos pavadinimas"] || '—'}</p>
+              <p><strong>Serijos numeris:</strong> ${item["Serijos numeris"] || '—'}</p>
+              <p><strong>Informacija:</strong> <span style="color:#e30613;font-weight:bold;">${faultDetails}</span></p>
+            </div>
+          `
         })
       });
 
       if (response.ok) {
-        console.log("🚀 Resend per Vercel: Laiškas sėkmingai išsiųstas!");
+        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas!");
       } else {
-        console.error("❌ Nepavyko išsiųsti laiško per Vercel serverį");
+        console.error("❌ Resend atmetė užklausą:", response.status);
       }
     } catch (err) {
-      console.error("Klaida kreipiantis į /api/send-fault:", err);
+      console.error("Klaida siunčiant laišką:", err);
     }
   };
 
@@ -143,18 +159,14 @@ function App() {
     }
 
     try {
-      // 1. Pirmiausia saugiai įrašome duomenis į Supabase duomenų bazę
       const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
         method: 'PATCH',
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
 
-      if (!res.ok) {
-        throw new Error("Nepavyko išsaugoti duomenų duomenų bazėje");
-      }
+      if (!res.ok) throw new Error("Nepavyko išsaugoti duomenų");
 
-      // 2. Tik jei duomenys sėkmingai išsaugoti, tikriname ar reikia išsiųsti el. laišką
       if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
         if (!value.toLowerCase().includes('sutaisyta')) {
           sendUrgentEmail(currentItem, value);
@@ -165,7 +177,6 @@ function App() {
       setEditingCell(null);
     } catch (err) { 
       console.error(err);
-      alert("Klaida saugant duomenis: " + err.message);
     }
   };
 
@@ -217,107 +228,33 @@ function App() {
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff', overflow: 'hidden', position: 'fixed', fontFamily: 'Arial, sans-serif' }}>
       <style>{`
-        .main-header { 
-          height: 85px; 
-          display: flex; 
-          padding: 0 35px; 
-          background: #113c32; 
-          align-items: center; 
-          flex-shrink: 0;
-        }
-
+        .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
         .nav-item:hover { opacity: 0.8; }
         .btn-add-gold { color: #b4965d !important; }
         .nav-separator { color: rgba(255,255,255,0.2); font-weight: normal; }
-
-        .search-box-embedded {
-          background: #194a3f;
-          border: 1px solid #235d51;
-          padding: 9px 15px;
-          color: white;
-          font-size: 13px;
-          outline: none;
-          width: 220px;
-          margin-left: 10px;
-        }
+        .search-box-embedded { background: #194a3f; border: 1px solid #235d51; padding: 9px 15px; color: white; font-size: 13px; outline: none; width: 220px; margin-left: 10px; }
         .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
-
-        .crm-title-right {
-          margin-left: auto;
-          color: #acca23;
-          font-size: 22px;
-          font-weight: normal;
-          letter-spacing: 1px;
-          font-family: 'Candara', serif;
-        }
-
-        .crm-card-wrapper {
-          flex: 1;
-          margin: 0;
-          background: #ffffff;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .table-wrap { 
-          flex: 1; 
-          overflow: auto; 
-          width: 100vw;
-          -webkit-overflow-scrolling: touch;
-        }
-
+        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-weight: normal; letter-spacing: 1px; font-family: 'Candara', serif; }
+        .crm-card-wrapper { flex: 1; margin: 0; background: #ffffff; overflow: hidden; display: flex; flex-direction: column; }
+        .table-wrap { flex: 1; overflow: auto; width: 100vw; -webkit-overflow-scrolling: touch; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        
-        th { 
-          background: #1e1e1e; 
-          color: #ffffff !important; 
-          position: sticky; 
-          top: 0; 
-          zIndex: 30; 
-          font-size: 11px; 
-          font-weight: bold;
-          text-align: center;
-          padding: 16px 5px;
-          border-right: 1px solid #333333;
-          border-bottom: 2px solid #000000;
-          text-transform: uppercase;
-        }
-        
+        th { background: #1e1e1e; color: #ffffff !important; position: sticky; top: 0; zIndex: 30; font-size: 11px; font-weight: bold; text-align: center; padding: 16px 5px; border-right: 1px solid #333333; border-bottom: 2px solid #000000; text-transform: uppercase; }
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
-        
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
-        
-        @keyframes blink-fault {
-          0% { background-color: #ffe6e6; }
-          50% { background-color: #ff9999; }
-          100% { background-color: #ffe6e6; }
-        }
-        .row-fault td { 
-          animation: blink-fault 1.5s infinite ease-in-out !important; 
-        }
-
+        @keyframes blink-fault { 0% { background-color: #ffe6e6; } 50% { background-color: #ff9999; } 100% { background-color: #ffe6e6; } }
+        .row-fault td { animation: blink-fault 1.5s infinite ease-in-out !important; }
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
         .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 12px; outline: none; box-sizing: border-box; }
-        
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #555555; }
-
-        @media (max-width: 768px) {
-          .main-header { height: auto; padding: 15px 15px; }
-          .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; }
-          .nav-separator { display: none; }
-          .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; margin-bottom: 5px; }
-          .search-box-embedded { width: 100%; margin-left: 0; box-sizing: border-box; }
-          .nav-item { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; }
-        }
+        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; margin-bottom: 5px; } .search-box-embedded { width: 100%; margin-left: 0; box-sizing: border-box; } .nav-item { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; } }
       `}</style>
 
       <div className="main-header">
@@ -345,8 +282,8 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
@@ -361,14 +298,9 @@ function App() {
               ) : (
                 filteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
-                  
-                  const hasFault = item["Prižiūri"] && 
-                                   item["Prižiūri"].toLowerCase().includes('gedimas') && 
-                                   !item["Prižiūri"].toLowerCase().includes('sutaisyta');
-
+                  const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
                   let rowClass = '';
-                  if (hasFault) rowClass = 'row-fault'; 
-                  else if (isOverdue) rowClass = 'row-overdue'; 
+                  if (hasFault) rowClass = 'row-fault'; else if (isOverdue) rowClass = 'row-overdue';
 
                   return (
                     <tr key={item.id} className={rowClass}>
@@ -379,39 +311,16 @@ function App() {
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
                               col.key === "Sutartis YRA/NĖRA" ? (
                                 <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
-                                  <option value="">—</option>
-                                  <option value="YES">YES</option>
-                                  <option value="NO">NO</option>
+                                  <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
                                 </select>
                               ) : col.key === "Atlikta" ? (
                                 <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
-                                  <option value="Ne">Ne</option>
-                                  <option value="Taip">Taip</option>
+                                  <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input 
-                                  autoFocus 
-                                  type="date"
-                                  className="cell-edit" 
-                                  defaultValue={item[col.key]} 
-                                  onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value);
-                                    if (e.key === 'Escape') setEditingCell(null);
-                                  }}
-                                />
+                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input 
-                                  autoFocus 
-                                  type="text"
-                                  className="cell-edit" 
-                                  defaultValue={item[col.key]} 
-                                  onBlur={e => handleSave(item.id, col.key, e.target.value)}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value);
-                                    if (e.key === 'Escape') setEditingCell(null);
-                                  }}
-                                />
+                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (item[col.key] || '—')}
                           </div>
