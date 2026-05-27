@@ -13,12 +13,12 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
       { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-      { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
+      { label: "IN. KODAS", key: "Kliento įmonės kodas", visible: true },
       { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
       { label: "ADRESAS", key: "Adresas", visible: true },
       { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
       { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true }, // Šį stulpelį naudosime iškvietimams/gedimams
+      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true }, 
       { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
       { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
       { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
@@ -68,17 +68,19 @@ function App() {
 
   // Funkcija, kuri išsiunčia skubų el. laišką apie užregistruotą gedimą
   const sendUrgentEmail = async (item, faultDetails) => {
+    console.log("Bandoma siųsti laišką apie gedimą...", item, faultDetails);
     try {
-      await fetch('https://api.resend.com/emails', {
+      const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
+        mode: 'cors', // Svarbu: Leidžia naršyklei išsiųsti užklausą į išorinį serverį
         headers: {
           'Authorization': 'Bearer re_S6XpEw7Y_MvH6p6T99vXNq4J8Kz8Y7X2D',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: 'CRM Iškvietimas <onboarding@resend.dev>',
+          from: 'CRM Iskvietimas <onboarding@resend.dev>',
           to: ['valdasjanciauskas@gmail.com'], 
-          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas klientas'}`,
+          subject: `🚨 SKUBUS ISKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas klientas'}`,
           html: `
             <h2>🚨 Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
             <p><strong>Klientas:</strong> ${item["Kliento pavadinimas"] || '—'}</p>
@@ -91,6 +93,9 @@ function App() {
           `
         })
       });
+      
+      const resData = await response.json();
+      console.log("Resend atsakymas iš serverio:", resData);
     } catch (err) {
       console.error("Nepavyko išsiųsti skubaus laiško:", err);
     }
@@ -153,9 +158,8 @@ function App() {
         body: JSON.stringify(updates)
       });
 
-      // NAUJAS: Tikriname ar atnaujintas laukelis yra „Prižiūri“ ir ar jame atsirado žodis „gedimas“
+      // Tikriname stulpelį „Prižiūri“
       if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
-        // Taip pat tikriname, ar jame dar nėra žodžio „sutaisyta“ (kad nesiųstų laiško pakartotinai pildant)
         if (!value.toLowerCase().includes('sutaisyta')) {
           sendUrgentEmail(currentItem, value);
         }
@@ -290,7 +294,6 @@ function App() {
         .row-overdue td { background-color: #fff0f0 !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
         
-        /* Mirksėjimo efektas aktyviam iškvietimui/gedimui */
         @keyframes blink-fault {
           0% { background-color: #ffe6e6; }
           50% { background-color: #ff9999; }
@@ -343,8 +346,8 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
@@ -360,14 +363,13 @@ function App() {
                 filteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
                   
-                  // NAUJAS LOGIKOS PAKEITIMAS: Tikriname stulpelį „Prižiūri“
                   const hasFault = item["Prižiūri"] && 
                                    item["Prižiūri"].toLowerCase().includes('gedimas') && 
                                    !item["Prižiūri"].toLowerCase().includes('sutaisyta');
 
                   let rowClass = '';
-                  if (hasFault) rowClass = 'row-fault'; // Jei yra aktyvus gedimas -> mirksės rausvai
-                  else if (isOverdue) rowClass = 'row-overdue'; // Jei tik vėluoja patikra -> bus statiškai rausva
+                  if (hasFault) rowClass = 'row-fault'; 
+                  else if (isOverdue) rowClass = 'row-overdue'; 
 
                   return (
                     <tr key={item.id} className={rowClass}>
