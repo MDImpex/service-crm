@@ -8,10 +8,9 @@ function App() {
   const [searchAddress, setSearchAddress] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
-  
-  // Štai čia – sprendimas. Ši būsena leidžia laisvai rašyti tekstą laukelyje, jo neužrakinant
   const [inputValue, setInputValue] = useState('')
 
+  // SUVIENODINTA: Visur naudojamas raktas "Prižiūri", kaip tavo Supabase
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
@@ -131,7 +130,7 @@ function App() {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
-    // SAUGIKLIS NUO NETYČINIO IŠTRYNIMO: veikia pilnavertiškai
+    // SAUGIKLIS NUO NETYČINIO IŠTRYNIMO
     if (!newValue || newValue === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
@@ -175,7 +174,7 @@ function App() {
 
       const updatedItem = { ...currentItem, ...updates };
 
-      // GEDIMŲ EL. LAIŠKŲ SIUNTIMO FUNKCIJA (PATAISYTA):
+      // GEDIMŲ FUNKCIJA (Pataisyta tikrinti raktą "Prižiūri")
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
         if (!newValue.toLowerCase().includes('sutaisyta')) {
           sendUrgentEmail(updatedItem, newValue);
@@ -190,7 +189,6 @@ function App() {
     }
   };
 
-  // Paleidžiant redagavimą, užpildome įvesties lauką esama reikšme
   const handleStartEdit = (id, field, initialValue) => {
     setEditingCell({ id, field });
     setInputValue(initialValue || '');
@@ -259,7 +257,18 @@ function App() {
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
-        .row-fault td { background-color: #fff3cd !important; }
+        
+        /* RAUSVO MIRKSINČIO FONO ANIMACIJA */
+        @keyframes pulse-red {
+          0% { background-color: #fff3cd; }
+          50% { background-color: #ffe0e0; }
+          100% { background-color: #fff3cd; }
+        }
+        .row-fault td { 
+          animation: pulse-red 2s infinite ease-in-out; 
+          background-color: #fff3cd !important; 
+        }
+
         .text-overdue { color: #e30613 !important; font-weight: bold; }
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-height: 20px; cursor: pointer; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
@@ -311,6 +320,8 @@ function App() {
               ) : (
                 filteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
+                  
+                  // PATAISYTA: Tikriname raktą "Prižiūri" iš Supabase, kad įjungtume rausvą mirksėjimą
                   const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
                   let rowClass = '';
                   if (hasFault) rowClass = 'row-fault'; else if (isOverdue) rowClass = 'row-overdue';
@@ -345,6 +356,7 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          {/* PATAISYTA: Atidaro "Prižiūri" laukelį */}
                           <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
