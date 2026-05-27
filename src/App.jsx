@@ -63,6 +63,7 @@ function App() {
 
   useEffect(() => { 
     fetchData() 
+    // eslint-disable-next-line
   }, [])
 
   async function fetchData() {
@@ -88,6 +89,109 @@ function App() {
     try {
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const targetUrl = 'https://api.resend.com/emails';
+
+      await fetch(proxyUrl + targetUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${MY_RESEND_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          from: 'MD Impex CRM <onboarding@resend.dev>',
+          to: [MY_RECEIVER_EMAIL],
+          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas```jsx
+import { useEffect, useState, useRef } from 'react'
+
+function App() {
+  const [equipment, setEquipment] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [globalSearch, setGlobalSearch] = useState('') 
+  const [editingCell, setEditingCell] = useState(null)
+  const [showColManager, setShowColManager] = useState(false)
+  const [inputValue, setInputValue] = useState('')
+  const [history, setHistory] = useState([])
+
+  const defaultColumns = [
+    { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, 
+    { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
+    { label: "ADRESAS", key: "Adresas", visible: true },
+    { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
+    { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
+    { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true }, 
+    { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
+    { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
+    { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
+    { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
+    { label: "KOMENTARAS", key: "Komentaras", visible: true },
+    { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
+    { label: "ATLIKTA", key: "Atlikta", visible: true }
+  ];
+
+  const [columns, setColumns] = useState(() => {
+    const savedCols = localStorage.getItem('crm_columns')
+    if (savedCols) {
+      const parsed = JSON.parse(savedCols);
+      const hasOldLabel = parsed.some(c => c.key === "Kliento įmonės kodas" && c.label !== "ĮM. KODAS");
+      if (hasOldLabel) {
+        localStorage.removeItem('crm_columns');
+        return defaultColumns;
+      }
+      return parsed;
+    }
+    return defaultColumns;
+  });
+
+  const [widths, setWidths] = useState(() => {
+    const savedWidths = localStorage.getItem('crm_widths')
+    return savedWidths ? JSON.parse(savedWidths) : {
+      "Montavimo data": 120, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 160,
+      "Adresas": 180, "Įrangos pavadinimas": 160, "Serijos numeris": 120,
+      "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110, 
+      "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120, "Atlikta": 100
+    }
+  });
+
+  const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
+  const BASE_URL = '[https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment](https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment)'
+
+  useEffect(() => {
+    localStorage.setItem('crm_columns', JSON.stringify(columns))
+  }, [columns])
+
+  useEffect(() => {
+    localStorage.setItem('crm_widths', JSON.stringify(widths))
+  }, [widths])
+
+  useEffect(() => { 
+    fetchData() 
+    // eslint-disable-next-line
+  }, [])
+
+  async function fetchData() {
+    setLoading(true)
+    try {
+      const response = await fetch(`${BASE_URL}?select=*&order=id.desc`, { 
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
+      })
+      const data = await response.json()
+      setEquipment(data || [])
+    } catch (err) { console.error(err) } finally { setLoading(false) }
+  }
+
+  const sendUrgentEmail = async (item, faultDetails) => {
+    const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
+    const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
+
+    const klientas = item["Kliento pavadinimas"] || 'Nenurodytas klientas';
+    const adresas = item["Adresas"] || 'Nenurodytas adresas';
+    const iranga = item["Įrangos pavadinimas"] || 'Nenurodyta įranga';
+    const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
+
+    try {
+      const proxyUrl = '[https://cors-anywhere.herokuapp.com/](https://cors-anywhere.herokuapp.com/)';
+      const targetUrl = '[https://api.resend.com/emails](https://api.resend.com/emails)';
 
       await fetch(proxyUrl + targetUrl, {
         method: 'POST',
@@ -357,22 +461,26 @@ function App() {
         .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-add-gold { color: #b4965d !important; margin-left: 20px;}
-        /* PAKEISTA: Undo mygtuko stilius - rodyklė be žodžio, perkelta į kairę */
+        .btn-add-gold { color: #b4965d !important; margin-left: auto; }
+        /* PAKEISTA: Atšaukimo rodyklės stilius - be fono, MD Impex CRM spalva, 30% didesnė */
         .btn-undo { 
           color: #acca23 !important; 
           cursor: pointer; 
-          font-size: 18px; 
+          font-size: 24px; /* Padidinta ~30% nuo 18px */
           font-weight: bold;
           transition: opacity 0.2s; 
-          margin-right: -10px; /* Pritraukiame arčiau sekančio elemento */
+          background: none; /* Užtikriname, kad nėra fono */
+          padding: 0;
+          margin: 0;
+          border: none;
         }
         .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
         
         .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
         .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
-        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
+        /* CRM u=ra6as u=ima visą likusią vietą dešinėje */
+        .crm-title-right { margin-left: 20px; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
         .crm-card-wrapper { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
         .table-wrap { flex: 1; overflow: auto; width: 100vw; -webkit-overflow-scrolling: touch; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
@@ -406,7 +514,7 @@ function App() {
 
       <div className="main-header">
         <div className="nav-menu">
-          {/* SUTVARKYTA: Atšaukimo rodyklė perkelta į kairę, be žodžio "atšaukti" */}
+          {/* SUTVARKYTA: Atšaukimo rodyklė be fono, MD Impex CRM spalva, padidinta */}
           <span 
             className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
             onClick={handleUndo}
@@ -417,7 +525,7 @@ function App() {
           <span className="nav-separator">|</span>
           
           <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
-          <span className="nav-separator">|</span>
+          
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
           <input 
@@ -480,7 +588,7 @@ function App() {
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
                                 <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape) setEditingCell(null); }} />
                               )
                             ) : (
                               <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
