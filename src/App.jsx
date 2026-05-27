@@ -255,15 +255,14 @@ function App() {
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         
-        /* ATKURTI TIKRIEJI LĖTAI PULSUOJANTYS RAUSVI ATSPALVIAI */
-        @keyframes pulse-red-clean {
-          0% { background-color: #ffebee; }
-          50% { background-color: #ffcdd2; }
-          100% { background-color: #ffebee; }
+        /* NAUJA: GREITESNĖ RAUSVA - BALTA PULSACIJA (1.5s) */
+        @keyframes pulse-red-white {
+          0% { background-color: #ffffff; }
+          50% { background-color: #ffdde0; }
+          100% { background-color: #ffffff; }
         }
         .row-fault td { 
-          animation: pulse-red-clean 4s infinite ease-in-out !important; 
-          background-color: #ffebee !important; 
+          animation: pulse-red-white 1.5s infinite ease-in-out !important; 
         }
 
         .text-overdue { color: #e30613 !important; font-weight: bold; }
@@ -342,7 +341,7 @@ function App() {
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
-                              /* PAKEISTA: Redagavimas pasileidžia tik per double-click (onDoubleClick) */
+                              /* DVIGUBAS PASPAUDIMAS (onDoubleClick) redagavimui paleisti */
                               <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
