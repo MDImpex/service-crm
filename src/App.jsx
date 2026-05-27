@@ -8,7 +8,7 @@ function App() {
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
   
-  // NAUJA: Istorijos būsena, skirta „Undo“ funkcijai (saugos iki 10 paskutinių būsenų)
+  // SUTVARKYTA: Istorijoje dabar saugome tik konkrečius veiksmus (Actions), o ne visos lentelės kopijas
   const [history, setHistory] = useState([])
 
   const defaultColumns = [
@@ -120,11 +120,12 @@ function App() {
     } catch (err) { console.error(err) }
   };
 
+  const pushActionToHistory = (action) => {
+    setHistory(prev => [action, ...prev].slice(0, 25)); // Padidinome istoriją iki 25 atskirų veiksmų
+  };
+
   const handleAddRow = async () => {
     try {
-      // Prieš pridedant eilutę, išsisaugojam dabartinę būseną į istoriją
-      saveToHistory(equipment);
-
       const res = await fetch(BASE_URL, {
         method: 'POST',
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
@@ -133,6 +134,7 @@ function App() {
       if (res.ok) {
         const [newItem] = await res.json();
         setEquipment([newItem, ...equipment]);
+        pushActionToHistory({ type: 'ADD_ROW', id: newItem.id });
       }
     } catch (err) { alert(err.message) }
   };
@@ -162,8 +164,15 @@ function App() {
       return;
     }
 
-    // Prieš darydami pakeitimą, išsisaugojam esamą būseną į Undo istoriją
-    saveToHistory(equipment);
+    // Įrašome tik konkretų langelio pasikeitimą į istoriją
+    pushActionToHistory({
+      type: 'EDIT_CELL',
+      id: id,
+      field: field,
+      oldValue: oldValue,
+      oldPatikrosData: currentItem["Patikros data"] || null,
+      oldSekantiPatikra: currentItem["Sekanti patikra"] || null
+    });
 
     let updates = { [field]: newValue };
 
@@ -204,49 +213,63 @@ function App() {
     }
   };
 
-  // NAUJA: Pagalbinė funkcija išsaugoti būseną prieš darant pakeitimą
-  const saveToHistory = (currentSnapshot) => {
-    setHistory(prev => {
-      const newHistory = [JSON.parse(JSON.stringify(currentSnapshot)), ...prev];
-      // Ribojame istoriją iki 10 žingsnių, kad neperkrauti atminties
-      if (newHistory.length > 10) newHistory.pop();
-      return newHistory;
-    });
-  };
-
-  // NAUJA: Pagrindinė „Undo“ (atšaukimo) funkcija
+  // SUTVARKYTA: Išmanioji granulinių veiksmų atšaukimo funkcija
   const handleUndo = async () => {
     if (history.length === 0) return;
 
-    const previousState = history[0];
+    const lastAction = history[0];
     const nextHistory = history.slice(1);
 
-    // Surandame, kas pasikeitė, kad sinchronizuotume su serveriu (Supabase)
     try {
       setLoading(true);
-      
-      // Tam, kad undo veiktų patikimai, surandame skirtumus tarp dabartinės būsenos ir ankstesnės
-      for (const oldItem of previousState) {
-        const currentItem = equipment.find(i => i.id === oldItem.id);
-        
-        // Jeigu elementas skiriasi arba buvo atstatytas/pakeistas
-        if (!currentItem || JSON.stringify(currentItem) !== JSON.stringify(oldItem)) {
-          // Siunčiame atstatymo užklausą į DB
-          await fetch(`${BASE_URL}?id=eq.${oldItem.id}`, {
-            method: 'PATCH',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(oldItem)
-          });
+
+      if (lastAction.type === 'EDIT_CELL') {
+        // Atstatome tik vieną konkretų langelį serveryje
+        let rollbacks = { [lastAction.field]: lastAction.oldValue };
+        if (lastAction.field === 'Atlikta') {
+          rollbacks["Patikros data"] = lastAction.oldPatikrosData;
+          rollbacks["Sekanti patikra"] = lastAction.oldSekantiPatikra;
         }
+
+        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, {
+          method: 'PATCH',
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(rollbacks)
+        });
+
+        setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
+      } 
+      
+      else if (lastAction.type === 'DELETE_ROW') {
+        // Atstatome netyčia ištrintą eilutę serveryje
+        const res = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify(lastAction.rowData)
+        });
+        if (res.ok) {
+          const [restoredItem] = await res.json();
+          setEquipment(prev => [restoredItem, ...prev]);
+        }
+      } 
+      
+      else if (lastAction.type === 'ADD_ROW') {
+        // Atšaukiame naujo įrašo pridėjimą (ištriname jį)
+        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+        });
+        setEquipment(prev => prev.filter(item => item.id !== lastAction.id));
+      } 
+      
+      else if (lastAction.type === 'COLUMNS_STATE') {
+        // SUTVARKYTA VIRTUALI UNDO FUNKCIJA: pilnai atstato stulpelius į buvusią būseną (trynimas/pervadinimas)
+        setColumns(lastAction.oldColumns);
       }
 
-      // Jei buvo ištrinta eilutė, Supabase jos paprastu PATCH neatstatys, tačiau šis sprendimas 
-      // idealiai tinka visiems langelių redagavimams, sekantiems patikrinimams ar netyčiniams įrašams.
-      
-      setEquipment(previousState);
       setHistory(nextHistory);
     } catch (err) {
-      console.error("Nepavyko atšaukti pakeitimo serveryje:", err);
+      console.error("Nepavyko įvykdyti undo:", err);
     } finally {
       setLoading(false);
     }
@@ -271,6 +294,8 @@ function App() {
     const currentCol = columns.find(c => c.key === key);
     const newLabel = window.prompt(`Įveskite naują stulpelio "${currentCol.label}" pavadinimą:`, currentCol.label);
     if (newLabel && newLabel.trim() !== "") {
+      // Saugome stulpelių būseną į Undo istoriją prieš pervadinant
+      pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
       setColumns(columns.map(c => c.key === key ? { ...c, label: newLabel.trim().toUpperCase() } : c));
     }
   };
@@ -278,13 +303,19 @@ function App() {
   const deleteColumnEntirely = (key) => {
     const currentCol = columns.find(c => c.key === key);
     if (window.confirm(`Ar tikrai norite VISIŠKAI IŠTRINTI stulpelį "${currentCol.label}" iš CRM sąrašo?`)) {
+      // SUTVARKYTA: Saugome stulpelių būseną į Undo istoriją prieš visišką ištrynimą!
+      pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
       setColumns(columns.filter(c => c.key !== key));
     }
   };
 
   const handleDeleteRow = async (id) => {
-    if (!window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
-    saveToHistory(equipment); // Saugom būseną prieš trynimą
+    const rowToDelete = equipment.find(item => item.id === id);
+    if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
+    
+    // Saugome ištrinamos eilutės duomenis į istoriją atstatymui
+    pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
+    
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
@@ -339,7 +370,6 @@ function App() {
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
-        /* Undo mygtuko stilius */
         .btn-undo { color: #acca23 !important; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
         .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
         .nav-separator { color: rgba(255,255,255,0.2); }
@@ -383,7 +413,6 @@ function App() {
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
-          {/* NAUJA: Dinaminis Atšaukimo (Undo) mygtukas su turimų žingsnių skaičiuokle */}
           <span className="nav-separator">|</span>
           <span 
             className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
