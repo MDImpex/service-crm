@@ -1,4 +1,4 @@
-// PILNAS CRM KODAS SU SUTARTYTU CORS TILTU IR TIKRAIS RAKTAIS
+// PILNAS CRM KODAS SU SUTARTYTU CORS TILTU, TIKRAIS RAKTAIS IR PILNA LAIŠKO INFORMACIJA
 import { useEffect, useState, useRef } from 'react'
 
 function App() {
@@ -69,13 +69,18 @@ function App() {
 
   // Tiesioginis saugus laiškų siuntimas per patikimą CORS tiltą
   const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Inicijuojamas skubus pranešimas apie gedimą...");
+    console.log("Inicijuojamas skubus pranešimas apie gedimą...", item);
     
     const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
 
+    // Ištraukiame tikrąsias reikšmes iš objekto su atsarginiais variantais (jei skirtųsi didžiosios/mažosios raidės)
+    const klientas = item["Kliento pavadinimas"] || item["kliento_pavadinimas"] || item["Klientas"] || 'Nenurodytas klientas';
+    const adresas = item["Adresas"] || item["adresas"] || 'Nenurodytas adresas';
+    const iranga = item["Įrangos pavadinimas"] || item["Irangos pavadinimas"] || item["irangos_pavadinimas"] || 'Nenurodyta įranga';
+    const serijosNumeris = item["Serijos numeris"] || item["serijos_numeris"] || item["Serija"] || 'Nenurodytas S/N';
+
     try {
-      // CORS tiltas, praleidžiantis Authorization antraštes
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const targetUrl = 'https://api.resend.com/emails';
 
@@ -89,22 +94,43 @@ function App() {
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
           to: [MY_RECEIVER_EMAIL],
-          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas'}`,
+          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${klientas}`,
           html: `
-            <div style="font-family:Arial,sans-serif;padding:20px;line-height:1.6;">
-              <h2 style="color:#e30613;margin-top:0;">Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
-              <p><strong>Klientas:</strong> ${item["Kliento pavadinimas"] || 'Nenurodytas'}</p>
-              <p><strong>Adresas:</strong> ${item["Adresas"] || '—'}</p>
-              <p><strong>Įranga:</strong> ${item["Įrangos pavadinimas"] || '—'}</p>
-              <p><strong>Serijos numeris:</strong> ${item["Serijos numeris"] || '—'}</p>
-              <p><strong>Informacija:</strong> <span style="color:#e30613;font-weight:bold;">${faultDetails}</span></p>
+            <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+              <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
+              
+              <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td>
+                  <td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td>
+                  <td style="padding:8px 0;font-size:15px;color:#000;">${adresas}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td>
+                  <td style="padding:8px 0;font-size:15px;color:#000;">${iranga}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td>
+                  <td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td>
+                </tr>
+                <tr>
+                  <td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td>
+                  <td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td>
+                </tr>
+              </table>
+              
+              <hr style="border:0;border-top:1px solid #e3e7eb;margin-top:20px;" />
+              <p style="font-size:11px;color:#999;margin-bottom:0;">Pranešimas sugeneruotas automatiškai iš MD Impex CRM sistemos.</p>
             </div>
           `
         })
       });
 
       if (response.ok) {
-        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui!");
+        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui su tikrais duomenimis!");
       } else {
         const errText = await response.text();
         console.error("❌ Resend atmetė užklausą. Statusas:", response.status, errText);
@@ -135,7 +161,6 @@ function App() {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString() : '';
 
-    // Jeigu nauja reikšmė tuščia arba išvalyta
     if (!newValue || newValue.trim() === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
@@ -177,10 +202,12 @@ function App() {
 
       if (!res.ok) throw new Error("Nepavyko išsaugoti duomenų");
 
-      // Siunčiame el. laišką, jei stulpelyje įrašomas žodis „gedimas“
+      // Sukuriame naują laikiną objektą su atnaujinta reikšme, kad funkcija iškart matytų naują įrašą
+      const updatedItem = { ...currentItem, ...updates };
+
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
         if (!newValue.toLowerCase().includes('sutaisyta')) {
-          sendUrgentEmail(currentItem, newValue);
+          sendUrgentEmail(updatedItem, newValue);
         }
       }
 
