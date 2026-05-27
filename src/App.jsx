@@ -128,6 +128,20 @@ function App() {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
+    // ATSTATYTAS SAUGIKLIS: Jei įvesta nauja reikšmė yra tuščia, bet seniau ten kažkas buvo įrašyta
+    if (!newValue || newValue === "") {
+      if (oldValue && oldValue !== '—') {
+        const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
+        if (!confirmDeleteValue) {
+          setEditingCell(null);
+          return; // Nutraukiam išsaugojimą, senas įrašas neištrunka!
+        }
+      } else {
+        setEditingCell(null);
+        return;
+      }
+    }
+
     if (newValue === oldValue) {
       setEditingCell(null);
       return;
