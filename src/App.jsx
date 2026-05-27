@@ -9,7 +9,7 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
-  // Užtikrina, kad telefono klaviatūra ar paspaudimas šone neištrintų parašyto teksto
+  // Šis kintamasis saugo tai, ką rašote ŠIUO METU
   const [tempValue, setTempValue] = useState('')
 
   const [columns, setColumns] = useState(() => {
@@ -70,8 +70,6 @@ function App() {
   }
 
   const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Inicijuojamas skubus pranešimas apie gedimą...", item);
-    
     const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
 
@@ -84,7 +82,7 @@ function App() {
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const targetUrl = 'https://api.resend.com/emails';
 
-      const response = await fetch(proxyUrl + targetUrl, {
+      await fetch(proxyUrl + targetUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MY_RESEND_KEY}`,
@@ -105,22 +103,11 @@ function App() {
                 <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td><td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td></tr>
                 <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td></tr>
               </table>
-              <hr style="border:0;border-top:1px solid #e3e7eb;margin-top:20px;" />
-              <p style="font-size:11px;color:#999;margin-bottom:0;">Pranešimas sugeneruotas automatiškai iš MD Impex CRM sistemos.</p>
             </div>
           `
         })
       });
-
-      if (response.ok) {
-        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui!");
-      } else {
-        const errText = await response.text();
-        console.error("❌ Resend atmetė užklausą:", response.status, errText);
-      }
-    } catch (err) {
-      console.error("Klaida siunčiant laišką:", err);
-    }
+    } catch (err) { console.error(err) }
   };
 
   const handleAddRow = async () => {
@@ -142,20 +129,7 @@ function App() {
     if (!currentItem) return;
     
     const oldValue = currentItem[field] || '';
-    const newValue = value !== undefined && value !== null ? value.toString() : '';
-
-    if (!newValue || newValue.trim() === "") {
-      if (oldValue && oldValue !== '—') {
-        const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
-        if (!confirmDeleteValue) {
-          setEditingCell(null);
-          return;
-        }
-      } else {
-        setEditingCell(null);
-        return;
-      }
-    }
+    const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
     if (newValue === oldValue) {
       setEditingCell(null);
@@ -256,31 +230,33 @@ function App() {
       <style>{`
         .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
-        .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
-        .nav-item:hover { opacity: 0.8; }
+        .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
-        .nav-separator { color: rgba(255,255,255,0.2); font-weight: normal; }
+        .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-embedded { background: #194a3f; border: 1px solid #235d51; padding: 9px 15px; color: white; font-size: 13px; outline: none; width: 220px; margin-left: 10px; }
-        .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
-        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-weight: normal; letter-spacing: 1px; font-family: 'Candara', serif; }
-        .crm-card-wrapper { flex: 1; margin: 0; background: #ffffff; overflow: hidden; display: flex; flex-direction: column; }
+        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
+        .crm-card-wrapper { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
         .table-wrap { flex: 1; overflow: auto; width: 100vw; -webkit-overflow-scrolling: touch; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        th { background: #1e1e1e; color: #ffffff !important; position: sticky; top: 0; zIndex: 30; font-size: 11px; font-weight: bold; text-align: center; padding: 16px 5px; border-right: 1px solid #333333; border-bottom: 2px solid #000000; text-transform: uppercase; }
+        th { background: #1e1e1e; color: #ffffff !important; position: sticky; top: 0; z-index: 30; font-size: 11px; font-weight: bold; text-align: center; padding: 16px 5px; border-right: 1px solid #333333; border-bottom: 2px solid #000000; }
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
-        @keyframes blink-fault { 0% { background-color: #ffe6e6; } 50% { background-color: #ff9999; } 100% { background-color: #ffe6e6; } }
-        .row-fault td { animation: blink-fault 1.5s infinite ease-in-out !important; }
-        .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-height: 20px; }
+        .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-height: 20px; cursor: pointer; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
-        .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 13px; outline: none; box-sizing: border-box; background: white; }
+        
+        /* SAUGI IR PAPRASTA REDAGAVIMO SĄSAJA */
+        .edit-holder { display: flex; align-items: center; background: #ffffff; width: 100%; box-sizing: border-box; padding: 2px; }
+        .cell-input { flex: 1; border: 2px solid #113c32; padding: 6px; font-size: 13px; outline: none; min-width: 0; }
+        .btn-check-save { background: #acca23; color: #113c32; border: none; font-size: 14px; font-weight: bold; padding: 6px 12px; cursor: pointer; margin-left: 2px; }
+        .btn-cancel-x { background: #e30613; color: white; border: none; font-size: 12px; padding: 6px 10px; cursor: pointer; margin-left: 2px; }
+        
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
-        .btn-edit-icon { color: #555555; }
-        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; margin-bottom: 5px; } .search-box-embedded { width: 100%; margin-left: 0; box-sizing: border-box; } .nav-item { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; } }
+        .btn-edit-icon { color: #113c32; font-weight: bold; }
+        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-embedded { width: 100%; margin-left: 0; } }
       `}</style>
 
       <div className="main-header">
@@ -332,24 +308,29 @@ function App() {
                     <tr key={item.id} className={rowClass}>
                       <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
                       {visibleCols.map(col => (
-                        <td key={col.key} onDoubleClick={() => startEditing(item.id, col.key, item[col.key])}>
+                        <td key={col.key}>
                           <div style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                              col.key === "Sutartis YRA/NĖRA" ? (
-                                <select className="cell-edit" autoFocus value={tempValue} onBlur={() => handleSave(item.id, col.key, tempValue)} onChange={e => setTempValue(e.target.value)}>
-                                  <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
-                                </select>
-                              ) : col.key === "Atlikta" ? (
-                                <select className="cell-edit" autoFocus value={tempValue} onBlur={() => handleSave(item.id, col.key, tempValue)} onChange={e => setTempValue(e.target.value)}>
-                                  <option value="Ne">Ne</option><option value="Taip">Taip</option>
-                                </select>
-                              ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
-                              ) : (
-                                <input autoFocus type="text" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
-                              )
+                              <div className="edit-holder">
+                                {col.key === "Sutartis YRA/NĖRA" ? (
+                                  <select className="cell-input" autoFocus value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                                    <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
+                                  </select>
+                                ) : col.key === "Atlikta" ? (
+                                  <select className="cell-input" autoFocus value={tempValue} onChange={e => setTempValue(e.target.value)}>
+                                    <option value="Ne">Ne</option><option value="Taip">Taip</option>
+                                  </select>
+                                ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
+                                  <input autoFocus type="date" className="cell-input" value={tempValue} onChange={e => setTempValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); }} />
+                                ) : (
+                                  <input autoFocus type="text" className="cell-input" value={tempValue} onChange={e => setTempValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); }} />
+                                )}
+                                {/* Rankinis išsaugojimas, kuris garantuoja veikimą 100% */}
+                                <button className="btn-check-save" onClick={() => handleSave(item.id, col.key, tempValue)}>✔</button>
+                                <button className="btn-cancel-x" onClick={() => setEditingCell(null)}>X</button>
+                              </div>
                             ) : (
-                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`}>
+                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => startEditing(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
                             )}
@@ -358,7 +339,6 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          {/* Mobiliesiems skirtas patikimas redagavimas: atidaro stulpelį "Prižiūri", kur rašomas gedimas */}
                           <button className="action-btn btn-edit-icon" onClick={() => startEditing(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
