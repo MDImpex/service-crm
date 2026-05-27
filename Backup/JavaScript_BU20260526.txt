@@ -4,8 +4,8 @@ function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [searchEquipment, setSearchEquipment] = useState('') 
-  const [searchAddress, setSearchAddress] = useState('') 
+  const [searchEquipment, setSearchEquipment] = useState('') // NAUJAS: Būsena įrangos filtravimui
+  const [searchAddress, setSearchAddress] = useState('') // NAUJAS: Būsena adreso filtravimui
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   
@@ -18,7 +18,7 @@ function App() {
       { label: "ADRESAS", key: "Adresas", visible: true },
       { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
       { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true }, // Šį stulpelį naudosime iškvietimams/gedimams
+      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true },
       { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
       { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
       { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
@@ -66,36 +66,6 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // Funkcija, kuri išsiunčia skubų el. laišką apie užregistruotą gedimą
-  const sendUrgentEmail = async (item, faultDetails) => {
-    try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer re_S6XpEw7Y_MvH6p6T99vXNq4J8Kz8Y7X2D',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'CRM Iškvietimas <onboarding@resend.dev>',
-          to: ['v.janciauskas@mdimpex.lt'], 
-          subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas klientas'}`,
-          html: `
-            <h2>🚨 Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
-            <p><strong>Klientas:</strong> ${item["Kliento pavadinimas"] || '—'}</p>
-            <p><strong>Adresas:</strong> ${item["Adresas"] || '—'}</p>
-            <p><strong>Įranga:</strong> ${item["Įrangos pavadinimas"] || '—'}</p>
-            <p><strong>Serijos numeris:</strong> ${item["Serijos numeris"] || '—'}</p>
-            <p><strong>Iškvietimo informacija:</strong> <span style="color: red; font-weight: bold;">${faultDetails}</span></p>
-            <br/>
-            <p>Sistemos pranešimas generuotas automatiškai.</p>
-          `
-        })
-      });
-    } catch (err) {
-      console.error("Nepavyko išsiųsti skubaus laiško:", err);
-    }
-  };
-
   const handleAddRow = async () => {
     try {
       const res = await fetch(BASE_URL, {
@@ -114,19 +84,22 @@ function App() {
     const currentItem = equipment.find(item => item.id === id);
     const oldValue = currentItem ? currentItem[field] : '';
 
+    // SAUGIKLIS 1: Jei reikšmė tuščia, bet seniau kažkas buvo įrašyta, paklausiame vartotojo ar tikrai ištrinti
     if (!value || value.trim() === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
         if (!confirmDeleteValue) {
           setEditingCell(null);
-          return;
+          return; // Atšaukiame trynimą ir paliekame seną reikšmę
         }
       } else {
+        // Jei seniau nieko nebuvo ir paliko tuščią - tiesiog uždarome redagavimą nieko nekeisdami
         setEditingCell(null);
         return;
       }
     }
 
+    // Jei reikšmė visiškai nepasikeitė, duomenų bazės netrukdome
     if (value === oldValue) {
       setEditingCell(null);
       return;
@@ -152,15 +125,6 @@ function App() {
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-
-      // NAUJAS: Tikriname ar atnaujintas laukelis yra „Prižiūri“ ir ar jame atsirado žodis „gedimas“
-      if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
-        // Taip pat tikriname, ar jame dar nėra žodžio „sutaisyta“ (kad nesiųstų laiško pakartotinai pildant)
-        if (!value.toLowerCase().includes('sutaisyta')) {
-          sendUrgentEmail(currentItem, value);
-        }
-      }
-
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { console.error(err) }
@@ -204,6 +168,7 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
+  {/* ATNAUJINTA: Trigubas filtravimas (pagal klientą IR pagal įrangą IR pagal adresą) */}
   const filteredData = equipment.filter(item => {
     const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
@@ -263,7 +228,7 @@ function App() {
           flex: 1; 
           overflow: auto; 
           width: 100vw;
-          -webkit-overflow-scrolling: touch;
+          -webkit-overflow-scrolling: touch; /* Švelnus skrolas iOS įrenginiuose */
         }
 
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
@@ -290,16 +255,6 @@ function App() {
         .row-overdue td { background-color: #fff0f0 !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
         
-        /* Mirksėjimo efektas aktyviam iškvietimui/gedimui */
-        @keyframes blink-fault {
-          0% { background-color: #ffe6e6; }
-          50% { background-color: #ff9999; }
-          100% { background-color: #ffe6e6; }
-        }
-        .row-fault td { 
-          animation: blink-fault 1.5s infinite ease-in-out !important; 
-        }
-
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
         .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 12px; outline: none; box-sizing: border-box; }
@@ -308,13 +263,38 @@ function App() {
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #555555; }
 
+        /* NAUJAS: Prisitaikymas mobiliesiems telefonams (ekranams iki 768px) */
         @media (max-width: 768px) {
-          .main-header { height: auto; padding: 15px 15px; }
-          .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; }
-          .nav-separator { display: none; }
-          .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; margin-bottom: 5px; }
-          .search-box-embedded { width: 100%; margin-left: 0; box-sizing: border-box; }
-          .nav-item { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; }
+          .main-header {
+            height: auto;
+            padding: 15px 15px;
+          }
+          .nav-menu {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .nav-separator {
+            display: none;
+          }
+          .crm-title-right {
+            margin-left: 0;
+            text-align: center;
+            order: -1;
+            font-size: 18px;
+            margin-bottom: 5px;
+          }
+          .search-box-embedded {
+            width: 100%;
+            margin-left: 0;
+            box-sizing: border-box;
+          }
+          .nav-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+          }
         }
       `}</style>
 
@@ -324,9 +304,26 @@ function App() {
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
-          <input className="search-box-embedded" placeholder="🔍 Filtruoti klientą..." onChange={e => setSearchTerm(e.target.value)} />
-          <input className="search-box-embedded" placeholder="⚙️ Filtruoti įrangą..." onChange={e => setSearchEquipment(e.target.value)} />
-          <input className="search-box-embedded" placeholder="📍 Filtruoti adresą..." onChange={e => setSearchAddress(e.target.value)} />
+          {/* Filtras 1: Pagal Klientą */}
+          <input 
+            className="search-box-embedded" 
+            placeholder="🔍 Filtruoti klientą..." 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
+
+          {/* Filtras 2: Pagal Įrangą */}
+          <input 
+            className="search-box-embedded" 
+            placeholder="⚙️ Filtruoti įrangą..." 
+            onChange={e => setSearchEquipment(e.target.value)} 
+          />
+
+          {/* NAUJAS Filtras 3: Pagal Adresą */}
+          <input 
+            className="search-box-embedded" 
+            placeholder="📍 Filtruoti adresą..." 
+            onChange={e => setSearchAddress(e.target.value)} 
+          />
 
           <div className="crm-title-right">MD Impex CRM</div>
         </div>
@@ -359,18 +356,8 @@ function App() {
               ) : (
                 filteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
-                  
-                  // NAUJAS LOGIKOS PAKEITIMAS: Tikriname stulpelį „Prižiūri“
-                  const hasFault = item["Prižiūri"] && 
-                                   item["Prižiūri"].toLowerCase().includes('gedimas') && 
-                                   !item["Prižiūri"].toLowerCase().includes('sutaisyta');
-
-                  let rowClass = '';
-                  if (hasFault) rowClass = 'row-fault'; // Jei yra aktyvus gedimas -> mirksės rausvai
-                  else if (isOverdue) rowClass = 'row-overdue'; // Jei tik vėluoja patikra -> bus statiškai rausva
-
                   return (
-                    <tr key={item.id} className={rowClass}>
+                    <tr key={item.id} className={isOverdue ? 'row-overdue' : ''}>
                       <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
                       {visibleCols.map(col => (
                         <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
@@ -396,7 +383,7 @@ function App() {
                                   onBlur={e => handleSave(item.id, col.key, e.target.value)}
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value);
-                                    if (e.key === 'Escape') setEditingCell(null);
+                                    if (e.key === 'Escape') setEditingCell(null); // Paspaudus ESC - atšaukia redagavimą
                                   }}
                                 />
                               ) : (
