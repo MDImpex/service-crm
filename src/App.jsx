@@ -10,24 +10,38 @@ function App() {
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
+  // Numatytoji stulpelių konfigūracija su naujuoju pavadinimu
+  const defaultColumns = [
+    { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
+    { label: "ALIGNMENT KODAS", key: "Kliento įmonės kodas", visible: true },
+    { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
+    { label: "ADRESAS", key: "Adresas", visible: true },
+    { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
+    { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
+    { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true }, 
+    { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
+    { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
+    { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
+    { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
+    { label: "KOMENTARAS", key: "Komentaras", visible: true },
+    { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
+    { label: "ATLIKTA", key: "Atlikta", visible: true }
+  ];
+
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
-    return savedCols ? JSON.parse(savedCols) : [
-      { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-      { label: "ALIGNMENT KODAS", key: "Kliento įmonės kodas", visible: true },
-      { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
-      { label: "ADRESAS", key: "Adresas", visible: true },
-      { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
-      { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-      { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true }, /* PAKEISTA: Label pakeistas iš PRIŽIŪRI į IŠKVIETIMAI */
-      { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
-      { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
-      { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
-      { label: "ATK. PERIODAS", key: "Atk. Periodas", visible: true },
-      { label: "KOMENTARAS", key: "Komentaras", visible: true },
-      { label: "SUTARTIS YRA/NĖRA", key: "Sutartis YRA/NĖRA", visible: true },
-      { label: "ATLIKTA", key: "Atlikta", visible: true }
-    ]
+    if (savedCols) {
+      const parsed = JSON.parse(savedCols);
+      // Priverstinai patikriname, ar atmintyje užsilikęs senas pavadinimas "PRIŽIŪRI"
+      const hasOldLabel = parsed.some(c => c.key === "Prižiūri" && c.label === "PRIŽIŪRI");
+      if (hasOldLabel) {
+        // Jei sena, ištriname atmintį ir grąžiname naują versiją
+        localStorage.removeItem('crm_columns');
+        return defaultColumns;
+      }
+      return parsed;
+    }
+    return defaultColumns;
   });
 
   const [widths, setWidths] = useState(() => {
@@ -358,7 +372,6 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          {/* Mygtukas redaguoja tą patį DB stulpelį, bet dabar aiškumo dėlei nurodoma jo paskirtis */}
                           <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
