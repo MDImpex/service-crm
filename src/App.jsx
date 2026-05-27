@@ -77,7 +77,7 @@ function App() {
         },
         body: JSON.stringify({
           from: 'CRM Iškvietimas <onboarding@resend.dev>',
-          to: ['v.janciauskas@mdimpex.lt'], 
+          to: ['valdasjanciauskas@gmail.com'], 
           subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas klientas'}`,
           html: `
             <h2>🚨 Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
