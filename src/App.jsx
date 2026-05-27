@@ -8,6 +8,9 @@ function App() {
   const [searchAddress, setSearchAddress] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
+  
+  // Šis kintamasis saugo realiu laiku įvedamą tekstą, kad jis nedingtų
+  const [tempValue, setTempValue] = useState('')
 
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
@@ -128,13 +131,13 @@ function App() {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
-    // ATSTATYTAS SAUGIKLIS: Jei įvesta nauja reikšmė yra tuščia, bet seniau ten kažkas buvo įrašyta
+    // SAUGIKLIS: Jei bandoma ištrinti jau esamą tekstą
     if (!newValue || newValue === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
         if (!confirmDeleteValue) {
           setEditingCell(null);
-          return; // Nutraukiam išsaugojimą, senas įrašas neištrunka!
+          return;
         }
       } else {
         setEditingCell(null);
@@ -172,18 +175,25 @@ function App() {
 
       const updatedItem = { ...currentItem, ...updates };
 
+      // GEDIMO FUNKCIJA: Tikriname, ar įvestas gedimas
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
         if (!newValue.toLowerCase().includes('sutaisyta')) {
           sendUrgentEmail(updatedItem, newValue);
         }
       }
 
+      // Atnaujiname sąrašą ekrane realiu laiku, kad reikšmė pasiliktų!
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { 
       console.error("Klaida:", err);
       setEditingCell(null);
     }
+  };
+
+  const startEditing = (id, field, value) => {
+    setEditingCell({ id, field });
+    setTempValue(value || '');
   };
 
   const moveColumn = (index, direction) => {
@@ -249,6 +259,7 @@ function App() {
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
+        .row-fault td { background-color: #fff3cd !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
         .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-height: 20px; cursor: pointer; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
@@ -312,20 +323,20 @@ function App() {
                           <div style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
                               col.key === "Sutartis YRA/NĖRA" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)}>
                                   <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
                                 </select>
                               ) : col.key === "Atlikta" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || 'Ne'} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="date" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="text" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
-                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => startEditing(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
                             )}
@@ -334,7 +345,7 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: "Prižiūri" })}>✏️</button>
+                          <button className="action-btn btn-edit-icon" onClick={() => startEditing(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
