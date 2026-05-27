@@ -255,15 +255,15 @@ function App() {
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         
-        /* ATKURTA LĖTAI MIRKSINTI RAUSVA ANIMACIJA */
-        @keyframes pulse-red {
-          0% { background-color: #fff3cd; }
-          50% { background-color: #ffe0e0; }
-          100% { background-color: #fff3cd; }
+        /* ATKURTI TIKRIEJI LĖTAI PULSUOJANTYS RAUSVI ATSPALVIAI */
+        @keyframes pulse-red-clean {
+          0% { background-color: #ffebee; }
+          50% { background-color: #ffcdd2; }
+          100% { background-color: #ffebee; }
         }
         .row-fault td { 
-          animation: pulse-red 3s infinite ease-in-out; 
-          background-color: #fff3cd !important; 
+          animation: pulse-red-clean 4s infinite ease-in-out !important; 
+          background-color: #ffebee !important; 
         }
 
         .text-overdue { color: #e30613 !important; font-weight: bold; }
@@ -317,8 +317,6 @@ function App() {
               ) : (
                 filteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
-                  
-                  // PATAISYTA: Tikriname tavo Supabase raktą „Prižiūri“ rausvam fone
                   const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
                   let rowClass = '';
                   if (hasFault) rowClass = 'row-fault'; else if (isOverdue) rowClass = 'row-overdue';
@@ -344,7 +342,8 @@ function App() {
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
-                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
+                              /* PAKEISTA: Redagavimas pasileidžia tik per double-click (onDoubleClick) */
+                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
                             )}
