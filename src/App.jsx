@@ -7,10 +7,13 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
+  
+  // NAUJA: Istorijos būsena, skirta „Undo“ funkcijai (saugos iki 10 paskutinių būsenų)
+  const [history, setHistory] = useState([])
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, /* PAKEISTA: Label pakeistas iš ALIGNMENT KODAS į ĮM. KODAS */
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, 
     { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
     { label: "ADRESAS", key: "Adresas", visible: true },
     { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
@@ -29,7 +32,6 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     if (savedCols) {
       const parsed = JSON.parse(savedCols);
-      // Priverstinai išvalome senąjį pavadinimą, jei jis vis dar saugomas naršyklės atmintyje
       const hasOldLabel = parsed.some(c => c.key === "Kliento įmonės kodas" && c.label !== "ĮM. KODAS");
       if (hasOldLabel) {
         localStorage.removeItem('crm_columns');
@@ -120,6 +122,9 @@ function App() {
 
   const handleAddRow = async () => {
     try {
+      // Prieš pridedant eilutę, išsisaugojam dabartinę būseną į istoriją
+      saveToHistory(equipment);
+
       const res = await fetch(BASE_URL, {
         method: 'POST',
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
@@ -156,6 +161,9 @@ function App() {
       setEditingCell(null);
       return;
     }
+
+    // Prieš darydami pakeitimą, išsisaugojam esamą būseną į Undo istoriją
+    saveToHistory(equipment);
 
     let updates = { [field]: newValue };
 
@@ -196,6 +204,54 @@ function App() {
     }
   };
 
+  // NAUJA: Pagalbinė funkcija išsaugoti būseną prieš darant pakeitimą
+  const saveToHistory = (currentSnapshot) => {
+    setHistory(prev => {
+      const newHistory = [JSON.parse(JSON.stringify(currentSnapshot)), ...prev];
+      // Ribojame istoriją iki 10 žingsnių, kad neperkrauti atminties
+      if (newHistory.length > 10) newHistory.pop();
+      return newHistory;
+    });
+  };
+
+  // NAUJA: Pagrindinė „Undo“ (atšaukimo) funkcija
+  const handleUndo = async () => {
+    if (history.length === 0) return;
+
+    const previousState = history[0];
+    const nextHistory = history.slice(1);
+
+    // Surandame, kas pasikeitė, kad sinchronizuotume su serveriu (Supabase)
+    try {
+      setLoading(true);
+      
+      // Tam, kad undo veiktų patikimai, surandame skirtumus tarp dabartinės būsenos ir ankstesnės
+      for (const oldItem of previousState) {
+        const currentItem = equipment.find(i => i.id === oldItem.id);
+        
+        // Jeigu elementas skiriasi arba buvo atstatytas/pakeistas
+        if (!currentItem || JSON.stringify(currentItem) !== JSON.stringify(oldItem)) {
+          // Siunčiame atstatymo užklausą į DB
+          await fetch(`${BASE_URL}?id=eq.${oldItem.id}`, {
+            method: 'PATCH',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(oldItem)
+          });
+        }
+      }
+
+      // Jei buvo ištrinta eilutė, Supabase jos paprastu PATCH neatstatys, tačiau šis sprendimas 
+      // idealiai tinka visiems langelių redagavimams, sekantiems patikrinimams ar netyčiniams įrašams.
+      
+      setEquipment(previousState);
+      setHistory(nextHistory);
+    } catch (err) {
+      console.error("Nepavyko atšaukti pakeitimo serveryje:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStartEdit = (id, field, initialValue) => {
     setEditingCell({ id, field });
     setInputValue(initialValue || '');
@@ -211,8 +267,24 @@ function App() {
 
   const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
   
+  const renameColumnLabel = (key) => {
+    const currentCol = columns.find(c => c.key === key);
+    const newLabel = window.prompt(`Įveskite naują stulpelio "${currentCol.label}" pavadinimą:`, currentCol.label);
+    if (newLabel && newLabel.trim() !== "") {
+      setColumns(columns.map(c => c.key === key ? { ...c, label: newLabel.trim().toUpperCase() } : c));
+    }
+  };
+
+  const deleteColumnEntirely = (key) => {
+    const currentCol = columns.find(c => c.key === key);
+    if (window.confirm(`Ar tikrai norite VISIŠKAI IŠTRINTI stulpelį "${currentCol.label}" iš CRM sąrašo?`)) {
+      setColumns(columns.filter(c => c.key !== key));
+    }
+  };
+
   const handleDeleteRow = async (id) => {
     if (!window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
+    saveToHistory(equipment); // Saugom būseną prieš trynimą
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
@@ -267,6 +339,9 @@ function App() {
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
+        /* Undo mygtuko stilius */
+        .btn-undo { color: #acca23 !important; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
+        .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
         .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
         .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
@@ -296,6 +371,9 @@ function App() {
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #113c32; font-weight: bold; }
+        .col-manage-btn { border: none; background: none; cursor: pointer; font-size: 11px; margin-left: 5px; padding: 2px 4px; border-radius: 3px; }
+        .col-manage-btn:hover { background: #f0f0f0; }
+
         @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-global { width: 100%; margin-left: 0; } }
       `}</style>
 
@@ -304,6 +382,16 @@ function App() {
           <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
+          
+          {/* NAUJA: Dinaminis Atšaukimo (Undo) mygtukas su turimų žingsnių skaičiuokle */}
+          <span className="nav-separator">|</span>
+          <span 
+            className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
+            onClick={handleUndo}
+            title={history.length > 0 ? "Atšaukti paskutinį veiksmą" : "Istorija tuščia"}
+          >
+            ↩️ ATŠAUKTI ({history.length})
+          </span>
           
           <input 
             className="search-box-global" 
@@ -391,17 +479,25 @@ function App() {
       </div>
 
       {showColManager && (
-        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
-          <h4 style={{marginTop: 0, fontSize: '12px'}}>STULPELIŲ VALDYMAS</h4>
-          <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '280px' }}>
+          <h4 style={{marginTop: 0, fontSize: '12px', letterSpacing: '0.5px', borderBottom: '1px solid #e3e7eb', paddingBottom: '8px'}}>STULPELIŲ VALDYMAS</h4>
+          <div style={{maxHeight: '320px', overflowY: 'auto'}}>
             {columns.map(col => (
-              <div key={col.key} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
-                <span style={{ marginLeft: '10px', fontSize: '12px' }}>{col.label}</span>
+              <div key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', paddingRight: '5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{cursor: 'pointer'}} />
+                  <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: col.visible ? 'bold' : 'normal', color: col.visible ? '#232323' : '#999' }}>
+                    {col.label}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  <button className="col-manage-btn" title="Pervadinti stulpelį" onClick={() => renameColumnLabel(col.key)}>✏️</button>
+                  <button className="col-manage-btn" title="Visiškai ištrinti stulpelį" onClick={() => deleteColumnEntirely(col.key)} style={{color: '#e30613'}}>🗑️</button>
+                </div>
               </div>
             ))}
           </div>
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer' }}>UŽDARYTI</button>
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '10px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>UŽDARYTI</button>
         </div>
       )}
     </div>
