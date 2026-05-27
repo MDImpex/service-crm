@@ -7,8 +7,6 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
-  
-  // SUTVARKYTA: Istorijoje dabar saugome tik konkrečius veiksmus (Actions), o ne visos lentelės kopijas
   const [history, setHistory] = useState([])
 
   const defaultColumns = [
@@ -65,7 +63,6 @@ function App() {
 
   useEffect(() => { 
     fetchData() 
-    // eslint-disable-next-line
   }, [])
 
   async function fetchData() {
@@ -121,7 +118,7 @@ function App() {
   };
 
   const pushActionToHistory = (action) => {
-    setHistory(prev => [action, ...prev].slice(0, 25)); // Padidinome istoriją iki 25 atskirų veiksmų
+    setHistory(prev => [action, ...prev].slice(0, 25)); 
   };
 
   const handleAddRow = async () => {
@@ -164,7 +161,6 @@ function App() {
       return;
     }
 
-    // Įrašome tik konkretų langelio pasikeitimą į istoriją
     pushActionToHistory({
       type: 'EDIT_CELL',
       id: id,
@@ -213,7 +209,6 @@ function App() {
     }
   };
 
-  // SUTVARKYTA: Išmanioji granulinių veiksmų atšaukimo funkcija
   const handleUndo = async () => {
     if (history.length === 0) return;
 
@@ -224,7 +219,6 @@ function App() {
       setLoading(true);
 
       if (lastAction.type === 'EDIT_CELL') {
-        // Atstatome tik vieną konkretų langelį serveryje
         let rollbacks = { [lastAction.field]: lastAction.oldValue };
         if (lastAction.field === 'Atlikta') {
           rollbacks["Patikros data"] = lastAction.oldPatikrosData;
@@ -241,7 +235,6 @@ function App() {
       } 
       
       else if (lastAction.type === 'DELETE_ROW') {
-        // Atstatome netyčia ištrintą eilutę serveryje
         const res = await fetch(BASE_URL, {
           method: 'POST',
           headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
@@ -254,7 +247,6 @@ function App() {
       } 
       
       else if (lastAction.type === 'ADD_ROW') {
-        // Atšaukiame naujo įrašo pridėjimą (ištriname jį)
         await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, {
           method: 'DELETE',
           headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
@@ -263,7 +255,6 @@ function App() {
       } 
       
       else if (lastAction.type === 'COLUMNS_STATE') {
-        // SUTVARKYTA VIRTUALI UNDO FUNKCIJA: pilnai atstato stulpelius į buvusią būseną (trynimas/pervadinimas)
         setColumns(lastAction.oldColumns);
       }
 
@@ -294,7 +285,6 @@ function App() {
     const currentCol = columns.find(c => c.key === key);
     const newLabel = window.prompt(`Įveskite naują stulpelio "${currentCol.label}" pavadinimą:`, currentCol.label);
     if (newLabel && newLabel.trim() !== "") {
-      // Saugome stulpelių būseną į Undo istoriją prieš pervadinant
       pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
       setColumns(columns.map(c => c.key === key ? { ...c, label: newLabel.trim().toUpperCase() } : c));
     }
@@ -303,7 +293,6 @@ function App() {
   const deleteColumnEntirely = (key) => {
     const currentCol = columns.find(c => c.key === key);
     if (window.confirm(`Ar tikrai norite VISIŠKAI IŠTRINTI stulpelį "${currentCol.label}" iš CRM sąrašo?`)) {
-      // SUTVARKYTA: Saugome stulpelių būseną į Undo istoriją prieš visišką ištrynimą!
       pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
       setColumns(columns.filter(c => c.key !== key));
     }
@@ -313,7 +302,6 @@ function App() {
     const rowToDelete = equipment.find(item => item.id === id);
     if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     
-    // Saugome ištrinamos eilutės duomenis į istoriją atstatymui
     pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
     
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
@@ -369,9 +357,18 @@ function App() {
         .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-add-gold { color: #b4965d !important; }
-        .btn-undo { color: #acca23 !important; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
+        .btn-add-gold { color: #b4965d !important; margin-left: 20px;}
+        /* PAKEISTA: Undo mygtuko stilius - rodyklė be žodžio, perkelta į kairę */
+        .btn-undo { 
+          color: #acca23 !important; 
+          cursor: pointer; 
+          font-size: 18px; 
+          font-weight: bold;
+          transition: opacity 0.2s; 
+          margin-right: -10px; /* Pritraukiame arčiau sekančio elemento */
+        }
         .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
+        
         .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
         .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
@@ -409,18 +406,19 @@ function App() {
 
       <div className="main-header">
         <div className="nav-menu">
-          <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
-          <span className="nav-separator">|</span>
-          <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
-          
-          <span className="nav-separator">|</span>
+          {/* SUTVARKYTA: Atšaukimo rodyklė perkelta į kairę, be žodžio "atšaukti" */}
           <span 
             className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
             onClick={handleUndo}
-            title={history.length > 0 ? "Atšaukti paskutinį veiksmą" : "Istorija tuščia"}
+            title={history.length > 0 ? `Atšaukti paskutinį veiksmą (galima ${history.length} kartų)` : "Istorija tuščia"}
           >
-            ↩️ ATŠAUKTI ({history.length})
+            ↩️
           </span>
+          <span className="nav-separator">|</span>
+          
+          <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
+          <span className="nav-separator">|</span>
+          <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
           <input 
             className="search-box-global" 
