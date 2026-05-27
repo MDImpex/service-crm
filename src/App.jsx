@@ -8,6 +8,9 @@ function App() {
   const [searchAddress, setSearchAddress] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
+  
+  // Štai čia – sprendimas. Ši būsena leidžia laisvai rašyti tekstą laukelyje, jo neužrakinant
+  const [inputValue, setInputValue] = useState('')
 
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
@@ -128,7 +131,7 @@ function App() {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
-    // PIRMINIS SAUGIKLIS: Jei netyčia ištrinama reikšmė, prašoma patvirtinimo
+    // SAUGIKLIS NUO NETYČINIO IŠTRYNIMO: veikia pilnavertiškai
     if (!newValue || newValue === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
@@ -172,7 +175,7 @@ function App() {
 
       const updatedItem = { ...currentItem, ...updates };
 
-      // GEDIMAS FUNKCIJA (VEIKIA IDEALIAI): Tikrina reikšmę tiesiogiai
+      // GEDIMŲ EL. LAIŠKŲ SIUNTIMO FUNKCIJA (PATAISYTA):
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
         if (!newValue.toLowerCase().includes('sutaisyta')) {
           sendUrgentEmail(updatedItem, newValue);
@@ -185,6 +188,12 @@ function App() {
       console.error("Klaida:", err);
       setEditingCell(null);
     }
+  };
+
+  // Paleidžiant redagavimą, užpildome įvesties lauką esama reikšme
+  const handleStartEdit = (id, field, initialValue) => {
+    setEditingCell({ id, field });
+    setInputValue(initialValue || '');
   };
 
   const moveColumn = (index, direction) => {
@@ -314,20 +323,20 @@ function App() {
                           <div style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
                               col.key === "Sutartis YRA/NĖRA" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
                                   <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
                                 </select>
                               ) : col.key === "Atlikta" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || 'Ne'} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
-                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
                             )}
@@ -336,7 +345,7 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: "Prižiūri" })}>✏️</button>
+                          <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
