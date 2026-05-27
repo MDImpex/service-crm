@@ -1,4 +1,4 @@
-// GAMINYI PARUOŠTAS CRM KODAS - SU VEIKIANČIU RESEND RAKTU IR VALDO PAŠTU
+// PILNAS CRM KODAS SU SUTARTYTU CORS TILTU IR TIKRAIS RAKTAIS
 import { useEffect, useState, useRef } from 'react'
 
 function App() {
@@ -67,7 +67,7 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // Tiesioginis saugus laiškų siuntimas per AllOrigins CORS tiltą
+  // Tiesioginis saugus laiškų siuntimas per patikimą CORS tiltą
   const sendUrgentEmail = async (item, faultDetails) => {
     console.log("Inicijuojamas skubus pranešimas apie gedimą...");
     
@@ -75,11 +75,16 @@ function App() {
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
 
     try {
-      const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.resend.com/emails'), {
+      // CORS tiltas, praleidžiantis Authorization antraštes
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+      const targetUrl = 'https://api.resend.com/emails';
+
+      const response = await fetch(proxyUrl + targetUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MY_RESEND_KEY}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
@@ -101,7 +106,8 @@ function App() {
       if (response.ok) {
         console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui!");
       } else {
-        console.error("❌ Resend atmetė užklausą. Statusas:", response.status);
+        const errText = await response.text();
+        console.error("❌ Resend atmetė užklausą. Statusas:", response.status, errText);
       }
     } catch (err) {
       console.error("Klaida siunčiant laišką:", err);
@@ -124,9 +130,13 @@ function App() {
 
   const handleSave = async (id, field, value) => {
     const currentItem = equipment.find(item => item.id === id);
-    const oldValue = currentItem ? currentItem[field] : '';
+    if (!currentItem) return;
+    
+    const oldValue = currentItem[field] || '';
+    const newValue = value !== undefined && value !== null ? value.toString() : '';
 
-    if (!value || value.trim() === "") {
+    // Jeigu nauja reikšmė tuščia arba išvalyta
+    if (!newValue || newValue.trim() === "") {
       if (oldValue && oldValue !== '—') {
         const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
         if (!confirmDeleteValue) {
@@ -139,14 +149,14 @@ function App() {
       }
     }
 
-    if (value === oldValue) {
+    if (newValue === oldValue) {
       setEditingCell(null);
       return;
     }
 
-    let updates = { [field]: value };
+    let updates = { [field]: newValue };
 
-    if (field === "Atlikta" && value === "Taip") {
+    if (field === "Atlikta" && newValue === "Taip") {
       const today = new Date();
       updates["Patikros data"] = today.toISOString().split('T')[0];
       const period = currentItem["Patikr. Periodiškumas"]?.toString().toLowerCase() || "";
@@ -167,16 +177,18 @@ function App() {
 
       if (!res.ok) throw new Error("Nepavyko išsaugoti duomenų");
 
-      if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
-        if (!value.toLowerCase().includes('sutaisyta')) {
-          sendUrgentEmail(currentItem, value);
+      // Siunčiame el. laišką, jei stulpelyje įrašomas žodis „gedimas“
+      if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
+        if (!newValue.toLowerCase().includes('sutaisyta')) {
+          sendUrgentEmail(currentItem, newValue);
         }
       }
 
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { 
-      console.error(err);
+      console.error("Išsaugojimo klaida:", err);
+      setEditingCell(null);
     }
   };
 
