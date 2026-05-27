@@ -19,7 +19,7 @@ function App() {
       { label: "ADRESAS", key: "Adresas", visible: true },
       { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
       { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-      { label: "PRIŽIŪRI", key: "Prižiūri", visible: true }, 
+      { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true }, /* PAKEISTA: Label pakeistas iš PRIŽIŪRI į IŠKVIETIMAI */
       { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
       { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
       { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
@@ -229,7 +229,6 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
-  // 1. Pirmiausia atliekame standartinį paieškos filtravimą
   const filteredData = equipment.filter(item => {
     const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
@@ -237,14 +236,13 @@ function App() {
     return matchesClient && matchesEquipment && matchesAddress;
   });
 
-  // 2. NAUJA: Išfiltruotus duomenis išrikiuojame taip, kad gedimai visada būtų pačiame viršuje
   const sortedAndFilteredData = [...filteredData].sort((a, b) => {
     const aFault = a["Prižiūri"] && a["Prižiūri"].toLowerCase().includes('gedimas') && !a["Prižiūri"].toLowerCase().includes('sutaisyta');
     const bFault = b["Prižiūri"] && b["Prižiūri"].toLowerCase().includes('gedimas') && !b["Prižiūri"].toLowerCase().includes('sutaisyta');
 
-    if (aFault && !bFault) return -1; // 'a' keliauja į viršų
-    if (!aFault && bFault) return 1;  // 'b' keliauja į viršų
-    return 0; // jei abu vienodi (abu gedimai arba abu ne), išlaiko esamą tvarką (pagal ID)
+    if (aFault && !bFault) return -1;
+    if (!aFault && bFault) return 1;
+    return 0;
   });
 
   return (
@@ -324,7 +322,6 @@ function App() {
               {loading ? (
                 <tr><td colSpan={visibleCols.length + 2} style={{textAlign: 'center', padding: '50px'}}>KRAUNAMA...</td></tr>
               ) : (
-                /* PAKEISTA: Atvaizduojame išrikiuotus duomenis (sortedAndFilteredData) */
                 sortedAndFilteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
                   const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
@@ -361,6 +358,7 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          {/* Mygtukas redaguoja tą patį DB stulpelį, bet dabar aiškumo dėlei nurodoma jo paskirtis */}
                           <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
