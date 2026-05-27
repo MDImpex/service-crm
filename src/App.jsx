@@ -229,11 +229,22 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
+  // 1. Pirmiausia atliekame standartinį paieškos filtravimą
   const filteredData = equipment.filter(item => {
     const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
     const matchesAddress = (item["Adresas"]?.toLowerCase() || '').includes(searchAddress.toLowerCase());
     return matchesClient && matchesEquipment && matchesAddress;
+  });
+
+  // 2. NAUJA: Išfiltruotus duomenis išrikiuojame taip, kad gedimai visada būtų pačiame viršuje
+  const sortedAndFilteredData = [...filteredData].sort((a, b) => {
+    const aFault = a["Prižiūri"] && a["Prižiūri"].toLowerCase().includes('gedimas') && !a["Prižiūri"].toLowerCase().includes('sutaisyta');
+    const bFault = b["Prižiūri"] && b["Prižiūri"].toLowerCase().includes('gedimas') && !b["Prižiūri"].toLowerCase().includes('sutaisyta');
+
+    if (aFault && !bFault) return -1; // 'a' keliauja į viršų
+    if (!aFault && bFault) return 1;  // 'b' keliauja į viršų
+    return 0; // jei abu vienodi (abu gedimai arba abu ne), išlaiko esamą tvarką (pagal ID)
   });
 
   return (
@@ -255,7 +266,6 @@ function App() {
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         
-        /* NAUJA: GREITESNĖ RAUSVA - BALTA PULSACIJA (1.5s) */
         @keyframes pulse-red-white {
           0% { background-color: #ffffff; }
           50% { background-color: #ffdde0; }
@@ -314,7 +324,8 @@ function App() {
               {loading ? (
                 <tr><td colSpan={visibleCols.length + 2} style={{textAlign: 'center', padding: '50px'}}>KRAUNAMA...</td></tr>
               ) : (
-                filteredData.map((item, index) => {
+                /* PAKEISTA: Atvaizduojame išrikiuotus duomenis (sortedAndFilteredData) */
+                sortedAndFilteredData.map((item, index) => {
                   const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
                   const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
                   let rowClass = '';
@@ -341,7 +352,6 @@ function App() {
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
-                              /* DVIGUBAS PASPAUDIMAS (onDoubleClick) redagavimui paleisti */
                               <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
                                 {item[col.key] || '—'}
                               </span>
