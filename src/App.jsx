@@ -3,14 +3,14 @@ import { useEffect, useState, useRef } from 'react'
 function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
-  const [globalSearch, setGlobalSearch] = useState('') // NAUJA: Vienas paieškos laukas viskam
+  const [globalSearch, setGlobalSearch] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-    { label: "ALIGNMENT KODAS", key: "Kliento įmonės kodas", visible: true },
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, /* PAKEISTA: Label pakeistas iš ALIGNMENT KODAS į ĮM. KODAS */
     { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
     { label: "ADRESAS", key: "Adresas", visible: true },
     { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
@@ -29,7 +29,8 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     if (savedCols) {
       const parsed = JSON.parse(savedCols);
-      const hasOldLabel = parsed.some(c => c.key === "Prižiūri" && c.label === "PRIŽIŪRI");
+      // Priverstinai išvalome senąjį pavadinimą, jei jis vis dar saugomas naršyklės atmintyje
+      const hasOldLabel = parsed.some(c => c.key === "Kliento įmonės kodas" && c.label !== "ĮM. KODAS");
       if (hasOldLabel) {
         localStorage.removeItem('crm_columns');
         return defaultColumns;
@@ -238,15 +239,14 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
-  // NAUJA: Išmanioji globali paieška per kelis stulpelius vienu metu
   const filteredData = equipment.filter(item => {
-    if (!globalSearch.trim()) return true; // Jei tuščia, rodom viską
+    if (!globalSearch.trim()) return true; 
     
     const query = globalSearch.toLowerCase();
     const clientMatch = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(query);
     const equipmentMatch = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(query);
     const addressMatch = (item["Adresas"]?.toLowerCase() || '').includes(query);
-    const serialMatch = (item["Serijos numeris"]?.toLowerCase() || '').includes(query); // Serijos numerio paieška
+    const serialMatch = (item["Serijos numeris"]?.toLowerCase() || '').includes(query); 
 
     return clientMatch || equipmentMatch || addressMatch || serialMatch;
   });
@@ -268,7 +268,6 @@ function App() {
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
         .nav-separator { color: rgba(255,255,255,0.2); }
-        /* PAKEISTA: Padidintas bendras paieškos laukas išmanesniam vaizdui */
         .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
         .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
         .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
@@ -302,11 +301,10 @@ function App() {
 
       <div className="main-header">
         <div className="nav-menu">
-          <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIAI</span>
+          <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
-          {/* PAKEISTA: Tik vienas, bet galingas paieškos laukas */}
           <input 
             className="search-box-global" 
             placeholder="🔍 Ieškoti (Kliento, Įrangos, Adreso, S/N)..." 
