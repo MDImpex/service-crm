@@ -13,7 +13,7 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
       { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-      { label: "IN. KODAS", key: "Kliento įmonės kodas", visible: true },
+      { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
       { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
       { label: "ADRESAS", key: "Adresas", visible: true },
       { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
@@ -65,41 +65,6 @@ function App() {
       setEquipment(data || [])
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
-
-  // Funkcija, kuri išsiunčia skubų el. laišką apie užregistruotą gedimą
-  const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Bandoma siųsti laišką apie gedimą...", item, faultDetails);
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        mode: 'cors', // Svarbu: Leidžia naršyklei išsiųsti užklausą į išorinį serverį
-        headers: {
-          'Authorization': 'Bearer re_S6XpEw7Y_MvH6p6T99vXNq4J8Kz8Y7X2D',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'CRM Iskvietimas <onboarding@resend.dev>',
-          to: ['valdasjanciauskas@gmail.com'], 
-          subject: `🚨 SKUBUS ISKVIETIMAS: Gedimas - ${item["Kliento pavadinimas"] || 'Nenurodytas klientas'}`,
-          html: `
-            <h2>🚨 Užregistruotas skubios reakcijos reikalaujantis gedimas!</h2>
-            <p><strong>Klientas:</strong> ${item["Kliento pavadinimas"] || '—'}</p>
-            <p><strong>Adresas:</strong> ${item["Adresas"] || '—'}</p>
-            <p><strong>Įranga:</strong> ${item["Įrangos pavadinimas"] || '—'}</p>
-            <p><strong>Serijos numeris:</strong> ${item["Serijos numeris"] || '—'}</p>
-            <p><strong>Iškvietimo informacija:</strong> <span style="color: red; font-weight: bold;">${faultDetails}</span></p>
-            <br/>
-            <p>Sistemos pranešimas generuotas automatiškai.</p>
-          `
-        })
-      });
-      
-      const resData = await response.json();
-      console.log("Resend atsakymas iš serverio:", resData);
-    } catch (err) {
-      console.error("Nepavyko išsiųsti skubaus laiško:", err);
-    }
-  };
 
   const handleAddRow = async () => {
     try {
@@ -158,13 +123,8 @@ function App() {
         body: JSON.stringify(updates)
       });
 
-      // Tikriname stulpelį „Prižiūri“
-      if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
-        if (!value.toLowerCase().includes('sutaisyta')) {
-          sendUrgentEmail(currentItem, value);
-        }
-      }
-
+      // LAIŠKO SIUNTIMO LOGIKA PERKELTA Į SUPABASE SERVERĮ (TRIGGERĮ).
+      // Ši vieta dabar tik atnaujina būseną pačiame puslapyje, o laiškas išsiunčiamas fone.
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { console.error(err) }
@@ -346,8 +306,8 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
