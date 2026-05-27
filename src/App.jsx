@@ -66,6 +66,32 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
+  // Siunčiame duomenis į jūsų saugų Vercel backend puslapį, kuris apeina CORS blokus
+  const sendUrgentEmail = async (item, faultDetails) => {
+    console.log("Siunčiamas pranešimas apie gedimą per Vercel serverį...");
+    try {
+      const response = await fetch('/api/send-fault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: item["Kliento pavadinimas"] || 'Nenurodytas klientas',
+          address: item["Adresas"] || '—',
+          equipment: item["Įrangos pavadinimas"] || '—',
+          serial: item["Serijos numeris"] || '—',
+          details: faultDetails
+        })
+      });
+
+      if (response.ok) {
+        console.log("🚀 Resend per Vercel: Laiškas sėkmingai išsiųstas!");
+      } else {
+        console.error("❌ Nepavyko išsiųsti laiško per Vercel serverį");
+      }
+    } catch (err) {
+      console.error("Klaida kreipiantis į /api/send-fault:", err);
+    }
+  };
+
   const handleAddRow = async () => {
     try {
       const res = await fetch(BASE_URL, {
@@ -117,17 +143,30 @@ function App() {
     }
 
     try {
-      await fetch(`${BASE_URL}?id=eq.${id}`, {
+      // 1. Pirmiausia saugiai įrašome duomenis į Supabase duomenų bazę
+      const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
         method: 'PATCH',
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
 
-      // LAIŠKO SIUNTIMO LOGIKA PERKELTA Į SUPABASE SERVERĮ (TRIGGERĮ).
-      // Ši vieta dabar tik atnaujina būseną pačiame puslapyje, o laiškas išsiunčiamas fone.
+      if (!res.ok) {
+        throw new Error("Nepavyko išsaugoti duomenų duomenų bazėje");
+      }
+
+      // 2. Tik jei duomenys sėkmingai išsaugoti, tikriname ar reikia išsiųsti el. laišką
+      if (field === "Prižiūri" && value.toLowerCase().includes('gedimas')) {
+        if (!value.toLowerCase().includes('sutaisyta')) {
+          sendUrgentEmail(currentItem, value);
+        }
+      }
+
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
-    } catch (err) { console.error(err) }
+    } catch (err) { 
+      console.error(err);
+      alert("Klaida saugant duomenis: " + err.message);
+    }
   };
 
   const moveColumn = (index, direction) => {
@@ -306,8 +345,8 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965dfb'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
