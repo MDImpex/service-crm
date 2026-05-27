@@ -1,4 +1,3 @@
-// PILNAS CRM KODAS SU SUTARTYTU CORS TILTU, TIKRAIS RAKTAIS IR PILNA LAIŠKO INFORMACIJA
 import { useEffect, useState, useRef } from 'react'
 
 function App() {
@@ -9,7 +8,7 @@ function App() {
   const [searchAddress, setSearchAddress] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
-  
+
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
     return savedCols ? JSON.parse(savedCols) : [
@@ -67,24 +66,20 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // Tiesioginis saugus laiškų siuntimas per patikimą CORS tiltą
   const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Inicijuojamas skubus pranešimas apie gedimą...", item);
-    
     const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
 
-    // Ištraukiame tikrąsias reikšmes iš objekto su atsarginiais variantais (jei skirtųsi didžiosios/mažosios raidės)
-    const klientas = item["Kliento pavadinimas"] || item["kliento_pavadinimas"] || item["Klientas"] || 'Nenurodytas klientas';
-    const adresas = item["Adresas"] || item["adresas"] || 'Nenurodytas adresas';
-    const iranga = item["Įrangos pavadinimas"] || item["Irangos pavadinimas"] || item["irangos_pavadinimas"] || 'Nenurodyta įranga';
-    const serijosNumeris = item["Serijos numeris"] || item["serijos_numeris"] || item["Serija"] || 'Nenurodytas S/N';
+    const klientas = item["Kliento pavadinimas"] || 'Nenurodytas klientas';
+    const adresas = item["Adresas"] || 'Nenurodytas adresas';
+    const iranga = item["Įrangos pavadinimas"] || 'Nenurodyta įranga';
+    const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
 
     try {
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const targetUrl = 'https://api.resend.com/emails';
 
-      const response = await fetch(proxyUrl + targetUrl, {
+      await fetch(proxyUrl + targetUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MY_RESEND_KEY}`,
@@ -98,46 +93,18 @@ function App() {
           html: `
             <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
               <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-              
               <table style="width:100%;border-collapse:collapse;margin-top:15px;">
-                <tr>
-                  <td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td>
-                  <td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td>
-                  <td style="padding:8px 0;font-size:15px;color:#000;">${adresas}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td>
-                  <td style="padding:8px 0;font-size:15px;color:#000;">${iranga}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td>
-                  <td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td>
-                </tr>
-                <tr>
-                  <td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td>
-                  <td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td>
-                </tr>
+                <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${adresas}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${iranga}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td><td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td></tr>
+                <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td></tr>
               </table>
-              
-              <hr style="border:0;border-top:1px solid #e3e7eb;margin-top:20px;" />
-              <p style="font-size:11px;color:#999;margin-bottom:0;">Pranešimas sugeneruotas automatiškai iš MD Impex CRM sistemos.</p>
             </div>
           `
         })
       });
-
-      if (response.ok) {
-        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui su tikrais duomenimis!");
-      } else {
-        const errText = await response.text();
-        console.error("❌ Resend atmetė užklausą. Statusas:", response.status, errText);
-      }
-    } catch (err) {
-      console.error("Klaida siunčiant laišką:", err);
-    }
+    } catch (err) { console.error(err) }
   };
 
   const handleAddRow = async () => {
@@ -159,20 +126,7 @@ function App() {
     if (!currentItem) return;
     
     const oldValue = currentItem[field] || '';
-    const newValue = value !== undefined && value !== null ? value.toString() : '';
-
-    if (!newValue || newValue.trim() === "") {
-      if (oldValue && oldValue !== '—') {
-        const confirmDeleteValue = window.confirm(`Ar tikrai norite IŠTRINTI reikšmę iš stulpelio "${field}"?`);
-        if (!confirmDeleteValue) {
-          setEditingCell(null);
-          return;
-        }
-      } else {
-        setEditingCell(null);
-        return;
-      }
-    }
+    const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
     if (newValue === oldValue) {
       setEditingCell(null);
@@ -200,9 +154,8 @@ function App() {
         body: JSON.stringify(updates)
       });
 
-      if (!res.ok) throw new Error("Nepavyko išsaugoti duomenų");
+      if (!res.ok) throw new Error("Nepavyko išsaugoti");
 
-      // Sukuriame naują laikiną objektą su atnaujinta reikšme, kad funkcija iškart matytų naują įrašą
       const updatedItem = { ...currentItem, ...updates };
 
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas')) {
@@ -214,7 +167,7 @@ function App() {
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
     } catch (err) { 
-      console.error("Išsaugojimo klaida:", err);
+      console.error("Klaida:", err);
       setEditingCell(null);
     }
   };
@@ -230,7 +183,7 @@ function App() {
   const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
   
   const handleDeleteRow = async (id) => {
-    if (!window.confirm("Ar tikrai norite VISIŠKAI IŠTRINTI šį CRM įrašą? Šio veiksmo atšaukti nebus galima.")) return;
+    if (!window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
@@ -269,31 +222,27 @@ function App() {
       <style>{`
         .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
-        .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s; }
-        .nav-item:hover { opacity: 0.8; }
+        .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
-        .nav-separator { color: rgba(255,255,255,0.2); font-weight: normal; }
+        .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-embedded { background: #194a3f; border: 1px solid #235d51; padding: 9px 15px; color: white; font-size: 13px; outline: none; width: 220px; margin-left: 10px; }
-        .search-box-embedded::placeholder { color: rgba(255,255,255,0.4); }
-        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-weight: normal; letter-spacing: 1px; font-family: 'Candara', serif; }
-        .crm-card-wrapper { flex: 1; margin: 0; background: #ffffff; overflow: hidden; display: flex; flex-direction: column; }
+        .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
+        .crm-card-wrapper { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
         .table-wrap { flex: 1; overflow: auto; width: 100vw; -webkit-overflow-scrolling: touch; }
         table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; }
-        th { background: #1e1e1e; color: #ffffff !important; position: sticky; top: 0; zIndex: 30; font-size: 11px; font-weight: bold; text-align: center; padding: 16px 5px; border-right: 1px solid #333333; border-bottom: 2px solid #000000; text-transform: uppercase; }
+        th { background: #1e1e1e; color: #ffffff !important; position: sticky; top: 0; z-index: 30; font-size: 11px; font-weight: bold; text-align: center; padding: 16px 5px; border-right: 1px solid #333333; border-bottom: 2px solid #000000; }
         td { padding: 0; border-right: 1px solid #e3e7eb; border-bottom: 1px solid #e3e7eb; position: relative; background: #ffffff; }
         tr:nth-child(even) td { background-color: #f8fafb; }
         tr:hover td { background-color: #edf2f7 !important; }
         .row-overdue td { background-color: #fff0f0 !important; }
         .text-overdue { color: #e30613 !important; font-weight: bold; }
-        @keyframes blink-fault { 0% { background-color: #ffe6e6; } 50% { background-color: #ff9999; } 100% { background-color: #ffe6e6; } }
-        .row-fault td { animation: blink-fault 1.5s infinite ease-in-out !important; }
-        .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .cell-content { padding: 12px 10px; font-size: 13px; color: #232323; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-height: 20px; cursor: pointer; }
         .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 6px; cursor: col-resize; z-index: 31; }
-        .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 12px; outline: none; box-sizing: border-box; }
+        .cell-edit { width: 100%; border: 2px solid #113c32; padding: 6px; font-size: 13px; outline: none; box-sizing: border-box; background: white; }
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
-        .btn-edit-icon { color: #555555; }
-        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; margin-bottom: 5px; } .search-box-embedded { width: 100%; margin-left: 0; box-sizing: border-box; } .nav-item { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px; } }
+        .btn-edit-icon { color: #113c32; font-weight: bold; }
+        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-embedded { width: 100%; margin-left: 0; } }
       `}</style>
 
       <div className="main-header">
@@ -345,29 +294,33 @@ function App() {
                     <tr key={item.id} className={rowClass}>
                       <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
                       {visibleCols.map(col => (
-                        <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
-                          <div className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} style={{ width: `${widths[col.key]}px` }}>
+                        <td key={col.key}>
+                          <div style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
                               col.key === "Sutartis YRA/NĖRA" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
                                   <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
                                 </select>
                               ) : col.key === "Atlikta" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={() => setEditingCell(null)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus defaultValue={item[col.key] || 'Ne'} onBlur={(e) => handleSave(item.id, col.key, e.target.value)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key] || ''} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
-                            ) : (item[col.key] || '—')}
+                            ) : (
+                              <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                                {item[col.key] || '—'}
+                              </span>
+                            )}
                           </div>
                         </td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: visibleCols[0].key })}>✏️</button>
+                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: "Prižiūri" })}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
