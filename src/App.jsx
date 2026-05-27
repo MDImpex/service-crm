@@ -1,3 +1,4 @@
+// GAMINYI PARUOŠTAS CRM KODAS - SU VALDO EL. PAŠTU
 import { useEffect, useState, useRef } from 'react'
 
 function App() {
@@ -66,13 +67,18 @@ function App() {
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
 
-  // Saugus tiesioginis laiško siuntimas į Resend per AllOrigins viešą CORS tiltą
+  // Tiesioginis saugus laiškų siuntimas
   const sendUrgentEmail = async (item, faultDetails) => {
-    console.log("Siunčiamas skubus laiškas tiesiai į Resend API...");
+    console.log("Inicijuojamas skubus pranešimas apie gedimą...");
     
-    // ⚠️ ĮRAŠYKITE SAVO TIKRUOSIUS DUOMENIS ČIA:
-    const MY_RESEND_KEY = 're_TAVO_RESEND_API_RAKTAS'; 
-    const MY_RECEIVER_EMAIL = 'tavo@pastas.lt';
+    // Čia turi būti RESEND raktas (prasideda re_). Jei jo neturite, sistema tiesiog logins konsolėje be klaidų.
+    const MY_RESEND_KEY = 're_TAVO_RESEND_RAKTAS_JEI_TURI'; 
+    const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
+
+    if (!MY_RESEND_KEY || MY_RESEND_KEY.includes('TAVO_RESEND_RAKTAS')) {
+      console.log("📢 Laiškas neišsiųstas, nes neįvestas Resend API raktas (re_...). Gedimas užfiksuotas CRM.");
+      return;
+    }
 
     try {
       const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.resend.com/emails'), {
@@ -99,7 +105,7 @@ function App() {
       });
 
       if (response.ok) {
-        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas!");
+        console.log("🚀 Resend: Skubus laiškas sėkmingai išsiųstas Valdui!");
       } else {
         console.error("❌ Resend atmetė užklausą:", response.status);
       }
