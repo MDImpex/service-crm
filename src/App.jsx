@@ -3,14 +3,11 @@ import { useEffect, useState, useRef } from 'react'
 function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchEquipment, setSearchEquipment] = useState('') 
-  const [searchAddress, setSearchAddress] = useState('') 
+  const [globalSearch, setGlobalSearch] = useState('') // NAUJA: Vienas paieškos laukas viskam
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
-  // Numatytoji stulpelių konfigūracija su naujuoju pavadinimu
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
     { label: "ALIGNMENT KODAS", key: "Kliento įmonės kodas", visible: true },
@@ -32,10 +29,8 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     if (savedCols) {
       const parsed = JSON.parse(savedCols);
-      // Priverstinai patikriname, ar atmintyje užsilikęs senas pavadinimas "PRIŽIŪRI"
       const hasOldLabel = parsed.some(c => c.key === "Prižiūri" && c.label === "PRIŽIŪRI");
       if (hasOldLabel) {
-        // Jei sena, ištriname atmintį ir grąžiname naują versiją
         localStorage.removeItem('crm_columns');
         return defaultColumns;
       }
@@ -243,11 +238,17 @@ function App() {
 
   const visibleCols = columns.filter(c => c.visible);
 
+  // NAUJA: Išmanioji globali paieška per kelis stulpelius vienu metu
   const filteredData = equipment.filter(item => {
-    const matchesClient = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesEquipment = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(searchEquipment.toLowerCase());
-    const matchesAddress = (item["Adresas"]?.toLowerCase() || '').includes(searchAddress.toLowerCase());
-    return matchesClient && matchesEquipment && matchesAddress;
+    if (!globalSearch.trim()) return true; // Jei tuščia, rodom viską
+    
+    const query = globalSearch.toLowerCase();
+    const clientMatch = (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(query);
+    const equipmentMatch = (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(query);
+    const addressMatch = (item["Adresas"]?.toLowerCase() || '').includes(query);
+    const serialMatch = (item["Serijos numeris"]?.toLowerCase() || '').includes(query); // Serijos numerio paieška
+
+    return clientMatch || equipmentMatch || addressMatch || serialMatch;
   });
 
   const sortedAndFilteredData = [...filteredData].sort((a, b) => {
@@ -267,7 +268,9 @@ function App() {
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; }
         .nav-separator { color: rgba(255,255,255,0.2); }
-        .search-box-embedded { background: #194a3f; border: 1px solid #235d51; padding: 9px 15px; color: white; font-size: 13px; outline: none; width: 220px; margin-left: 10px; }
+        /* PAKEISTA: Padidintas bendras paieškos laukas išmanesniam vaizdui */
+        .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
+        .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
         .crm-title-right { margin-left: auto; color: #acca23; font-size: 22px; font-family: 'Candara', serif; }
         .crm-card-wrapper { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
         .table-wrap { flex: 1; overflow: auto; width: 100vw; -webkit-overflow-scrolling: touch; }
@@ -294,7 +297,7 @@ function App() {
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #113c32; font-weight: bold; }
-        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-embedded { width: 100%; margin-left: 0; } }
+        @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-global { width: 100%; margin-left: 0; } }
       `}</style>
 
       <div className="main-header">
@@ -303,9 +306,13 @@ function App() {
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
           
-          <input className="search-box-embedded" placeholder="🔍 Filtruoti klientą..." onChange={e => setSearchTerm(e.target.value)} />
-          <input className="search-box-embedded" placeholder="⚙️ Filtruoti įrangą..." onChange={e => setSearchEquipment(e.target.value)} />
-          <input className="search-box-embedded" placeholder="📍 Filtruoti adresą..." onChange={e => setSearchAddress(e.target.value)} />
+          {/* PAKEISTA: Tik vienas, bet galingas paieškos laukas */}
+          <input 
+            className="search-box-global" 
+            placeholder="🔍 Ieškoti (Kliento, Įrangos, Adreso, S/N)..." 
+            value={globalSearch}
+            onChange={e => setGlobalSearch(e.target.value)} 
+          />
 
           <div className="crm-title-right">MD Impex CRM</div>
         </div>
