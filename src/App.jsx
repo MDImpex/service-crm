@@ -8,6 +8,9 @@ function App() {
   const [searchAddress, setSearchAddress] = useState('') 
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
+  
+  // Užtikrina, kad telefono klaviatūra ar paspaudimas šone neištrintų parašyto teksto
+  const [tempValue, setTempValue] = useState('')
 
   const [columns, setColumns] = useState(() => {
     const savedCols = localStorage.getItem('crm_columns')
@@ -198,6 +201,11 @@ function App() {
     }
   };
 
+  const startEditing = (id, field, value) => {
+    setEditingCell({ id, field });
+    setTempValue(value || '');
+  };
+
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
     const targetIndex = index + direction;
@@ -324,21 +332,21 @@ function App() {
                     <tr key={item.id} className={rowClass}>
                       <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
                       {visibleCols.map(col => (
-                        <td key={col.key} onDoubleClick={() => setEditingCell({ id: item.id, field: col.key })}>
+                        <td key={col.key} onDoubleClick={() => startEditing(item.id, col.key, item[col.key])}>
                           <div style={{ width: `${widths[col.key]}px` }}>
                             {editingCell?.id === item.id && editingCell?.field === col.key ? (
                               col.key === "Sutartis YRA/NĖRA" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={tempValue} onBlur={() => handleSave(item.id, col.key, tempValue)} onChange={e => setTempValue(e.target.value)}>
                                   <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
                                 </select>
                               ) : col.key === "Atlikta" ? (
-                                <select className="cell-edit" autoFocus defaultValue={item[col.key]} onBlur={(e) => handleSave(item.id, col.key, e.target.value)} onChange={e => handleSave(item.id, col.key, e.target.value)}>
+                                <select className="cell-edit" autoFocus value={tempValue} onBlur={() => handleSave(item.id, col.key, tempValue)} onChange={e => setTempValue(e.target.value)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="date" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
-                                <input autoFocus type="text" className="cell-edit" defaultValue={item[col.key]} onBlur={e => handleSave(item.id, col.key, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, e.target.value); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input autoFocus type="text" className="cell-edit" value={tempValue} onChange={e => setTempValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, tempValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, tempValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
                               <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`}>
@@ -350,8 +358,8 @@ function App() {
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          {/* Mobiliesiems skirtas redagavimo aktyvavimas */}
-                          <button className="action-btn btn-edit-icon" onClick={() => setEditingCell({ id: item.id, field: "Prižiūri" })}>✏️</button>
+                          {/* Mobiliesiems skirtas patikimas redagavimas: atidaro stulpelį "Prižiūri", kur rašomas gedimas */}
+                          <button className="action-btn btn-edit-icon" onClick={() => startEditing(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
                           <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
