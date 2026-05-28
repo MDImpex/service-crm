@@ -358,14 +358,13 @@ function App() {
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-add-gold { color: #b4965d !important; margin-left: 20px;}
-        /* PAKEISTA: Undo mygtuko stilius - rodyklė be žodžio, perkelta į kairę */
         .btn-undo { 
           color: #acca23 !important; 
           cursor: pointer; 
           font-size: 18px; 
           font-weight: bold;
           transition: opacity 0.2s; 
-          margin-right: -10px; /* Pritraukiame arčiau sekančio elemento */
+          margin-right: -10px;
         }
         .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
         
@@ -406,7 +405,6 @@ function App() {
 
       <div className="main-header">
         <div className="nav-menu">
-          {/* SUTVARKYTA: Atšaukimo rodyklė perkelta į kairę, be žodžio "atšaukti" */}
           <span 
             className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
             onClick={handleUndo}
@@ -477,6 +475,16 @@ function App() {
                                 <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
+                              ) : col.key === "Komentaras" ? (
+                                <textarea 
+                                  autoFocus 
+                                  className="cell-edit" 
+                                  value={inputValue} 
+                                  style={{ minHeight: '100px', resize: 'vertical' }}
+                                  onChange={e => setInputValue(e.target.value)} 
+                                  onBlur={() => handleSave(item.id, col.key, inputValue)}
+                                  onKeyDown={e => { if (e.key === 'Escape') setEditingCell(null); }}
+                                />
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
                                 <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
