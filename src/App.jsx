@@ -545,6 +545,32 @@ function App() {
           <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '10px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>UŽDARYTI</button>
         </div>
       )}
+      {selectedEquipmentId && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', padding: '20px', width: '400px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ marginTop: 0 }}>Remonto istorija</h3>
+            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '15px' }}>
+              {komentarai.map(k => (
+                <p key={k.id} style={{fontSize: '12px', borderBottom: '1px solid #eee', padding: '5px 0', margin: 0}}>
+                  <strong>{k.sukurta_data.split('T')[0]}</strong>: {k.tekstas}
+                </p>
+              ))}
+              {komentarai.length === 0 && <p style={{fontSize: '12px', color: '#999'}}>Įrašų nėra.</p>}
+            </div>
+            <textarea id="newKomentaras" style={{width: '100%', height: '80px', padding: '5px', boxSizing: 'border-box'}} placeholder="Įrašyti naują komentarą..." />
+            <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+              <button style={{ padding: '8px 15px', cursor: 'pointer', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px' }} onClick={() => {
+                const text = document.getElementById('newKomentaras').value;
+                if(text) {
+                  handleAddComment(text);
+                  document.getElementById('newKomentaras').value = '';
+                }
+              }}>Įrašyti</button>
+              <button style={{ padding: '8px 15px', cursor: 'pointer', background: '#f0f0f0', border: 'none', borderRadius: '4px' }} onClick={() => setSelectedEquipmentId(null)}>Uždaryti</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
