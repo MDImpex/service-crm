@@ -110,6 +110,11 @@ function App() {
                 <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td><td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td></tr>
                 <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td></tr>
               </table>
+              <div style="margin-top: 20px;">
+                <a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: underline;">
+                  Eiti į CRM
+                </a>
+              </div>
             </div>
           `
         })
