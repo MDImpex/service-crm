@@ -8,6 +8,8 @@ function App() {
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
   const [history, setHistory] = useState([])
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
+  const [komentarai, setKomentarai] = useState([]);
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
