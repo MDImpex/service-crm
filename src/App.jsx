@@ -7,11 +7,10 @@ function App() {
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
-  const [history, setHistory] = useState([])
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, 
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, /* PAKEISTA: Label pakeistas iš ALIGNMENT KODAS į ĮM. KODAS */
     { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
     { label: "ADRESAS", key: "Adresas", visible: true },
     { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
@@ -30,6 +29,7 @@ function App() {
     const savedCols = localStorage.getItem('crm_columns')
     if (savedCols) {
       const parsed = JSON.parse(savedCols);
+      // Priverstinai išvalome senąjį pavadinimą, jei jis vis dar saugomas naršyklės atmintyje
       const hasOldLabel = parsed.some(c => c.key === "Kliento įmonės kodas" && c.label !== "ĮM. KODAS");
       if (hasOldLabel) {
         localStorage.removeItem('crm_columns');
@@ -63,6 +63,7 @@ function App() {
 
   useEffect(() => { 
     fetchData() 
+    // eslint-disable-next-line
   }, [])
 
   async function fetchData() {
@@ -110,20 +111,11 @@ function App() {
                 <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td><td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td></tr>
                 <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td></tr>
               </table>
-              <div style="margin-top: 20px;">
-                <a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: underline;">
-                  Eiti į CRM
-                </a>
-              </div>
             </div>
           `
         })
       });
     } catch (err) { console.error(err) }
-  };
-
-  const pushActionToHistory = (action) => {
-    setHistory(prev => [action, ...prev].slice(0, 25)); 
   };
 
   const handleAddRow = async () => {
@@ -136,7 +128,6 @@ function App() {
       if (res.ok) {
         const [newItem] = await res.json();
         setEquipment([newItem, ...equipment]);
-        pushActionToHistory({ type: 'ADD_ROW', id: newItem.id });
       }
     } catch (err) { alert(err.message) }
   };
@@ -165,15 +156,6 @@ function App() {
       setEditingCell(null);
       return;
     }
-
-    pushActionToHistory({
-      type: 'EDIT_CELL',
-      id: id,
-      field: field,
-      oldValue: oldValue,
-      oldPatikrosData: currentItem["Patikros data"] || null,
-      oldSekantiPatikra: currentItem["Sekanti patikra"] || null
-    });
 
     let updates = { [field]: newValue };
 
@@ -214,63 +196,6 @@ function App() {
     }
   };
 
-  const handleUndo = async () => {
-    if (history.length === 0) return;
-
-    const lastAction = history[0];
-    const nextHistory = history.slice(1);
-
-    try {
-      setLoading(true);
-
-      if (lastAction.type === 'EDIT_CELL') {
-        let rollbacks = { [lastAction.field]: lastAction.oldValue };
-        if (lastAction.field === 'Atlikta') {
-          rollbacks["Patikros data"] = lastAction.oldPatikrosData;
-          rollbacks["Sekanti patikra"] = lastAction.oldSekantiPatikra;
-        }
-
-        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, {
-          method: 'PATCH',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(rollbacks)
-        });
-
-        setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
-      } 
-      
-      else if (lastAction.type === 'DELETE_ROW') {
-        const res = await fetch(BASE_URL, {
-          method: 'POST',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify(lastAction.rowData)
-        });
-        if (res.ok) {
-          const [restoredItem] = await res.json();
-          setEquipment(prev => [restoredItem, ...prev]);
-        }
-      } 
-      
-      else if (lastAction.type === 'ADD_ROW') {
-        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, {
-          method: 'DELETE',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-        });
-        setEquipment(prev => prev.filter(item => item.id !== lastAction.id));
-      } 
-      
-      else if (lastAction.type === 'COLUMNS_STATE') {
-        setColumns(lastAction.oldColumns);
-      }
-
-      setHistory(nextHistory);
-    } catch (err) {
-      console.error("Nepavyko įvykdyti undo:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleStartEdit = (id, field, initialValue) => {
     setEditingCell({ id, field });
     setInputValue(initialValue || '');
@@ -286,29 +211,8 @@ function App() {
 
   const toggleColumn = (key) => setColumns(columns.map(c => c.key === key ? { ...c, visible: !c.visible } : c));
   
-  const renameColumnLabel = (key) => {
-    const currentCol = columns.find(c => c.key === key);
-    const newLabel = window.prompt(`Įveskite naują stulpelio "${currentCol.label}" pavadinimą:`, currentCol.label);
-    if (newLabel && newLabel.trim() !== "") {
-      pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
-      setColumns(columns.map(c => c.key === key ? { ...c, label: newLabel.trim().toUpperCase() } : c));
-    }
-  };
-
-  const deleteColumnEntirely = (key) => {
-    const currentCol = columns.find(c => c.key === key);
-    if (window.confirm(`Ar tikrai norite VISIŠKAI IŠTRINTI stulpelį "${currentCol.label}" iš CRM sąrašo?`)) {
-      pushActionToHistory({ type: 'COLUMNS_STATE', oldColumns: JSON.parse(JSON.stringify(columns)) });
-      setColumns(columns.filter(c => c.key !== key));
-    }
-  };
-
   const handleDeleteRow = async (id) => {
-    const rowToDelete = equipment.find(item => item.id === id);
-    if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
-    
-    pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
-    
+    if (!window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
@@ -362,17 +266,7 @@ function App() {
         .main-header { height: 85px; display: flex; padding: 0 35px; background: #113c32; align-items: center; flex-shrink: 0; }
         .nav-menu { display: flex; gap: 20px; color: #ffffff; font-size: 14px; font-weight: bold; align-items: center; width: 100%; }
         .nav-item { cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-add-gold { color: #b4965d !important; margin-left: 20px;}
-        .btn-undo { 
-          color: #acca23 !important; 
-          cursor: pointer; 
-          font-size: 18px; 
-          font-weight: bold;
-          transition: opacity 0.2s; 
-          margin-right: -10px;
-        }
-        .btn-undo.disabled { opacity: 0.3; cursor: not-allowed; color: #ffffff !important; }
-        
+        .btn-add-gold { color: #b4965d !important; }
         .nav-separator { color: rgba(255,255,255,0.2); }
         .search-box-global { background: #194a3f; border: 1px solid #235d51; padding: 10px 18px; color: white; font-size: 13px; outline: none; width: 320px; margin-left: 15px; border-radius: 4px; }
         .search-box-global::placeholder { color: rgba(255,255,255,0.5); }
@@ -402,23 +296,11 @@ function App() {
         .action-btn { border: none; background: none; cursor: pointer; font-size: 14px; margin: 0 6px; }
         .btn-del { color: #e30613; }
         .btn-edit-icon { color: #113c32; font-weight: bold; }
-        .col-manage-btn { border: none; background: none; cursor: pointer; font-size: 11px; margin-left: 5px; padding: 2px 4px; border-radius: 3px; }
-        .col-manage-btn:hover { background: #f0f0f0; }
-
         @media (max-width: 768px) { .main-header { height: auto; padding: 15px 15px; } .nav-menu { flex-direction: column; align-items: stretch; gap: 10px; } .nav-separator { display: none; } .crm-title-right { margin-left: 0; text-align: center; order: -1; font-size: 18px; } .search-box-global { width: 100%; margin-left: 0; } }
       `}</style>
 
       <div className="main-header">
         <div className="nav-menu">
-          <span 
-            className={`nav-item btn-undo ${history.length === 0 ? 'disabled' : ''}`} 
-            onClick={handleUndo}
-            title={history.length > 0 ? `Atšaukti paskutinį veiksmą (galima ${history.length} kartų)` : "Istorija tuščia"}
-          >
-            ↩️
-          </span>
-          <span className="nav-separator">|</span>
-          
           <span className="nav-item" onClick={() => setShowColManager(!showColManager)}>STULPELIŲ VALDYMAS</span>
           <span className="nav-separator">|</span>
           <span className="nav-item btn-add-gold" onClick={handleAddRow}>+ NAUJAS ĮRAŠAS</span>
@@ -480,16 +362,6 @@ function App() {
                                 <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
                                   <option value="Ne">Ne</option><option value="Taip">Taip</option>
                                 </select>
-                              ) : col.key === "Komentaras" ? (
-                                <textarea 
-                                  autoFocus 
-                                  className="cell-edit" 
-                                  value={inputValue} 
-                                  style={{ minHeight: '100px', resize: 'vertical' }}
-                                  onChange={e => setInputValue(e.target.value)} 
-                                  onBlur={() => handleSave(item.id, col.key, inputValue)}
-                                  onKeyDown={e => { if (e.key === 'Escape') setEditingCell(null); }}
-                                />
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
                                 <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               ) : (
@@ -519,25 +391,17 @@ function App() {
       </div>
 
       {showColManager && (
-        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '280px' }}>
-          <h4 style={{marginTop: 0, fontSize: '12px', letterSpacing: '0.5px', borderBottom: '1px solid #e3e7eb', paddingBottom: '8px'}}>STULPELIŲ VALDYMAS</h4>
-          <div style={{maxHeight: '320px', overflowY: 'auto'}}>
+        <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+          <h4 style={{marginTop: 0, fontSize: '12px'}}>STULPELIŲ VALDYMAS</h4>
+          <div style={{maxHeight: '300px', overflowY: 'auto'}}>
             {columns.map(col => (
-              <div key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', paddingRight: '5px' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{cursor: 'pointer'}} />
-                  <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: col.visible ? 'bold' : 'normal', color: col.visible ? '#232323' : '#999' }}>
-                    {col.label}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  <button className="col-manage-btn" title="Pervadinti stulpelį" onClick={() => renameColumnLabel(col.key)}>✏️</button>
-                  <button className="col-manage-btn" title="Visiškai ištrinti stulpelį" onClick={() => deleteColumnEntirely(col.key)} style={{color: '#e30613'}}>🗑️</button>
-                </div>
+              <div key={col.key} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} />
+                <span style={{ marginLeft: '10px', fontSize: '12px' }}>{col.label}</span>
               </div>
             ))}
           </div>
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '10px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>UŽDARYTI</button>
+          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '8px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer' }}>UŽDARYTI</button>
         </div>
       )}
     </div>
