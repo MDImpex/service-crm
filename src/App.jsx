@@ -86,18 +86,14 @@ function App() {
     const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
 
     try {
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-      const targetUrl = 'https://api.resend.com/emails';
-
-      await fetch(proxyUrl + targetUrl, {
+      await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MY_RESEND_KEY}`,
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: 'MD Impex CRM <onboarding@resend.dev>',
+          from: 'onboarding@resend.dev',
           to: [MY_RECEIVER_EMAIL],
           subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${klientas}`,
           html: `
@@ -114,7 +110,7 @@ function App() {
           `
         })
       });
-    } catch (err) { console.error(err) }
+    } catch (err) { console.error("Email siuntimo klaida:", err) }
   };
 
   const pushActionToHistory = (action) => {
