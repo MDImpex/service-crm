@@ -45,19 +45,21 @@ function App() {
     { label: "ATLIKTA", key: "Atlikta", visible: true }
   ];
 
-  const [columns, setColumns] = useState(() => {
-    const savedCols = localStorage.getItem('crm_columns')
-    if (savedCols) {
-      const parsed = JSON.parse(savedCols);
-      const hasOldLabel = parsed.some(c => c.key === "Kliento įmonės kodas" && c.label !== "ĮM. KODAS");
-      if (hasOldLabel) {
-        localStorage.removeItem('crm_columns');
-        return defaultColumns;
-      }
-      return parsed;
+ const [columns, setColumns] = useState(() => {
+  const savedCols = localStorage.getItem('crm_columns');
+  if (savedCols) {
+    const parsed = JSON.parse(savedCols);
+    // Tikriname, ar yra senų stulpelių pavadinimų
+    const hasOldNames = parsed.some(c => c.key === "Prižiūri" || (c.key === "Prižiūri" && c.label !== "IŠKVIETIMAI"));
+    
+    if (hasOldNames) {
+      localStorage.removeItem('crm_columns'); // Ištrinam seną, kad užsikrautų naujas
+      return defaultColumns;
     }
-    return defaultColumns;
-  });
+    return parsed;
+  }
+  return defaultColumns;
+});
 
   const [widths, setWidths] = useState(() => {
     const savedWidths = localStorage.getItem('crm_widths')
