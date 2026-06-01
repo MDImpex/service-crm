@@ -403,7 +403,7 @@ function App() {
               </div>
             ))}
           </div>
-          <<button 
+          <button 
   onClick={() => {
     const label = prompt("Įveskite naujo stulpelio pavadinimą:");
     if (label) {
