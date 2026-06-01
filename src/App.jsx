@@ -403,8 +403,7 @@ function App() {
               </div>
             ))}
           </div>
-          <// Kodas `showColManager` viduje (prieš uždarymo mygtuką):
-<button 
+          <<button 
   onClick={() => {
     const label = prompt("Įveskite naujo stulpelio pavadinimą:");
     if (label) {
@@ -418,7 +417,7 @@ function App() {
   style={{ width: '100%', padding: '10px', background: '#acca23', color: '#113c32', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px' }}
 >
   + PRIDĖTI NAUJĄ STULPELĮ
-</button></button>
+</button>
         </div>
       )}
       {selectedEquipmentId && (
