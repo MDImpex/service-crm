@@ -403,7 +403,22 @@ function App() {
               </div>
             ))}
           </div>
-          <button onClick={() => setShowColManager(false)} style={{ width: '100%', marginTop: '15px', padding: '10px', background: '#113c32', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>UŽDARYTI</button>
+          <// Kodas `showColManager` viduje (prieš uždarymo mygtuką):
+<button 
+  onClick={() => {
+    const label = prompt("Įveskite naujo stulpelio pavadinimą:");
+    if (label) {
+      const newKey = label.toLowerCase().replace(/\s+/g, '_'); // Sukuriam unikalų key
+      const newColumn = { label: label.toUpperCase(), key: newKey, visible: true };
+      setColumns([...columns, newColumn]);
+      // Taip pat reikėtų inicializuoti width, kad nelūžtų resizeris
+      setWidths(prev => ({ ...prev, [newKey]: 120 }));
+    }
+  }}
+  style={{ width: '100%', padding: '10px', background: '#acca23', color: '#113c32', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px' }}
+>
+  + PRIDĖTI NAUJĄ STULPELĮ
+</button></button>
         </div>
       )}
       {selectedEquipmentId && (
