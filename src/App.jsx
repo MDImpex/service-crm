@@ -137,7 +137,7 @@ function App() {
       <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Komentaras:</td><td style="padding:8px 0;font-size:15px;color:#333;background-color:#f9f9f9;padding:5px;">${item["Komentaras"] || 'Nėra'}</td></tr>
     </table>
     <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-    <p style="font-size: 13px; color: #666;">Šį įrašą galite peržiūrėti CRM sistemoje: <br/><a href="https://service-crm-vert.vercel.app" style="color: #113c32; font-weight: bold; text-decoration: underline;">Atidaryti MD Impex CRM</a></p>
+    <p style="font-size: 13px; color: #666;">Šį įrašą galite peržiūrėti CRM sistemoje: <br/><a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: underline;">Atidaryti MD Impex CRM</a></p>
   </div>`
         })
       });
