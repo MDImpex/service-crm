@@ -20,13 +20,28 @@ function App() {
   };
 
   const handleAddComment = async (text) => {
-    await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
-      method: 'POST',
+  // 1. Įrašome komentarą į 'komentarai' lentelę
+  const res = await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
+    method: 'POST',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ equipment_id: selectedEquipmentId, tekstas: text })
+  });
+
+  if (res.ok) {
+    // 2. Atnaujiname pagrindinį įrašą, kad 'Komentaras' stulpelyje pasirodytų tekstas
+    await fetch(`${BASE_URL}?id=eq.${selectedEquipmentId}`, {
+      method: 'PATCH',
       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ equipment_id: selectedEquipmentId, tekstas: text })
+      body: JSON.stringify({ Komentaras: text })
     });
+    
+    // 3. Atnaujiname vietinę būseną (lentelę)
+    setEquipment(prev => prev.map(item => 
+      item.id === selectedEquipmentId ? { ...item, Komentaras: text } : item
+    ));
     fetchKomentarai(selectedEquipmentId);
-  };
+  }
+};
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
