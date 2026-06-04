@@ -530,7 +530,7 @@ const fetchKlientoFailai = async (id) => {
               </div>
 
               {/* DASHBOARD: Patikros ir Gedimų progresas */}
-              {/* DASHBOARD: Patikros ir Gedimų progresas */}
+{/* DASHBOARD: Patikros ir Gedimų progresas */}
 <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
   <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
   
@@ -544,12 +544,14 @@ const fetchKlientoFailai = async (id) => {
           const next = new Date(selectedClient["Sekanti patikra"]);
           const now = new Date();
           
+          if (isNaN(last) || isNaN(next)) return "Nėra datų";
+          
           const totalDays = Math.ceil((next - last) / (1000 * 60 * 60 * 24));
           const passedDays = Math.ceil((now - last) / (1000 * 60 * 60 * 24));
-          const progress = Math.min(100, Math.max(0, (passedDays / totalDays) * 100));
+          const progress = totalDays !== 0 ? Math.round((passedDays / totalDays) * 100) : 0;
           const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
 
-          return `${Math.round(progress)}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
+          return `${Math.min(100, Math.max(0, progress))}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
         })()}
       </span>
     </div>
@@ -557,7 +559,14 @@ const fetchKlientoFailai = async (id) => {
       <div style={{ 
         background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', 
         height: '100%', 
-        width: `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Paskutinė patikra"])) / (new Date(selectedClient["Sekanti patikra"]) - new Date(selectedClient["Paskutinė patikra"]))) * 100))}%` 
+        width: `${(() => {
+          const last = new Date(selectedClient["Paskutinė patikra"]);
+          const next = new Date(selectedClient["Sekanti patikra"]);
+          const now = new Date();
+          if (isNaN(last) || isNaN(next)) return 0;
+          const pct = ((now - last) / (next - last)) * 100;
+          return Math.min(100, Math.max(0, pct));
+        })()}%` 
       }} />
     </div>
   </div>
@@ -566,15 +575,15 @@ const fetchKlientoFailai = async (id) => {
   <div>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
       <span>Gedimo eiga (30 d.)</span>
-      <span>{selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
-        `${Math.min(100, Math.round(((new Date() - new Date(selectedClient["Sukurta_data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : "Nėra"}</span>
+      <span>{selectedClient["Iškvietimai"] && selectedClient["Iškvietimai"].toLowerCase().includes('gedimas') ? 
+        `${Math.min(100, Math.max(0, Math.round(((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100)))}%` : "Nėra"}</span>
     </div>
     <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
       <div style={{ 
         background: '#e30613', 
         height: '100%', 
-        width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
-          `${Math.min(100, ((new Date() - new Date(selectedClient["Sukurta_data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100)}%` : '0%' 
+        width: selectedClient["Iškvietimai"] && selectedClient["Iškvietimai"].toLowerCase().includes('gedimas') ? 
+          `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : '0%' 
       }} />
     </div>
   </div>
