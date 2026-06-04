@@ -467,6 +467,7 @@ const fetchKlientoFailai = async (id) => {
       {/* KLIENTO KORTELĖ */}
         {/* KLIENTO KORTELĖ */}
 {/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
       {selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
@@ -492,11 +493,11 @@ const fetchKlientoFailai = async (id) => {
                 <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
                 <input type="file" onChange={async (e) => {
                   const file = e.target.files[0];
-                  if (!file || !selectedClient?.id) return;
+                  if (!file) return;
+                  console.log("Įkeliamas failas:", file.name);
                   
                   const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
                   
-                  // 1. Įkėlimas į Storage
                   const storageRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
@@ -504,7 +505,6 @@ const fetchKlientoFailai = async (id) => {
                   });
 
                   if (storageRes.ok) {
-                    // 2. Įrašas į DB
                     await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
                       method: 'POST',
                       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
@@ -514,10 +514,12 @@ const fetchKlientoFailai = async (id) => {
                         url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
                       })
                     });
-                    alert("Failas sėkmingai įkeltas!");
+                    alert("Failas įkeltas!");
                     fetchKlientoFailai(selectedClient.id);
                   } else {
-                    alert("Klaida įkeliant failą. Patikrinkite Supabase Storage Policies.");
+                    const err = await storageRes.text();
+                    console.error("Klaida:", err);
+                    alert("Klaida! Patikrinkite konsolę (F12).");
                   }
                 }} />
               </div>
