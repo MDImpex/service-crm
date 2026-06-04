@@ -446,18 +446,43 @@ function App() {
 
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 5px 20px rgba(0,0,0,0.3)' }}>
-            <h2>{selectedClient["Kliento pavadinimas"]}</h2>
-            {columns.map(col => (
-              <div key={col.key} style={{ marginBottom: '15px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', textTransform: 'uppercase' }}>{col.label}</label>
-                <input 
-                  style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-                  value={selectedClient[col.key] || ''}
-                  onChange={e => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
-                />
-              </div>
+  <div style={{ /* ... jūsų esami stiliai ... */ }}>
+    <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px' }}>
+      <h2>{selectedClient["Kliento pavadinimas"]}</h2>
+      
+      {/* Esami stulpeliai (palikite kaip yra) */}
+      {columns.map(col => (
+        <div key={col.key}>...</div>
+      ))}
+
+      {/* NAUJAS FAILŲ ĮKĖLIMAS */}
+      <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ (Aktas/Nuotrauka):</label>
+        <input 
+          type="file" 
+          onChange={async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Įkeliame į Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${selectedClient.id}/${Math.random()}.${fileExt}`;
+            
+            const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
+              body: file
+            });
+
+            if (res.ok) {
+              alert("Failas sėkmingai įkeltas!");
+            } else {
+              alert("Klaida įkeliant failą.");
+            }
+          }}
+          style={{ width: '100%', marginTop: '5px' }}
+        />
+      </div>
             ))}
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
               <button 
