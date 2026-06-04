@@ -468,6 +468,8 @@ const fetchKlientoFailai = async (id) => {
         {/* KLIENTO KORTELĖ */}
 {/* KLIENTO KORTELĖ */}
       {/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
       {selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
@@ -487,73 +489,71 @@ const fetchKlientoFailai = async (id) => {
               ))}
             </div>
 
-            {/* DEŠINĖ: Failai */}
+            {/* DEŠINĖ: Failai + Dashboard */}
             <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
+              
+              {/* Failų įkėlimas */}
               <div>
                 <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
                 <input type="file" onChange={async (e) => {
                   const file = e.target.files[0];
                   if (!file) return;
                   const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-                  const storageRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
                     body: file
                   });
-
-                  if (storageRes.ok) {
+                  if (res.ok) {
                     await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
                       method: 'POST',
                       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                      body: JSON.stringify({ 
-                        equipment_id: selectedClient.id, 
-                        failo_pavadinimas: file.name, 
-                        url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
-                      })
+                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
                     });
                     fetchKlientoFailai(selectedClient.id);
                   }
                 }} />
               </div>
 
-              {/* FAILŲ SĄRAŠAS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '10px' }}>
+              {/* Failų miniatiūros */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {klientoFailai.map((f) => {
-                    // Tikriname, ar tai nuotrauka (JPG, PNG, WEBP, GIF)
-                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(f.failo_pavadinimas);
-                    
-                    return (
-                      <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div style={{ 
-                          height: '70px', 
-                          background: '#f0f0f0', 
-                          border: '1px solid #ddd', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          borderRadius: '4px',
-                          overflow: 'hidden' 
-                        }}>
-                          {isImage ? (
-                            <img src={f.url} alt="miniatiūra" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{f.failo_pavadinimas.slice(-3).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {f.failo_pavadinimas}
-                        </div>
-                      </a>
-                    );
-                  })}
+                  const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(f.failo_pavadinimas);
+                  return (
+                    <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ height: '70px', background: '#f0f0f0', border: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', overflow: 'hidden' }}>
+                        {isImage ? <img src={f.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '10px' }}>{f.failo_pavadinimas.slice(-3).toUpperCase()}</span>}
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
+
+              {/* DASHBOARD: Patikros ir Gedimų progresas */}
+              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <div style={{ fontSize: '11px', marginBottom: '4px' }}>Patikra</div>
+                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
+                    <div style={{ background: '#acca23', height: '100%', borderRadius: '4px', width: '60%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '11px', marginBottom: '4px' }}>Gedimo progresas</div>
+                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
+                    <div style={{ background: '#e30613', height: '100%', borderRadius: '4px', width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? '75%' : '0%' }} />
+                  </div>
+                </div>
+              </div>
+
             </div>
             
             <button onClick={() => setSelectedClient(null)} style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
           </div>
         </div>
       )}
-      {/* KLIENTO KORTELĖS PABAIGA */}
     </div>
   );
 }
