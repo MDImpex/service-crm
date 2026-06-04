@@ -463,130 +463,55 @@ const fetchKlientoFailai = async (id) => {
       )}
 
       {/* KLIENTO KORTELĖ */}
+    {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
-      <h2>{selectedClient["Kliento pavadinimas"]}</h2>
-      
-      {/* Redagavimo laukai */}
-      {columns.map(col => (
-        <div key={col.key} style={{ marginBottom: '10px' }}>
-          <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block' }}>{col.label}</label>
-          <input 
-            type="text"
-            value={selectedClient[col.key] || ''}
-            onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
-      ))}
-
-      {/* FAILŲ ĮKĖLIMAS IR SĄRAŠAS */}
-<div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-  <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ:</label>
-  <input 
-    type="file" 
-    onChange={async (e) => {
-  const file = e.target.files[0];
-  // Svarbu: patikriname, ar egzistuoja selectedClient IR jo id
-  if (!file || !selectedClient || !selectedClient.id) {
-    console.error("Klaida: Nėra pasirinkto kliento arba jo ID");
-    return;
-  }
-
-  // Naudojame selectedClient.id, o ne tiesiog id
-  const currentClientId = selectedClient.id; 
-  const fileName = `${currentClientId}/${Date.now()}_${file.name}`;
-  
-  // 1. Įkėlimas į storage
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-    method: 'POST',
-    headers: { 
-      'Authorization': `Bearer ${API_KEY}`, 
-      'apikey': API_KEY, 
-      'Content-Type': file.type 
-    },
-    body: file
-  });
-
-  if (res.ok) {
-    // 2. Įrašymas į duomenų bazę (naudojame apatinį brūkšnį)
-    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-      method: 'POST',
-      headers: { 
-        'apikey': API_KEY, 
-        'Authorization': `Bearer ${API_KEY}`, 
-        'Content-Type': 'application/json', 
-        'Prefer': 'return=representation' 
-      },
-      body: JSON.stringify({ 
-        equipment_id: currentClientId, // Čia naudojame saugų ID
-        failo_pavadinimas: file.name,
-        url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
-      })
-    });
-    alert("Failas įkeltas!");
-    fetchKlientoFailai(currentClientId); // Atnaujiname sąrašą
-  } else {
-    alert("Klaida įkeliant failą.");
-  }
-}}
-    style={{ width: '100%', marginTop: '5px' }}
-  />
-  
-  {/* Failų sąrašas */}
-  <ul style={{ paddingLeft: '20px', margin: '15px 0' }}>
-    {klientoFailai.map(f => (
-      <li key={f.id} style={{ fontSize: '12px' }}>
-        <a href={f.url} target="_blank" rel="noreferrer" style={{color: '#113c32'}}>{f.failo_pavadinimas}</a>
-      </li>
-    ))}
-  </ul>
-</div>
-
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        <button 
-  onClick={async () => {
-    const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
-      method: 'PATCH',
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(selectedClient)
-    });
-    if (res.ok) {
-      setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
-      setSelectedClient(null);
-    }
-  }} 
-  style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-> 
-  IŠSAUGOTI 
-</button>
-        <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>UŽDARYTI</button>
-      </div>
-    </div>
-  </div>
-)}
-
-      {/* REMONTO ISTORIJA */}
-      {selectedEquipmentId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '20px', width: '400px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ marginTop: 0 }}>Remonto istorija</h3>
-            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '15px' }}>
-              {komentarai.map(k => (
-                <p key={k.id} style={{fontSize: '12px', borderBottom: '1px solid #eee', padding: '5px 0', margin: 0}}><strong>{k.sukurta_data.split('T')[0]}</strong>: {k.tekstas}</p>
+          <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
+            
+            {/* KAIRĖ: Redagavimo laukai */}
+            <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
+              <h2 style={{marginTop: 0}}>{selectedClient["Kliento pavadinimas"]}</h2>
+              {columns.map(col => (
+                <div key={col.key} style={{ marginBottom: '10px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+                  <input 
+                    value={selectedClient[col.key] || ''}
+                    onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                  />
+                </div>
               ))}
-              {komentarai.length === 0 && <p style={{fontSize: '12px', color: '#999'}}>Įrašų nėra.</p>}
             </div>
-            <textarea id="newKomentaras" style={{width: '100%', height: '80px', padding: '5px', boxSizing: 'border-box'}} placeholder="Įrašyti naują komentarą..." />
-            <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-              <button style={{ padding: '8px 15px', cursor: 'pointer', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px' }} onClick={() => { const text = document.getElementById('newKomentaras').value; if(text) { handleAddComment(text); document.getElementById('newKomentaras').value = ''; } }}>Įrašyti</button>
-              <button style={{ padding: '8px 15px', cursor: 'pointer', background: '#f0f0f0', border: 'none', borderRadius: '4px' }} onClick={() => setSelectedEquipmentId(null)}>Uždaryti</button>
+
+            {/* DEŠINĖ: Failai, Komentarai */}
+            <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
+              <div>
+                <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILAI:</label>
+                <input type="file" onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file || !selectedClient?.id) return;
+                  const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
+                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+                    method: 'POST', headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type }, body: file
+                  });
+                  if (res.ok) {
+                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+                      method: 'POST', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
+                    });
+                    fetchKlientoFailai(selectedClient.id);
+                  }
+                }} />
+              </div>
             </div>
+            
+            <button onClick={() => setSelectedClient(null)} style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
 export default App;
