@@ -409,6 +409,7 @@ function App() {
           </table>
         </div>
       </div>
+      {/* STULPELIŲ VALDYMAS */}
       {showColManager && (
         <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '280px' }}>
           <h4 style={{marginTop: 0, fontSize: '12px', letterSpacing: '0.5px', borderBottom: '1px solid #e3e7eb', paddingBottom: '8px'}}>STULPELIŲ VALDYMAS</h4>
@@ -427,62 +428,61 @@ function App() {
             ))}
           </div>
           <button 
-  onClick={() => {
-    const label = prompt("Įveskite naujo stulpelio pavadinimą:");
-    if (label) {
-      const newKey = label.toLowerCase().replace(/\s+/g, '_'); // Sukuriam unikalų key
-      const newColumn = { label: label.toUpperCase(), key: newKey, visible: true };
-      setColumns([...columns, newColumn]);
-      // Taip pat reikėtų inicializuoti width, kad nelūžtų resizeris
-      setWidths(prev => ({ ...prev, [newKey]: 120 }));
-    }
-  }}
-  style={{ width: '100%', padding: '10px', background: '#acca23', color: '#113c32', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px' }}
->
-  + PRIDĖTI NAUJĄ STULPELĮ
-</button>
+            onClick={() => {
+              const label = prompt("Įveskite naujo stulpelio pavadinimą:");
+              if (label) {
+                const newKey = label.toLowerCase().replace(/\s+/g, '_');
+                const newColumn = { label: label.toUpperCase(), key: newKey, visible: true };
+                setColumns([...columns, newColumn]);
+                setWidths(prev => ({ ...prev, [newKey]: 120 }));
+              }
+            }}
+            style={{ width: '100%', padding: '10px', background: '#acca23', color: '#113c32', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px' }}
+          >
+            + PRIDĖTI NAUJĄ STULPELĮ
+          </button>
         </div>
       )}
-    // ... (tęsiasi jūsų esamas kodas)
-          <button 
-            onClick={() => {
-              const label = prompt("Įveskite naujo stulpelio pavadinimą:");
-              // ... čia jūsų esama funkcija ...
-            }}
-            style={{ /* ... stiliai ... */ }}
-          >
-            + PRIDĖTI NAUJĄ STULPELĮ
-          </button>
-        </div>
-      )} 
-      {/* ČIA BAIGIASI showColManager blokas */}
 
-      {/* !!! ČIA ĮDĖKITE NAUJĄ KODĄ !!! */}
-      
-      {/* ČIA PRASIDEDA JŪSŲ SENASIS selectedEquipmentId blokas */}
-      {selectedEquipmentId && (
-        <div style={{ position: 'fixed', inset: 0, /* ... */ }}>
-// ... (toliau viskas lieka kaip buvo)  
-      // ... (tęsiasi jūsų esamas kodas)
-          <button 
-            onClick={() => {
-              const label = prompt("Įveskite naujo stulpelio pavadinimą:");
-              // ... čia jūsų esama funkcija ...
-            }}
-            style={{ /* ... stiliai ... */ }}
-          >
-            + PRIDĖTI NAUJĄ STULPELĮ
-          </button>
+      {/* KLIENTO KORTELĖ */}
+      {selectedClient && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 5px 20px rgba(0,0,0,0.3)' }}>
+            <h2>{selectedClient["Kliento pavadinimas"]}</h2>
+            {columns.map(col => (
+              <div key={col.key} style={{ marginBottom: '15px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', textTransform: 'uppercase' }}>{col.label}</label>
+                <input 
+                  style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
+                  value={selectedClient[col.key] || ''}
+                  onChange={e => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                />
+              </div>
+            ))}
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+                      method: 'PATCH',
+                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                      body: JSON.stringify(selectedClient)
+                    });
+                    if (res.ok) {
+                      setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
+                      setSelectedClient(null);
+                    } else { alert("Nepavyko išsaugoti."); }
+                  } catch (err) { console.error(err); alert("Klaida."); }
+                }} 
+                style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              > IŠSAUGOTI </button>
+              <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>UŽDARYTI</button>
+            </div>
+          </div>
         </div>
-      )} 
-      {/* ČIA BAIGIASI showColManager blokas */}
+      )}
 
-      {/* !!! ČIA ĮDĖKITE NAUJĄ KODĄ !!! */}
-      
-      {/* ČIA PRASIDEDA JŪSŲ SENASIS selectedEquipmentId blokas */}
-      {selectedEquipmentId && (
-        <div style={{ position: 'fixed', inset: 0, /* ... */ }}>
-// ... (toliau viskas lieka kaip buvo)
+      {/* REMONTO ISTORIJA */}
       {selectedEquipmentId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', padding: '20px', width: '400px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
