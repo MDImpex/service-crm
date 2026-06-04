@@ -487,28 +487,50 @@ const fetchKlientoFailai = async (id) => {
   <input 
     type="file" 
     onChange={async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-      
-      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai-failai?equipment_id=eq.${id}`, {
-  headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-});
+  const file = e.target.files[0];
+  // Svarbu: patikriname, ar egzistuoja selectedClient IR jo id
+  if (!file || !selectedClient || !selectedClient.id) {
+    console.error("Klaida: Nėra pasirinkto kliento arba jo ID");
+    return;
+  }
 
-      if (res.ok) {
-        await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai_meta`, {
-          method: 'POST',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            equipment_id: selectedClient.id, 
-            failo_pavadinimas: file.name,
-            url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
-          })
-        });
-        alert("Failas įkeltas!");
-        fetchKlientoFailai(selectedClient.id);
-      } else { alert("Klaida įkeliant."); }
-    }}
+  // Naudojame selectedClient.id, o ne tiesiog id
+  const currentClientId = selectedClient.id; 
+  const fileName = `${currentClientId}/${Date.now()}_${file.name}`;
+  
+  // 1. Įkėlimas į storage
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${API_KEY}`, 
+      'apikey': API_KEY, 
+      'Content-Type': file.type 
+    },
+    body: file
+  });
+
+  if (res.ok) {
+    // 2. Įrašymas į duomenų bazę (naudojame apatinį brūkšnį)
+    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+      method: 'POST',
+      headers: { 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}`, 
+        'Content-Type': 'application/json', 
+        'Prefer': 'return=representation' 
+      },
+      body: JSON.stringify({ 
+        equipment_id: currentClientId, // Čia naudojame saugų ID
+        failo_pavadinimas: file.name,
+        url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
+      })
+    });
+    alert("Failas įkeltas!");
+    fetchKlientoFailai(currentClientId); // Atnaujiname sąrašą
+  } else {
+    alert("Klaida įkeliant failą.");
+  }
+}}
     style={{ width: '100%', marginTop: '5px' }}
   />
   
