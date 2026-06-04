@@ -530,32 +530,42 @@ const fetchKlientoFailai = async (id) => {
               </div>
 
               {/* DASHBOARD: Patikros ir Gedimų progresas */}
-              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
+              {/* DASHBOARD: Patikros ir Gedimų progresas */}
+<div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
   <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
   
-  {/* Patikros progresas: (Nuo paskutinės patikros iki kitos) */}
+  {/* Patikros progresas */}
   <div style={{ marginBottom: '15px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
       <span>Patikros ciklas</span>
-      <span>{(() => {
-        const last = new Date(selectedClient["Paskutinė patikra"] || Date.now());
-        const next = new Date(selectedClient["Sekanti patikra"] || Date.now());
-        const total = next - last;
-        const passed = new Date() - last;
-        const progress = Math.min(100, Math.max(0, (passed / total) * 100));
-        const daysRemaining = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
-        return `${Math.round(progress)}% (liko ${daysRemaining > 0 ? daysRemaining : 0} d.)`;
-      })()}</span>
+      <span>
+        {(() => {
+          const last = new Date(selectedClient["Paskutinė patikra"]);
+          const next = new Date(selectedClient["Sekanti patikra"]);
+          const now = new Date();
+          
+          const totalDays = Math.ceil((next - last) / (1000 * 60 * 60 * 24));
+          const passedDays = Math.ceil((now - last) / (1000 * 60 * 60 * 24));
+          const progress = Math.min(100, Math.max(0, (passedDays / totalDays) * 100));
+          const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+
+          return `${Math.round(progress)}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
+        })()}
+      </span>
     </div>
     <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-      <div style={{ background: '#acca23', height: '100%', width: `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Paskutinė patikra"] || Date.now())) / (new Date(selectedClient["Sekanti patikra"] || Date.now()) - new Date(selectedClient["Paskutinė patikra"] || Date.now()))) * 100))}%` }} />
+      <div style={{ 
+        background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', 
+        height: '100%', 
+        width: `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Paskutinė patikra"])) / (new Date(selectedClient["Sekanti patikra"]) - new Date(selectedClient["Paskutinė patikra"]))) * 100))}%` 
+      }} />
     </div>
   </div>
 
-  {/* Gedimo progresas: (Fiksuotas 30 dienų langas) */}
+  {/* Gedimo progresas */}
   <div>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Gedimo eiga (30 d. tikslas)</span>
+      <span>Gedimo eiga (30 d.)</span>
       <span>{selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
         `${Math.min(100, Math.round(((new Date() - new Date(selectedClient["Sukurta_data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : "Nėra"}</span>
     </div>
