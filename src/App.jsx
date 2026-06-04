@@ -20,11 +20,17 @@ function App() {
     setKomentarai(data);
   };
 const fetchKlientoFailai = async (id) => {
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai_meta?equipment_id=eq.${id}`, {
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai-failai?equipment_id=eq.${id}`, {
     headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
   });
-  const data = await res.json();
-  setKlientoFailai(data || []);
+  
+  if (res.ok) {
+    const data = await res.json();
+    setKlientoFailai(data);
+  } else {
+    console.error("Klaida:", await res.text());
+    setKlientoFailai([]); // SVARBU: čia išvengiame "map is not a function"
+  }
 };
   const handleAddComment = async (text) => {
   // 1. Įrašome komentarą į 'komentarai' lentelę
