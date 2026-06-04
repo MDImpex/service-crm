@@ -530,58 +530,53 @@ const fetchKlientoFailai = async (id) => {
               </div>
 
               {/* DASHBOARD: Patikros ir Gedimų progresas */}
-<div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
-  <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
-  
-  {/* Patikros progresas */}
-  <div style={{ marginBottom: '15px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Patikra</span>
-      <span>{(() => {
-        const last = new Date(selectedClient["Patikros data"]);
-        const next = new Date(selectedClient["Sekanti patikra"]);
-        const now = new Date();
-        const totalDays = Math.ceil((next - last) / (1000 * 60 * 60 * 24));
-        const passedDays = Math.ceil((now - last) / (1000 * 60 * 60 * 24));
-        const progress = totalDays > 0 ? Math.min(100, Math.max(0, (passedDays / totalDays) * 100)) : 0;
-        const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
-        
-        return `${Math.round(progress)}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
-      })()}</span>
-    </div>
-    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-      <div style={{ 
-        background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', 
-        height: '100%', 
-        width: `${(() => {
-          const last = new Date(selectedClient["Patikros data"]);
-          const next = new Date(selectedClient["Sekanti patikra"]);
-          const now = new Date();
-          const totalDays = next - last;
-          const passedDays = now - last;
-          return totalDays > 0 ? Math.min(100, Math.max(0, (passedDays / totalDays) * 100)) : 0;
-        })()}%` 
-      }} />
-    </div>
-  </div>
+              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
+                
+                {/* Patikros progresas */}
+                <div style={{ marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Patikros ciklas</span>
+                    <span>{(() => {
+                      const last = new Date(selectedClient["Patikros data"]);
+                      const next = new Date(selectedClient["Sekanti patikra"]);
+                      const now = new Date();
+                      const totalDays = Math.ceil((next - last) / (1000 * 60 * 60 * 24));
+                      const passedDays = Math.ceil((now - last) / (1000 * 60 * 60 * 24));
+                      const progress = totalDays > 0 ? Math.min(100, Math.max(0, (passedDays / totalDays) * 100)) : 0;
+                      const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+                      return `${Math.round(progress)}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
+                    })()}</span>
+                  </div>
+                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', height: '100%', width: `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Patikros data"])) / (new Date(selectedClient["Sekanti patikra"]) - new Date(selectedClient["Patikros data"]))) * 100))}%` }} />
+                  </div>
+                </div>
 
-  {/* Gedimo progresas */}
-  <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Gedimo progresas (30 d.)</span>
-      <span>{((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) ? 
-        `${Math.min(100, Math.round(((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : "Nėra"}</span>
-    </div>
-    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-      <div style={{ 
-        background: '#e30613', 
-        height: '100%', 
-        width: ((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) ? 
-          `${Math.min(100, ((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100)}%` : '0%' 
-      }} />
-    </div>
-  </div>
-</div>
+                {/* Gedimo progresas (pagal komentarų datą) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Gedimo eiga (30 d.)</span>
+                    <span>{(() => {
+                      const isFault = (selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta');
+                      if (!isFault) return "Nėra";
+                      const lastCommentDate = komentarai.length > 0 ? new Date(komentarai[0].sukurta_data) : new Date();
+                      const daysPassed = Math.max(0, Math.ceil((new Date() - lastCommentDate) / (1000 * 60 * 60 * 24)));
+                      const progress = Math.min(100, (daysPassed / 30) * 100);
+                      return `${Math.round(progress)}% (${daysPassed} d. bėgyje)`;
+                    })()}</span>
+                  </div>
+                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ background: '#e30613', height: '100%', width: (() => {
+                      const isFault = (selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta');
+                      if (!isFault) return '0%';
+                      const lastCommentDate = komentarai.length > 0 ? new Date(komentarai[0].sukurta_data) : new Date();
+                      const daysPassed = Math.max(0, Math.ceil((new Date() - lastCommentDate) / (1000 * 60 * 60 * 24)));
+                      return `${Math.min(100, (daysPassed / 30) * 100)}%`;
+                    })() }} />
+                  </div>
+                </div>
+              </div>
 
             </div>
             
