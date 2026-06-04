@@ -530,20 +530,37 @@ const fetchKlientoFailai = async (id) => {
               </div>
 
               {/* DASHBOARD: Patikros ir Gedimų progresas */}
-              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
                 
+                {/* Patikros progresas (skaičiuoja dienas iki patikros) */}
                 <div style={{ marginBottom: '15px' }}>
-                  <div style={{ fontSize: '11px', marginBottom: '4px' }}>Patikra</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Patikra</span>
+                    <span>{(() => {
+                      const daysLeft = Math.ceil((new Date(selectedClient["Sekanti patikra"]) - new Date()) / (1000 * 60 * 60 * 24));
+                      return daysLeft >= 0 ? `${100 - daysLeft}% (liko ${daysLeft} d.)` : "Vėluoja!";
+                    })()}</span>
+                  </div>
                   <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
                     <div style={{ background: '#acca23', height: '100%', borderRadius: '4px', width: '60%' }} />
                   </div>
                 </div>
 
+                {/* Gedimo progresas (skaičiuoja dienas nuo "Gedimas" įrašo) */}
                 <div>
-                  <div style={{ fontSize: '11px', marginBottom: '4px' }}>Gedimo progresas</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Gedimo progresas</span>
+                    <span>{selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
+                      `${Math.floor((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 30)} d. eigoje` : "Nėra"}</span>
+                  </div>
                   <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
-                    <div style={{ background: '#e30613', height: '100%', borderRadius: '4px', width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? '75%' : '0%' }} />
+                    <div style={{ 
+                      background: '#e30613', 
+                      height: '100%', 
+                      borderRadius: '4px', 
+                      width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? '75%' : '0%' 
+                    }} />
                   </div>
                 </div>
               </div>
