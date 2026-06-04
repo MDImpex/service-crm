@@ -531,39 +531,44 @@ const fetchKlientoFailai = async (id) => {
 
               {/* DASHBOARD: Patikros ir Gedimų progresas */}
               <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
-                
-                {/* Patikros progresas (skaičiuoja dienas iki patikros) */}
-                <div style={{ marginBottom: '15px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                    <span>Patikra</span>
-                    <span>{(() => {
-                      const daysLeft = Math.ceil((new Date(selectedClient["Sekanti patikra"]) - new Date()) / (1000 * 60 * 60 * 24));
-                      return daysLeft >= 0 ? `${100 - daysLeft}% (liko ${daysLeft} d.)` : "Vėluoja!";
-                    })()}</span>
-                  </div>
-                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
-                    <div style={{ background: '#acca23', height: '100%', borderRadius: '4px', width: '60%' }} />
-                  </div>
-                </div>
+  <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
+  
+  {/* Patikros progresas: (Nuo paskutinės patikros iki kitos) */}
+  <div style={{ marginBottom: '15px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+      <span>Patikros ciklas</span>
+      <span>{(() => {
+        const last = new Date(selectedClient["Paskutinė patikra"] || Date.now());
+        const next = new Date(selectedClient["Sekanti patikra"] || Date.now());
+        const total = next - last;
+        const passed = new Date() - last;
+        const progress = Math.min(100, Math.max(0, (passed / total) * 100));
+        const daysRemaining = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
+        return `${Math.round(progress)}% (liko ${daysRemaining > 0 ? daysRemaining : 0} d.)`;
+      })()}</span>
+    </div>
+    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+      <div style={{ background: '#acca23', height: '100%', width: `${Math.min(100, Math.max(0, ((new Date() - new Date(selectedClient["Paskutinė patikra"] || Date.now())) / (new Date(selectedClient["Sekanti patikra"] || Date.now()) - new Date(selectedClient["Paskutinė patikra"] || Date.now()))) * 100))}%` }} />
+    </div>
+  </div>
 
-                {/* Gedimo progresas (skaičiuoja dienas nuo "Gedimas" įrašo) */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                    <span>Gedimo progresas</span>
-                    <span>{selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
-                      `${Math.floor((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 30)} d. eigoje` : "Nėra"}</span>
-                  </div>
-                  <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
-                    <div style={{ 
-                      background: '#e30613', 
-                      height: '100%', 
-                      borderRadius: '4px', 
-                      width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? '75%' : '0%' 
-                    }} />
-                  </div>
-                </div>
-              </div>
+  {/* Gedimo progresas: (Fiksuotas 30 dienų langas) */}
+  <div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+      <span>Gedimo eiga (30 d. tikslas)</span>
+      <span>{selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
+        `${Math.min(100, Math.round(((new Date() - new Date(selectedClient["Sukurta_data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : "Nėra"}</span>
+    </div>
+    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+      <div style={{ 
+        background: '#e30613', 
+        height: '100%', 
+        width: selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') ? 
+          `${Math.min(100, ((new Date() - new Date(selectedClient["Sukurta_data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100)}%` : '0%' 
+      }} />
+    </div>
+  </div>
+</div>
 
             </div>
             
