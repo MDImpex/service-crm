@@ -446,27 +446,32 @@ function App() {
 
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-  <div style={{ /* ... jūsų esami stiliai ... */ }}>
-    <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px' }}>
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
       <h2>{selectedClient["Kliento pavadinimas"]}</h2>
       
-      {/* Esami stulpeliai (palikite kaip yra) */}
+      {/* Redagavimo laukai */}
       {columns.map(col => (
-        <div key={col.key}>...</div>
+        <div key={col.key} style={{ marginBottom: '10px' }}>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block' }}>{col.label}</label>
+          <input 
+            type="text"
+            value={selectedClient[col.key] || ''}
+            onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
       ))}
 
-      {/* NAUJAS FAILŲ ĮKĖLIMAS */}
+      {/* Failų įkėlimas */}
       <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ (Aktas/Nuotrauka):</label>
+        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ:</label>
         <input 
           type="file" 
           onChange={async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            // Įkeliame į Supabase Storage
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${selectedClient.id}/${Math.random()}.${fileExt}`;
+            const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
             
             const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
               method: 'POST',
@@ -474,38 +479,33 @@ function App() {
               body: file
             });
 
-            if (res.ok) {
-              alert("Failas sėkmingai įkeltas!");
-            } else {
-              alert("Klaida įkeliant failą.");
-            }
+            if (res.ok) alert("Failas įkeltas!");
+            else alert("Klaida įkeliant.");
           }}
           style={{ width: '100%', marginTop: '5px' }}
         />
       </div>
-            ))}
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
-                      method: 'PATCH',
-                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                      body: JSON.stringify(selectedClient)
-                    });
-                    if (res.ok) {
-                      setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
-                      setSelectedClient(null);
-                    } else { alert("Nepavyko išsaugoti."); }
-                  } catch (err) { console.error(err); alert("Klaida."); }
-                }} 
-                style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              > IŠSAUGOTI </button>
-              <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>UŽDARYTI</button>
-            </div>
-          </div>
-        </div>
-      )}
+
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+        <button 
+          onClick={async () => {
+            const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+              method: 'PATCH',
+              headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify(selectedClient)
+            });
+            if (res.ok) {
+              setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
+              setSelectedClient(null);
+            }
+          }} 
+          style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        > IŠSAUGOTI </button>
+        <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>UŽDARYTI</button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* REMONTO ISTORIJA */}
       {selectedEquipmentId && (
