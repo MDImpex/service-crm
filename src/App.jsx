@@ -464,52 +464,51 @@ const fetchKlientoFailai = async (id) => {
 
       {/* KLIENTO KORTELĖ */}
     {/* KLIENTO KORTELĖ */}
-      {selectedClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
-            
-            {/* KAIRĖ: Redagavimo laukai */}
-            <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
-              <h2 style={{marginTop: 0}}>{selectedClient["Kliento pavadinimas"]}</h2>
-              {columns.map(col => (
-                <div key={col.key} style={{ marginBottom: '10px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-                  <input 
-                    value={selectedClient[col.key] || ''}
-                    onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* DEŠINĖ: Failai, Komentarai */}
-            <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
-              <div>
-                <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILAI:</label>
-                <input type="file" onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file || !selectedClient?.id) return;
-                  const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-                    method: 'POST', headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type }, body: file
-                  });
-                  if (res.ok) {
-                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-                      method: 'POST', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
-                    });
-                    fetchKlientoFailai(selectedClient.id);
-                  }
-                }} />
+      {/* KLIENTO KORTELĖ */}
+        {selectedClient && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
+              
+              <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
+                <h2 style={{marginTop: 0}}>{selectedClient["Kliento pavadinimas"]}</h2>
+                {columns.map(col => (
+                  <div key={col.key} style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+                    <input 
+                      value={selectedClient[col.key] || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
-            
-            <button onClick={() => setSelectedClient(null)} style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
-          </div>
-        </div>
-      )}
 
+              <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
+                <div>
+                  <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILAI:</label>
+                  <input type="file" onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file || !selectedClient?.id) return;
+                    const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
+                    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+                      method: 'POST', headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type }, body: file
+                    });
+                    if (res.ok) {
+                      await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+                        method: 'POST', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                        body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
+                      });
+                      fetchKlientoFailai(selectedClient.id);
+                    }
+                  }} />
+                </div>
+              </div>
+              
+              <button onClick={() => setSelectedClient(null)} style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
