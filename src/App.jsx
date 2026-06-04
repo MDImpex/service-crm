@@ -99,6 +99,11 @@ const fetchKlientoFailai = async (id) => {
   useEffect(() => { localStorage.setItem('crm_columns', JSON.stringify(columns)) }, [columns])
   useEffect(() => { localStorage.setItem('crm_widths', JSON.stringify(widths)) }, [widths])
   useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+  if (selectedClient && selectedClient.id) {
+    fetchKlientoFailai(selectedClient.id);
+  }
+}, [selectedClient]);
 
   async function fetchData() {
     setLoading(true)
@@ -239,7 +244,6 @@ const fetchKlientoFailai = async (id) => {
   const handleStartEdit = (id, field, initialValue) => { setEditingCell({ id, field }); setInputValue(initialValue || ''); };
   const openClientCard = (item) => {
   setSelectedClient(item);
-  fetchKlientoFailai(item.id); // Pridėta ši eilutė
 };
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
@@ -516,19 +520,21 @@ const fetchKlientoFailai = async (id) => {
 
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         <button 
-          onClick={async () => {
-            const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
-              method: 'PATCH',
-              headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify(selectedClient)
-            });
-            if (res.ok) {
-              setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
-              setSelectedClient(null);
-            }
-          }} 
-          style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        > IŠSAUGOTI </button>
+  onClick={async () => {
+    const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(selectedClient)
+    });
+    if (res.ok) {
+      setEquipment(prev => prev.map(item => item.id === selectedClient.id ? selectedClient : item));
+      setSelectedClient(null);
+    }
+  }} 
+  style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+> 
+  IŠSAUGOTI 
+</button>
         <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>UŽDARYTI</button>
       </div>
     </div>
