@@ -20,7 +20,7 @@ function App() {
     setKomentarai(data);
   };
 const fetchKlientoFailai = async (id) => {
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai-failai?equipment_id=eq.${id}`, {
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
     headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
   });
   
