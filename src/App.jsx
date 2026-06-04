@@ -490,73 +490,78 @@ const fetchKlientoFailai = async (id) => {
             </div>
 
             {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
-<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-  
-  {/* Failų įkėlimas */}
-  <div>
-    <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
-    <input type="file" onChange={async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
-        body: file
-      });
-      if (res.ok) {
-        await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-          method: 'POST',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
-        });
-        fetchKlientoFailai(selectedClient.id);
-      }
-    }} />
-  </div>
+            <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+              
+              {/* Uždarymo mygtukas viršuje */}
+              <button 
+                style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
+                onClick={() => setSelectedClient(null)}
+              >✕</button>
 
-  {/* Dashboard */}
-  <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
-    <h4 style={{ fontSize: '12px' }}>Gedimo eiga (30 d.)</h4>
-    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
-       {/* Čia tavo esama logika */}
-    </div>
-  </div>
+              {/* 1. Failų įkėlimas */}
+              <div>
+                <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
+                <input type="file" onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
+                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
+                    body: file
+                  });
+                  if (res.ok) {
+                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+                      method: 'POST',
+                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
+                    });
+                    fetchKlientoFailai(selectedClient.id);
+                  }
+                }} />
+                <div style={{ marginTop: '5px' }}>
+                  {klientoFailai.map((f, i) => <div key={i}><a href={f.url} target="_blank" rel="noreferrer" style={{fontSize: '11px', color: '#113c32'}}>{f.failo_pavadinimas}</a></div>)}
+                </div>
+              </div>
 
-  {/* Komentarų įrašymas ir istorija */}
-              <div style={{ marginTop: '10px' }}>
-                <textarea 
-                  id="comment-input"
-                  placeholder="Įrašyk komentarą..."
-                  style={{ width: '100%', height: '60px', marginBottom: '5px' }}
-                />
-                <button 
-                  style={{ 
-                    width: '100%', padding: '8px', background: '#113c32', color: 'white', 
-                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
-                  }}
+              {/* 2. Gedimo eigos dashboard */}
+              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Gedimo eiga (30 d.)</h4>
+                <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                  {(() => {
+                    const sorted = [...komentarai].sort((a,b) => new Date(a.sukurta_data) - new Date(b.sukurta_data));
+                    const start = sorted.find(c => c.tekstas?.toLowerCase().includes('gedimas'))?.sukurta_data;
+                    if (!start) return <div style={{width:'0%'}} />;
+                    const dP = Math.min(30, Math.max(0, Math.ceil((new Date() - new Date(start)) / (1000*60*60*24))));
+                    const p = (dP / 30) * 100;
+                    const col = p < 50 ? `rgb(${p*3}, 200, 50)` : `rgb(255, ${200-(p-50)*4}, 50)`;
+                    return <div style={{ width: `${p}%`, height: '8px', background: col }} />;
+                  })()}
+                </div>
+              </div>
+
+              {/* 3. KOMENTARŲ LAUKAS (KURĮ TAISĖME) */}
+              <div>
+                <textarea id="comment-input" placeholder="Įrašyk komentarą..." style={{ width: '100%', height: '60px', marginBottom: '5px' }} />
+                <button style={{ width: '100%', padding: '8px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                   onClick={async () => {
                     const textarea = document.getElementById('comment-input');
                     const text = textarea.value;
                     if (!text.trim()) return;
-
                     await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai`, {
                       method: 'POST',
                       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
                       body: JSON.stringify({ equipment_id: selectedClient.id, tekstas: text, sukurta_data: new Date().toISOString() })
                     });
-                    
-                    textarea.value = ''; // Išvalom lauką
-                    fetchKomentarai(selectedClient.id); // Atnaujinam sąrašą
-                  }}
-                >
-                  IŠSAUGOTI KOMENTARĄ
-                </button>
+                    textarea.value = '';
+                    fetchKomentarai(selectedClient.id);
+                  }}>IŠSAUGOTI KOMENTARĄ</button>
 
                 <div style={{ marginTop: '15px' }}>
-                  {komentarai.map((k, i) => (
-                    <div key={i} style={{ fontSize: '12px', borderBottom: '1px solid #eee', padding: '5px 0' }}>
-                      <b>{new Date(k.sukurta_data).toLocaleString()}</b>: {k.tekstas}
+                  {komentarai.sort((a,b) => new Date(b.sukurta_data) - new Date(a.sukurta_data)).map((k, i) => (
+                    <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                      <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+                      <div style={{ fontSize: '12px', marginTop: '2px' }}>{k.tekstas}</div>
                     </div>
                   ))}
                 </div>
