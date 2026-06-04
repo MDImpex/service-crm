@@ -443,39 +443,46 @@ function App() {
 </button>
         </div>
       )}
-      {selectedClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 5px 20px rgba(0,0,0,0.3)' }}>
-            <h2>{selectedClient["Kliento pavadinimas"]}</h2>
-            
-            {columns.map(col => (
-              <div key={col.key} style={{ marginBottom: '15px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', textTransform: 'uppercase' }}>{col.label}</label>
-                <input 
-                  style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-                  value={selectedClient[col.key] || ''}
-                  onChange={e => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
-                />
-              </div>
-            ))}
-
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => {
-                   alert("Išsaugota"); 
-                   setSelectedClient(null);
-                }} 
-                style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                IŠSAUGOTI
-              </button>
-              <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                UŽDARYTI
-              </button>
-            </div>
-          </div>
+    // ... (tęsiasi jūsų esamas kodas)
+          <button 
+            onClick={() => {
+              const label = prompt("Įveskite naujo stulpelio pavadinimą:");
+              // ... čia jūsų esama funkcija ...
+            }}
+            style={{ /* ... stiliai ... */ }}
+          >
+            + PRIDĖTI NAUJĄ STULPELĮ
+          </button>
         </div>
-      )}
+      )} 
+      {/* ČIA BAIGIASI showColManager blokas */}
+
+      {/* !!! ČIA ĮDĖKITE NAUJĄ KODĄ !!! */}
+      
+      {/* ČIA PRASIDEDA JŪSŲ SENASIS selectedEquipmentId blokas */}
+      {selectedEquipmentId && (
+        <div style={{ position: 'fixed', inset: 0, /* ... */ }}>
+// ... (toliau viskas lieka kaip buvo)  
+      // ... (tęsiasi jūsų esamas kodas)
+          <button 
+            onClick={() => {
+              const label = prompt("Įveskite naujo stulpelio pavadinimą:");
+              // ... čia jūsų esama funkcija ...
+            }}
+            style={{ /* ... stiliai ... */ }}
+          >
+            + PRIDĖTI NAUJĄ STULPELĮ
+          </button>
+        </div>
+      )} 
+      {/* ČIA BAIGIASI showColManager blokas */}
+
+      {/* !!! ČIA ĮDĖKITE NAUJĄ KODĄ !!! */}
+      
+      {/* ČIA PRASIDEDA JŪSŲ SENASIS selectedEquipmentId blokas */}
+      {selectedEquipmentId && (
+        <div style={{ position: 'fixed', inset: 0, /* ... */ }}>
+// ... (toliau viskas lieka kaip buvo)
       {selectedEquipmentId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', padding: '20px', width: '400px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
