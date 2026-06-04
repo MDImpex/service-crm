@@ -489,110 +489,79 @@ const fetchKlientoFailai = async (id) => {
               ))}
             </div>
 
-            {/* DEŠINĖ: Failai + Dashboard */}
-            <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
-              
-              {/* Failų įkėlimas */}
-              <div>
-                <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
-                <input type="file" onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-                  const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
-                    body: file
-                  });
-                  if (res.ok) {
-                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-                      method: 'POST',
-                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
-                    });
-                    fetchKlientoFailai(selectedClient.id);
-                  }
-                }} />
-              </div>
-
-              {/* Failų miniatiūros */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                {klientoFailai.map((f) => {
-                  const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(f.failo_pavadinimas);
-                  return (
-                    <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div style={{ height: '70px', background: '#f0f0f0', border: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', overflow: 'hidden' }}>
-                        {isImage ? <img src={f.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '10px' }}>{f.failo_pavadinimas.slice(-3).toUpperCase()}</span>}
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
-
-              {/* DASHBOARD: Patikros ir Gedimų progresas */}
-<div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
-  <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
+            {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
+<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
-  {/* Patikros progresas (Jau turėjai) */}
-  <div style={{ marginBottom: '15px' }}>
-     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-        <span>Patikros ciklas</span>
-        <span>{(() => {
-            const next = new Date(selectedClient["Sekanti patikra"]);
-            const now = new Date();
-            const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
-            return daysRemaining >= 0 ? `Liko ${daysRemaining} d.` : `Vėluoja ${Math.abs(daysRemaining)} d.`;
-        })()}</span>
-     </div>
-     <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
-        <div style={{ background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', height: '100%', width: '100%', borderRadius: '4px' }} />
-     </div>
-  </div>
-
-  {/* Gedimo progresas: 0-30 d. (Žalia -> Geltona -> Raudona) */}
+  {/* Failų įkėlimas */}
   <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Gedimo progresas (30 d.)</span>
-      <span>{(() => {
-         const isFault = (selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta');
-         if (!isFault) return "Nėra";
-         const startDate = komentarai.length > 0 ? new Date(komentarai[komentarai.length - 1].sukurta_data) : new Date();
-         const daysPassed = Math.max(0, Math.ceil((new Date() - startDate) / (1000 * 60 * 60 * 24)));
-         return `${daysPassed} d. bėgyje`;
-      })()}</span>
-    </div>
-    
-    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-      {(() => {
-        const isFault = (selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta');
-        if (!isFault) return <div style={{ width: '0%', height: '8px' }} />;
-        
-        const startDate = komentarai.length > 0 ? new Date(komentarai[komentarai.length - 1].sukurta_data) : new Date();
-        const daysPassed = Math.max(0, Math.ceil((new Date() - startDate) / (1000 * 60 * 60 * 24)));
-        const progress = Math.min(100, (daysPassed / 30) * 100);
-        
-        // Spalvos logika: Žalia (0%) -> Geltona (50%) -> Raudona (100%)
-        const getColor = (p) => {
-           if (p < 50) return `rgb(${Math.round(p * 2 * 1.5)}, 200, 50)`; // Žalia į Geltoną
-           return `rgb(255, ${Math.round(200 - (p - 50) * 4)}, 50)`; // Geltona į Raudoną
-        };
+    <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
+    <input type="file" onChange={async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
+      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
+        body: file
+      });
+      if (res.ok) {
+        await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+          method: 'POST',
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
+        });
+        fetchKlientoFailai(selectedClient.id);
+      }
+    }} />
+  </div>
 
-        return (
-          <div style={{ 
-            width: `${progress}%`, 
-            height: '100%', 
-            background: getColor(progress),
-            transition: 'width 0.5s ease-in-out, background 0.5s ease-in-out'
-          }} />
-        );
-      })()}
+  {/* Dashboard */}
+  <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
+    <h4 style={{ fontSize: '12px' }}>Gedimo eiga (30 d.)</h4>
+    <div style={{ background: '#ddd', height: '8px', borderRadius: '4px' }}>
+       {/* Čia tavo esama logika */}
     </div>
   </div>
-</div>
 
+  {/* Komentarų įrašymas ir istorija */}
+              <div style={{ marginTop: '10px' }}>
+                <textarea 
+                  id="comment-input"
+                  placeholder="Įrašyk komentarą..."
+                  style={{ width: '100%', height: '60px', marginBottom: '5px' }}
+                />
+                <button 
+                  style={{ 
+                    width: '100%', padding: '8px', background: '#113c32', color: 'white', 
+                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' 
+                  }}
+                  onClick={async () => {
+                    const textarea = document.getElementById('comment-input');
+                    const text = textarea.value;
+                    if (!text.trim()) return;
+
+                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai`, {
+                      method: 'POST',
+                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ equipment_id: selectedClient.id, tekstas: text, sukurta_data: new Date().toISOString() })
+                    });
+                    
+                    textarea.value = ''; // Išvalom lauką
+                    fetchKomentarai(selectedClient.id); // Atnaujinam sąrašą
+                  }}
+                >
+                  IŠSAUGOTI KOMENTARĄ
+                </button>
+
+                <div style={{ marginTop: '15px' }}>
+                  {komentarai.map((k, i) => (
+                    <div key={i} style={{ fontSize: '12px', borderBottom: '1px solid #eee', padding: '5px 0' }}>
+                      <b>{new Date(k.sukurta_data).toLocaleString()}</b>: {k.tekstas}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            
-            <button onClick={() => setSelectedClient(null)} style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
           </div>
         </div>
       )}
