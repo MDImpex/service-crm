@@ -533,44 +533,51 @@ const fetchKlientoFailai = async (id) => {
 <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', marginTop: '10px' }}>
   <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Įrenginio būklė</h4>
   
-  {/* Patikros progresas (logika suderinta su lentelės "row-overdue" logika) */}
+  {/* Patikros progresas */}
   <div style={{ marginBottom: '15px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Patikros ciklas</span>
-      <span>
-        {(() => {
-          const nextDate = new Date(selectedClient["Sekanti patikra"]);
-          const isOverdue = nextDate < new Date();
-          return isOverdue ? <span style={{ color: '#e30613', fontWeight: 'bold' }}>Vėluoja</span> : "Tvarkoje";
-        })()}
-      </span>
+      <span>Patikra</span>
+      <span>{(() => {
+        const last = new Date(selectedClient["Patikros data"]);
+        const next = new Date(selectedClient["Sekanti patikra"]);
+        const now = new Date();
+        const totalDays = Math.ceil((next - last) / (1000 * 60 * 60 * 24));
+        const passedDays = Math.ceil((now - last) / (1000 * 60 * 60 * 24));
+        const progress = totalDays > 0 ? Math.min(100, Math.max(0, (passedDays / totalDays) * 100)) : 0;
+        const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+        
+        return `${Math.round(progress)}% (${daysRemaining >= 0 ? `liko ${daysRemaining} d.` : `vėluoja ${Math.abs(daysRemaining)} d.`})`;
+      })()}</span>
     </div>
     <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
       <div style={{ 
         background: new Date(selectedClient["Sekanti patikra"]) < new Date() ? '#e30613' : '#acca23', 
         height: '100%', 
-        width: '100%' 
+        width: `${(() => {
+          const last = new Date(selectedClient["Patikros data"]);
+          const next = new Date(selectedClient["Sekanti patikra"]);
+          const now = new Date();
+          const totalDays = next - last;
+          const passedDays = now - last;
+          return totalDays > 0 ? Math.min(100, Math.max(0, (passedDays / totalDays) * 100)) : 0;
+        })()}%` 
       }} />
     </div>
   </div>
 
-  {/* Gedimo progresas (logika suderinta su lentelės "row-fault" logika) */}
+  {/* Gedimo progresas */}
   <div>
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Gedimo statusas</span>
-      <span>
-        {((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && 
-          !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) 
-          ? <span style={{ color: '#e30613', fontWeight: 'bold' }}>AKTYVUS GEDIMAS</span> 
-          : "Nėra"}
-      </span>
+      <span>Gedimo progresas (30 d.)</span>
+      <span>{((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) ? 
+        `${Math.min(100, Math.round(((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100))}%` : "Nėra"}</span>
     </div>
     <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
       <div style={{ 
         background: '#e30613', 
         height: '100%', 
-        width: ((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && 
-                 !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) ? '100%' : '0%' 
+        width: ((selectedClient["Prižiūri"] || "").toLowerCase().includes('gedimas') && !(selectedClient["Prižiūri"] || "").toLowerCase().includes('sutaisyta')) ? 
+          `${Math.min(100, ((new Date() - new Date(selectedClient["Montavimo data"] || Date.now())) / (1000 * 60 * 60 * 24 * 30)) * 100)}%` : '0%' 
       }} />
     </div>
   </div>
