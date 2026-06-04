@@ -494,10 +494,7 @@ const fetchKlientoFailai = async (id) => {
                 <input type="file" onChange={async (e) => {
                   const file = e.target.files[0];
                   if (!file) return;
-                  console.log("Įkeliamas failas:", file.name);
-                  
                   const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-                  
                   const storageRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
@@ -514,14 +511,21 @@ const fetchKlientoFailai = async (id) => {
                         url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
                       })
                     });
-                    alert("Failas įkeltas!");
                     fetchKlientoFailai(selectedClient.id);
-                  } else {
-                    const err = await storageRes.text();
-                    console.error("Klaida:", err);
-                    alert("Klaida! Patikrinkite konsolę (F12).");
                   }
                 }} />
+              </div>
+
+              {/* FAILŲ SĄRAŠAS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '10px' }}>
+                {klientoFailai.map((f) => (
+                  <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                    <div style={{ height: '60px', background: '#f9f9f9', border: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', borderRadius: '4px' }}>
+                      {f.failo_pavadinimas.slice(-4).toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '4px' }}>{f.failo_pavadinimas}</div>
+                  </a>
+                ))}
               </div>
             </div>
             
@@ -529,6 +533,7 @@ const fetchKlientoFailai = async (id) => {
           </div>
         </div>
       )}
+      {/* KLIENTO KORTELĖS PABAIGA */}
     </div>
   );
 }
