@@ -11,6 +11,7 @@ function App() {
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
   const [komentarai, setKomentarai] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [klientoFailai, setKlientoFailai] = useState([]);
   const fetchKomentarai = async (id) => {
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
@@ -18,7 +19,13 @@ function App() {
     const data = await res.json();
     setKomentarai(data);
   };
-
+const fetchKlientoFailai = async (id) => {
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai_meta?equipment_id=eq.${id}`, {
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  const data = await res.json();
+  setKlientoFailai(data || []);
+};
   const handleAddComment = async (text) => {
   // 1. Įrašome komentarą į 'komentarai' lentelę
   const res = await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
@@ -231,8 +238,9 @@ function App() {
 
   const handleStartEdit = (id, field, initialValue) => { setEditingCell({ id, field }); setInputValue(initialValue || ''); };
   const openClientCard = (item) => {
-    setSelectedClient(item);
-  };
+  setSelectedClient(item);
+  fetchKlientoFailai(item.id); // Pridėta ši eilutė
+};
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
     const targetIndex = index + direction;
@@ -463,28 +471,48 @@ function App() {
         </div>
       ))}
 
-      {/* Failų įkėlimas */}
-      <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ:</label>
-        <input 
-          type="file" 
-          onChange={async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-            
-            const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
-              body: file
-            });
+      {/* FAILŲ ĮKĖLIMAS IR SĄRAŠAS */}
+<div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+  <label style={{ fontSize: '11px', fontWeight: 'bold' }}>ĮKELTI FAILĄ:</label>
+  <input 
+    type="file" 
+    onChange={async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
+      
+      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
+        body: file
+      });
 
-            if (res.ok) alert("Failas įkeltas!");
-            else alert("Klaida įkeliant.");
-          }}
-          style={{ width: '100%', marginTop: '5px' }}
-        />
-      </div>
+      if (res.ok) {
+        await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai_meta`, {
+          method: 'POST',
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            equipment_id: selectedClient.id, 
+            failo_pavadinimas: file.name,
+            url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` 
+          })
+        });
+        alert("Failas įkeltas!");
+        fetchKlientoFailai(selectedClient.id);
+      } else { alert("Klaida įkeliant."); }
+    }}
+    style={{ width: '100%', marginTop: '5px' }}
+  />
+  
+  {/* Failų sąrašas */}
+  <ul style={{ paddingLeft: '20px', margin: '15px 0' }}>
+    {klientoFailai.map(f => (
+      <li key={f.id} style={{ fontSize: '12px' }}>
+        <a href={f.url} target="_blank" rel="noreferrer" style={{color: '#113c32'}}>{f.failo_pavadinimas}</a>
+      </li>
+    ))}
+  </ul>
+</div>
 
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         <button 
