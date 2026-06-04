@@ -10,7 +10,7 @@ function App() {
   const [history, setHistory] = useState([])
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
   const [komentarai, setKomentarai] = useState([]);
-  
+  const [selectedClient, setSelectedClient] = useState(null);
   const fetchKomentarai = async (id) => {
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
@@ -230,6 +230,9 @@ function App() {
   };
 
   const handleStartEdit = (id, field, initialValue) => { setEditingCell({ id, field }); setInputValue(initialValue || ''); };
+  const openClientCard = (item) => {
+    setSelectedClient(item);
+  };
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
     const targetIndex = index + direction;
@@ -381,9 +384,14 @@ function App() {
                               <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                             )
                           ) : (
-                            <span className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}>
-                              {item[col.key] || '—'}
-                            </span>
+                            <span 
+    className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} 
+    onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}
+    onClick={() => col.key === "Kliento pavadinimas" ? openClientCard(item) : null}
+    style={col.key === "Kliento pavadinimas" ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
+  >
+    {item[col.key] || '—'}
+  </span>
                           )}
                         </div>
                       </td>
@@ -433,6 +441,39 @@ function App() {
 >
   + PRIDĖTI NAUJĄ STULPELĮ
 </button>
+        </div>
+      )}
+      {selectedClient && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', padding: '25px', width: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 5px 20px rgba(0,0,0,0.3)' }}>
+            <h2>{selectedClient["Kliento pavadinimas"]}</h2>
+            
+            {columns.map(col => (
+              <div key={col.key} style={{ marginBottom: '15px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', textTransform: 'uppercase' }}>{col.label}</label>
+                <input 
+                  style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
+                  value={selectedClient[col.key] || ''}
+                  onChange={e => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                />
+              </div>
+            ))}
+
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => {
+                   alert("Išsaugota"); 
+                   setSelectedClient(null);
+                }} 
+                style={{ flex: 1, padding: '10px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                IŠSAUGOTI
+              </button>
+              <button onClick={() => setSelectedClient(null)} style={{ padding: '10px 20px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                UŽDARYTI
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {selectedEquipmentId && (
