@@ -485,11 +485,9 @@ const fetchKlientoFailai = async (id) => {
       if (!file) return;
       const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
       
-      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
-        body: file
-      });
+      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai-failai?equipment_id=eq.${id}`, {
+  headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+});
 
       if (res.ok) {
         await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai_meta`, {
