@@ -518,14 +518,34 @@ const fetchKlientoFailai = async (id) => {
 
               {/* FAILŲ SĄRAŠAS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '10px' }}>
-                {klientoFailai.map((f) => (
-                  <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                    <div style={{ height: '60px', background: '#f9f9f9', border: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', borderRadius: '4px' }}>
-                      {f.failo_pavadinimas.slice(-4).toUpperCase()}
-                    </div>
-                    <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '4px' }}>{f.failo_pavadinimas}</div>
-                  </a>
-                ))}
+                {klientoFailai.map((f) => {
+                    // Tikriname, ar tai nuotrauka (JPG, PNG, WEBP, GIF)
+                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(f.failo_pavadinimas);
+                    
+                    return (
+                      <a key={f.id} href={f.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div style={{ 
+                          height: '70px', 
+                          background: '#f0f0f0', 
+                          border: '1px solid #ddd', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          borderRadius: '4px',
+                          overflow: 'hidden' 
+                        }}>
+                          {isImage ? (
+                            <img src={f.url} alt="miniatiūra" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{f.failo_pavadinimas.slice(-3).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {f.failo_pavadinimas}
+                        </div>
+                      </a>
+                    );
+                  })}
               </div>
             </div>
             
