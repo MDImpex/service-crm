@@ -479,94 +479,55 @@ const handleAddComment = async (text) => {
       )}
 
       {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
-      {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
+      
+      {/* Uždarymo mygtukas */}
+      <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
+        onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
-            {/* KAIRĖ: Redagavimo laukai */}
-            <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
-              <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
-              {columns.map(col => {
-                // JEI TAI KOMENTARAS, NEATVAIZDUOKIME JO KAIRĖJE
-                if (col.key === "Komentaras") return null;
-
-                return (
-                  <div key={col.key} style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-                    <input
-                      value={selectedClient[col.key] || ''}
-                      onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                    />
-                  </div>
-                );
-              })}
+      {/* KAIRĖ: Redagavimo laukai */}
+      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
+        <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
+        {columns.map(col => {
+          if (col.key === "Komentaras") return null;
+          return (
+            <div key={col.key} style={{ marginBottom: '10px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+              <input value={selectedClient[col.key] || ''} 
+                onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
             </div>
+          );
+        })}
+      </div>
 
-            {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
-            <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+      {/* DEŠINĖ: Komentarai ir Failai */}
+      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <h3>Komentarai</h3>
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+          <input id="new-comment-input" style={{ flex: 1, padding: '5px' }} placeholder="Įrašykite komentarą..." />
+          <button onClick={() => {
+            const val = document.getElementById('new-comment-input').value;
+            handleAddComment(val);
+            document.getElementById('new-comment-input').value = '';
+          }}>Siųsti</button>
+        </div>
+        
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {komentarai.map((k, i) => (
+            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-              {/* Uždarymo mygtukas */}
-              <button
-                style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
-                onClick={() => {
-                  setSelectedClient(null);
-                  setKomentarai([]);
-                }}
-              >✕</button>
-
-              {/* Failų sekcija */}
-              <div>
-                <h4 style={{ fontSize: '12px', marginBottom: '8px', color: '#113c32' }}>FAILAI</h4>
-                {klientoFailai.length > 0 ? (
-                  klientoFailai.map((f, i) => (
-                    <div key={i} style={{ fontSize: '12px', padding: '5px', background: '#f9f9f9', marginBottom: '4px' }}>
-                      <a href={f.url} target="_blank" rel="noreferrer">{f.pavadinimas || 'Failas'}</a>
-                    </div>
-                  ))
-                ) : <p style={{ fontSize: '11px', color: '#999' }}>Failų nėra.</p>}
-              </div>
-
-              {/* Komentarų sekcija */}
-              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <h4 style={{ fontSize: '12px', marginBottom: '8px', color: '#113c32' }}>KOMENTARAI</h4>
-                <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '10px' }}>
-                  {komentarai.map(k => (
-                    <div key={k.id} style={{ fontSize: '12px', padding: '8px', borderBottom: '1px solid #eee' }}>
-                      <div style={{ color: '#666', fontSize: '10px' }}>{new Date(k.sukurta_data).toLocaleDateString()}</div>
-                      <div>{k.tekstas}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <input 
-                    id="new-comment-input"
-                    placeholder="Naujas komentaras..." 
-                    style={{ flex: 1, padding: '8px', fontSize: '12px', border: '1px solid #ccc' }}
-                  />
-                  <button onClick={async () => {
-                    const input = document.getElementById('new-comment-input');
-                    if (input.value) {
-                      await handleAddComment(input.value);
-                      input.value = '';
-                    }
-                  }} style={{ background: '#113c32', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>
-                    Siųsti
-                  </button>
-                </div>
-              </div>
-
-            </div> {/* Pabaiga: Dešinė pusė */}
-          </div> {/* Pabaiga: Modalinis langas */}
-        </div> // Pabaiga: Fixed overlay
-      )}
+    </div>
+  </div>
+)}
     </div>
   );
 }
