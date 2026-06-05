@@ -38,6 +38,7 @@ function App() {
 const handleAddComment = async (text) => {
   if (!text.trim()) return;
 
+  // 1. Siunčiame į duomenų bazę
   const res = await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
     method: 'POST',
     headers: { 
@@ -47,22 +48,22 @@ const handleAddComment = async (text) => {
       'Prefer': 'return=representation' 
     },
     body: JSON.stringify({ 
-      equipment_id: selectedClient.id, // Svarbu: naudoti būtent šio kliento ID
+      equipment_id: selectedClient.id, 
       tekstas: text,
-      sukurta_data: new Date().toISOString()
+      sukurta_data: new Date().toISOString() 
     })
   });
 
   if (res.ok) {
     const [newComment] = await res.json();
     
-    // ATNAUJINAM BŪSENĄ: pridedam naują komentarą į esamą sąrašą
+    // 2. ATNAUJINAME TIK BŪSENĄ (React automatiškai perpieš Jūsų jau turimą gražų sąrašą)
     setKomentarai(prev => [newComment, ...prev]);
-
-    // Išvalom įvesties lauką (jei turite tokį state'ą)
-    // setCommentText(''); 
+    
+    // 3. Jei turite įvesties lauko "state", jį išvalome
+    // setCommentInputValue(''); 
   } else {
-    alert("Klaida išsaugant komentarą");
+    console.error("Nepavyko pridėti komentaro");
   }
 };
 
