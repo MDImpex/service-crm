@@ -509,38 +509,51 @@ const handleAddComment = async (text) => {
   <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
     onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
-  {/* PROGRESO RODIKLIAI */}
+  {/* PROGRESO RODIKLIAI SU DINAMINĖMIS SPALVOMIS */}
 <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '15px' }}>
   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
   
-  {/* Patikros ciklas: 100% = 360 dienų */}
-  <div style={{ marginBottom: '15px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Patikros ciklas (360 d.)</span>
-      {(() => {
-        const dienos = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24));
-        const proc = Math.min(100, Math.round((dienos % 360) / 360 * 100));
-        return <span>{proc}% ({dienos % 360} d.)</span>;
-      })()}
-    </div>
-    <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-      <div style={{ 
-        width: `${Math.min(100, ((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24) % 360) / 360 * 100)}%`, 
-        height: '100%', background: '#113c32', borderRadius: '4px' 
-      }}></div>
-    </div>
-  </div>
+  {/* Pagalbinė funkcija spalvai gauti: 0% = žalia (120), 100% = raudona (0) */}
+  {(() => {
+    const getDynamicColor = (percent) => {
+      // Procentus paverčiame į atspalvį: 0% -> 120 (žalia), 100% -> 0 (raudona)
+      const hue = Math.max(0, 120 - (percent * 1.2));
+      return `hsl(${hue}, 70%, 45%)`;
+    };
 
-  {/* Gedimo progresas: 30 dienų limitas */}
-  <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-      <span>Gedimo progresas (30 d.)</span>
-      {(() => {
-        const dienosNuoGedimo = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24));
-        const proc = Math.min(100, Math.round(dienosNuoGedimo / 30 * 100));
-        return <span>{proc}% ({dienosNuoGedimo} d.)</span>;
-      })()}
-    </div>
+    const renderProgressBar = (label, percent, days, totalDays) => (
+      <div style={{ marginBottom: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+          <span>{label}</span>
+          <span style={{ fontWeight: 'bold', color: getDynamicColor(percent) }}>{percent}% ({days} d.)</span>
+        </div>
+        <div style={{ height: '8px', background: '#ddd', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ 
+            width: `${Math.min(100, percent)}%`, 
+            height: '100%', 
+            background: getDynamicColor(percent),
+            transition: 'width 0.5s ease-in-out, background 0.5s ease-in-out',
+            borderRadius: '4px' 
+          }}></div>
+        </div>
+      </div>
+    );
+
+    // Skaičiavimai
+    const patikrosDienos = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24));
+    const patikrosProc = Math.round(((patikrosDienos % 360) / 360) * 100);
+    
+    const gedimoDienos = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24));
+    const gedimoProc = Math.min(100, Math.round((gedimoDienos / 30) * 100));
+
+    return (
+      <>
+        {renderProgressBar("Patikros ciklas (360 d.)", patikrosProc, patikrosDienos % 360, 360)}
+        {renderProgressBar("Gedimo progresas (30 d.)", gedimoProc, gedimoDienos, 30)}
+      </>
+    );
+  })()}
+</div>
     <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
       <div style={{ 
         width: `${Math.min(100, ((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24)) / 30 * 100)}%`, 
