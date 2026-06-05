@@ -503,27 +503,45 @@ const handleAddComment = async (text) => {
         })}
       </div>
 
-      {/* DEŠINĖ: Komentarai ir Failai */}
-      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <h3>Komentarai</h3>
-        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-          <input id="new-comment-input" style={{ flex: 1, padding: '5px' }} placeholder="Įrašykite komentarą..." />
-          <button onClick={() => {
-            const val = document.getElementById('new-comment-input').value;
-            handleAddComment(val);
-            document.getElementById('new-comment-input').value = '';
-          }}>Siųsti</button>
-        </div>
-        
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {komentarai.map((k, i) => (
-            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
-            </div>
-          ))}
-        </div>
+      {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
+<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+  
+  <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
+    onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
+
+  {/* PROGRESO RODIKLIAI (Jūsų originalūs dashboard elementai) */}
+  <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
+    <h4 style={{ margin: '0 0 10px 0' }}>ĮRENGINIO BŪKLĖ</h4>
+    <div style={{ fontSize: '12px', marginBottom: '5px' }}>Patikros ciklas</div>
+    <div style={{ height: '8px', background: '#eee', borderRadius: '4px', marginBottom: '10px' }}>
+      <div style={{ width: '90%', height: '100%', background: 'red', borderRadius: '4px' }}></div>
+    </div>
+    <div style={{ fontSize: '12px', marginBottom: '5px' }}>Gedimo progresas (30 d.)</div>
+    <div style={{ height: '8px', background: '#eee', borderRadius: '4px' }}>
+      <div style={{ width: '60%', height: '100%', background: 'green', borderRadius: '4px' }}></div>
+    </div>
+  </div>
+
+  {/* KOMENTARŲ SKILTIS */}
+  <h3>Komentarai</h3>
+  <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+    <input id="new-comment-input" style={{ flex: 1, padding: '5px' }} placeholder="Įrašykite komentarą..." />
+    <button onClick={() => {
+      const val = document.getElementById('new-comment-input').value;
+      handleAddComment(val);
+      document.getElementById('new-comment-input').value = '';
+    }}>Siųsti</button>
+  </div>
+  
+  <div style={{ flex: 1, overflowY: 'auto' }}>
+    {komentarai.map((k, i) => (
+      <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+        <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+        <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
       </div>
+    ))}
+  </div>
+</div>
 
     </div>
   </div>
