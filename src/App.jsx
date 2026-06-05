@@ -509,18 +509,38 @@ const handleAddComment = async (text) => {
   <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
     onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
-  {/* PROGRESO RODIKLIAI (Jūsų originalūs dashboard elementai) */}
-  <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-    <h4 style={{ margin: '0 0 10px 0' }}>ĮRENGINIO BŪKLĖ</h4>
-    <div style={{ fontSize: '12px', marginBottom: '5px' }}>Patikros ciklas</div>
-    <div style={{ height: '8px', background: '#eee', borderRadius: '4px', marginBottom: '10px' }}>
-      <div style={{ width: '90%', height: '100%', background: 'red', borderRadius: '4px' }}></div>
+  {/* PROGRESO RODIKLIAI */}
+<div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '15px' }}>
+  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
+  
+  {/* Patikros ciklas: 100% = 360 dienų */}
+  <div style={{ marginBottom: '12px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+      <span>Patikros ciklas</span>
+      <span>{Math.round(((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24) % 360) / 360 * 100)}%</span>
     </div>
-    <div style={{ fontSize: '12px', marginBottom: '5px' }}>Gedimo progresas (30 d.)</div>
-    <div style={{ height: '8px', background: '#eee', borderRadius: '4px' }}>
-      <div style={{ width: '60%', height: '100%', background: 'green', borderRadius: '4px' }}></div>
+    <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+      <div style={{ 
+        width: `${Math.min(100, ((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24) % 360) / 360 * 100)}%`, 
+        height: '100%', background: '#113c32', borderRadius: '4px' 
+      }}></div>
     </div>
   </div>
+
+  {/* Gedimo progresas: 30 dienų limitas */}
+  <div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+      <span>Gedimo progresas (30 d.)</span>
+      <span>{Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24))} d.</span>
+    </div>
+    <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+      <div style={{ 
+        width: `${Math.min(100, ((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24)) / 30 * 100)}%`, 
+        height: '100%', background: '#e30613', borderRadius: '4px' 
+      }}></div>
+    </div>
+  </div>
+</div>
 
   {/* KOMENTARŲ SKILTIS */}
   <h3>Komentarai</h3>
