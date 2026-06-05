@@ -13,12 +13,14 @@ function App() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [klientoFailai, setKlientoFailai] = useState([]);
   const fetchKomentarai = async (id) => {
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-    });
-    const data = await res.json();
-    setKomentarai(data);
-  };
+  if (!id) return;
+  // Užklausa filtravimui: equipment_id turi būti lygus būtent šio kliento id
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  const data = await res.json();
+  setKomentarai(data); // Čia setinam tik tai, ką gavom konkrečiam klientui
+};
 const fetchKlientoFailai = async (id) => {
   const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
     headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
@@ -500,7 +502,10 @@ const fetchKlientoFailai = async (id) => {
               {/* Uždarymo mygtukas viršuje */}
               <button 
                 style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
-                onClick={() => setSelectedClient(null)}
+                onClick={() => {
+  setSelectedClient(null);
+  setKomentarai([]); // Išvalom komentarus, kad kitą kartą atidarius būtų švaru
+}}
               >✕</button>
 
               {/* 1. Failų įkėlimas */}
@@ -563,13 +568,16 @@ const fetchKlientoFailai = async (id) => {
                   }}>IŠSAUGOTI KOMENTARĄ</button>
 
                 <div style={{ marginTop: '15px' }}>
-                  {komentarai.sort((a,b) => new Date(b.sukurta_data) - new Date(a.sukurta_data)).map((k, i) => (
-                    <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                      <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-                      <div style={{ fontSize: '12px', marginTop: '2px' }}>{k.tekstas}</div>
-                    </div>
-                  ))}
-                </div>
+  {komentarai
+    .filter(k => k.equipment_id === selectedClient.id) // PAPILDOMAS SAUGIKLIS: rodom tik tai, kas priklauso šiam ID
+    .sort((a,b) => new Date(b.sukurta_data) - new Date(a.sukurta_data))
+    .map((k, i) => (
+      <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+        <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+        <div style={{ fontSize: '12px', marginTop: '2px' }}>{k.tekstas}</div>
+      </div>
+  ))}
+</div>
               </div>
             </div>
           </div>
