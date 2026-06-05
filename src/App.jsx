@@ -514,10 +514,14 @@ const handleAddComment = async (text) => {
   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
   
   {/* Patikros ciklas: 100% = 360 dienų */}
-  <div style={{ marginBottom: '12px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
-      <span>Patikros ciklas</span>
-      <span>{Math.round(((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24) % 360) / 360 * 100)}%</span>
+  <div style={{ marginBottom: '15px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+      <span>Patikros ciklas (360 d.)</span>
+      {(() => {
+        const dienos = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24));
+        const proc = Math.min(100, Math.round((dienos % 360) / 360 * 100));
+        return <span>{proc}% ({dienos % 360} d.)</span>;
+      })()}
     </div>
     <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
       <div style={{ 
@@ -529,9 +533,13 @@ const handleAddComment = async (text) => {
 
   {/* Gedimo progresas: 30 dienų limitas */}
   <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
       <span>Gedimo progresas (30 d.)</span>
-      <span>{Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24))} d.</span>
+      {(() => {
+        const dienosNuoGedimo = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24));
+        const proc = Math.min(100, Math.round(dienosNuoGedimo / 30 * 100));
+        return <span>{proc}% ({dienosNuoGedimo} d.)</span>;
+      })()}
     </div>
     <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
       <div style={{ 
