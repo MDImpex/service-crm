@@ -503,87 +503,59 @@ const handleAddComment = async (text) => {
         })}
       </div>
 
-      {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
-<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-  
-  <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
-    onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
+      {/* DEŠINĖ: Dashboard ir Komentarai */}
+      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+        
+        {/* PROGRESO RODIKLIAI */}
+        <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
+          {(() => {
+            const getCol = (p) => `hsl(${Math.max(0, 120 - (p * 1.2))}, 70%, 45%)`;
+            const d1 = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / 86400000);
+            const p1 = Math.min(100, Math.round(((d1 % 360) / 360) * 100));
+            const d2 = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / 86400000);
+            const p2 = Math.min(100, Math.round((d2 / 30) * 100));
 
-  {/* PROGRESO RODIKLIAI SU DINAMINĖMIS SPALVOMIS */}
-<div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '15px' }}>
-  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
-  
-  {/* Pagalbinė funkcija spalvai gauti: 0% = žalia (120), 100% = raudona (0) */}
-  {(() => {
-    const getDynamicColor = (percent) => {
-      // Procentus paverčiame į atspalvį: 0% -> 120 (žalia), 100% -> 0 (raudona)
-      const hue = Math.max(0, 120 - (percent * 1.2));
-      return `hsl(${hue}, 70%, 45%)`;
-    };
-
-    const renderProgressBar = (label, percent, days, totalDays) => (
-      <div style={{ marginBottom: '15px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-          <span>{label}</span>
-          <span style={{ fontWeight: 'bold', color: getDynamicColor(percent) }}>{percent}% ({days} d.)</span>
+            return (
+              <>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Patikros ciklas</span>
+                    <span style={{ color: getCol(p1), fontWeight: 'bold' }}>{p1}% ({d1 % 360} d.)</span>
+                  </div>
+                  <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+                    <div style={{ width: `${p1}%`, height: '100%', background: getCol(p1), borderRadius: '4px' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                    <span>Gedimo progresas (30 d.)</span>
+                    <span style={{ color: getCol(p2), fontWeight: 'bold' }}>{p2}% ({d2} d.)</span>
+                  </div>
+                  <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+                    <div style={{ width: `${p2}%`, height: '100%', background: getCol(p2), borderRadius: '4px' }}></div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
-        <div style={{ height: '8px', background: '#ddd', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ 
-            width: `${Math.min(100, percent)}%`, 
-            height: '100%', 
-            background: getDynamicColor(percent),
-            transition: 'width 0.5s ease-in-out, background 0.5s ease-in-out',
-            borderRadius: '4px' 
-          }}></div>
+
+        {/* KOMENTARAI */}
+        <h3 style={{ margin: 0 }}>Komentarai</h3>
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
+          <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {komentarai.map((k, i) => (
+            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
+            </div>
+          ))}
         </div>
       </div>
-    );
-
-    // Skaičiavimai
-    const patikrosDienos = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / (1000 * 60 * 60 * 24));
-    const patikrosProc = Math.round(((patikrosDienos % 360) / 360) * 100);
-    
-    const gedimoDienos = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24));
-    const gedimoProc = Math.min(100, Math.round((gedimoDienos / 30) * 100));
-
-    return (
-      <>
-        {renderProgressBar("Patikros ciklas (360 d.)", patikrosProc, patikrosDienos % 360, 360)}
-        {renderProgressBar("Gedimo progresas (30 d.)", gedimoProc, gedimoDienos, 30)}
-      </>
-    );
-  })()}
-</div>
-    <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-      <div style={{ 
-        width: `${Math.min(100, ((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / (1000 * 60 * 60 * 24)) / 30 * 100)}%`, 
-        height: '100%', background: '#e30613', borderRadius: '4px' 
-      }}></div>
-    </div>
-  </div>
-</div>
-
-  {/* KOMENTARŲ SKILTIS */}
-  <h3>Komentarai</h3>
-  <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-    <input id="new-comment-input" style={{ flex: 1, padding: '5px' }} placeholder="Įrašykite komentarą..." />
-    <button onClick={() => {
-      const val = document.getElementById('new-comment-input').value;
-      handleAddComment(val);
-      document.getElementById('new-comment-input').value = '';
-    }}>Siųsti</button>
-  </div>
-  
-  <div style={{ flex: 1, overflowY: 'auto' }}>
-    {komentarai.map((k, i) => (
-      <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-        <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-        <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
-      </div>
-    ))}
-  </div>
-</div>
-
     </div>
   </div>
 )}
