@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
-  const [globalSearch, setGlobalSearch] = useState('') 
+  const [globalSearch, setGlobalSearch] = useState('')
   const [editingCell, setEditingCell] = useState(null)
   const [showColManager, setShowColManager] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -13,59 +13,67 @@ function App() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [klientoFailai, setKlientoFailai] = useState([]);
   const fetchKomentarai = async (id) => {
-  if (!id) return;
-  // Užklausa filtravimui: equipment_id turi būti lygus būtent šio kliento id
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-  });
-  const data = await res.json();
-  setKomentarai(data); // Čia setinam tik tai, ką gavom konkrečiam klientui
-};
-const fetchKlientoFailai = async (id) => {
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-  });
-  
-  if (res.ok) {
+    if (!id) return;
+    // Užklausa filtravimui: equipment_id turi būti lygus būtent šio kliento id
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
     const data = await res.json();
-    setKlientoFailai(data);
-  } else {
-    console.error("Klaida:", await res.text());
-    setKlientoFailai([]); // SVARBU: čia išvengiame "map is not a function"
-  }
-};
-  const handleAddComment = async (text) => {
-  // 1. Įrašome komentarą į 'komentarai' lentelę
+    setKomentarai(data); // Čia setinam tik tai, ką gavom konkrečiam klientui
+  };
+  const fetchKlientoFailai = async (id) => {
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setKlientoFailai(data);
+    } else {
+      console.error("Klaida:", await res.text());
+      setKlientoFailai([]); // SVARBU: čia išvengiame "map is not a function"
+    }
+  };
+ // 1. Atnaujinta komentarų pridėjimo funkcija
+const handleAddComment = async (text) => {
+  if (!text.trim()) return;
+
   const res = await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
     method: 'POST',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ equipment_id: selectedEquipmentId, tekstas: text })
+    headers: { 
+      'apikey': API_KEY, 
+      'Authorization': `Bearer ${API_KEY}`, 
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation' 
+    },
+    body: JSON.stringify({ 
+      equipment_id: selectedClient.id, // Svarbu: naudoti būtent šio kliento ID
+      tekstas: text,
+      sukurta_data: new Date().toISOString()
+    })
   });
 
   if (res.ok) {
-    // 2. Atnaujiname pagrindinį įrašą, kad 'Komentaras' stulpelyje pasirodytų tekstas
-    await fetch(`${BASE_URL}?id=eq.${selectedEquipmentId}`, {
-      method: 'PATCH',
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Komentaras: text })
-    });
+    const [newComment] = await res.json();
     
-    // 3. Atnaujiname vietinę būseną (lentelę)
-    setEquipment(prev => prev.map(item => 
-      item.id === selectedEquipmentId ? { ...item, Komentaras: text } : item
-    ));
-    fetchKomentarai(selectedEquipmentId);
+    // ATNAUJINAM BŪSENĄ: pridedam naują komentarą į esamą sąrašą
+    setKomentarai(prev => [newComment, ...prev]);
+
+    // Išvalom įvesties lauką (jei turite tokį state'ą)
+    // setCommentText(''); 
+  } else {
+    alert("Klaida išsaugant komentarą");
   }
 };
 
   const defaultColumns = [
     { label: "MONTAVIMO DATA", key: "Montavimo data", visible: true },
-    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true }, 
+    { label: "ĮM. KODAS", key: "Kliento įmonės kodas", visible: true },
     { label: "KLIENTAS", key: "Kliento pavadinimas", visible: true },
     { label: "ADRESAS", key: "Adresas", visible: true },
     { label: "ĮRANGOS PAVADINIMAS", key: "Įrangos pavadinimas", visible: true },
     { label: "SERIJOS NUMERIS", key: "Serijos numeris", visible: true },
-    { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true }, 
+    { label: "IŠKVIETIMAI", key: "Prižiūri", visible: true },
     { label: "PERIODAS", key: "Patikr. Periodiškumas", visible: true },
     { label: "PASK. PATIKRA", key: "Patikros data", visible: true },
     { label: "SEKANTI PATIKRA", key: "Sekanti patikra", visible: true },
@@ -75,28 +83,28 @@ const fetchKlientoFailai = async (id) => {
     { label: "ATLIKTA", key: "Atlikta", visible: true }
   ];
 
- const [columns, setColumns] = useState(() => {
-  const savedCols = localStorage.getItem('crm_columns');
-  if (savedCols) {
-    const parsed = JSON.parse(savedCols);
-    // Tikriname, ar yra senų stulpelių pavadinimų
-    const hasOldNames = parsed.some(c => c.key === "Prižiūri" || (c.key === "Prižiūri" && c.label !== "IŠKVIETIMAI"));
-    
-    if (hasOldNames) {
-      localStorage.removeItem('crm_columns'); // Ištrinam seną, kad užsikrautų naujas
-      return defaultColumns;
+  const [columns, setColumns] = useState(() => {
+    const savedCols = localStorage.getItem('crm_columns');
+    if (savedCols) {
+      const parsed = JSON.parse(savedCols);
+      // Tikriname, ar yra senų stulpelių pavadinimų
+      const hasOldNames = parsed.some(c => c.key === "Prižiūri" || (c.key === "Prižiūri" && c.label !== "IŠKVIETIMAI"));
+
+      if (hasOldNames) {
+        localStorage.removeItem('crm_columns'); // Ištrinam seną, kad užsikrautų naujas
+        return defaultColumns;
+      }
+      return parsed;
     }
-    return parsed;
-  }
-  return defaultColumns;
-});
+    return defaultColumns;
+  });
 
   const [widths, setWidths] = useState(() => {
     const savedWidths = localStorage.getItem('crm_widths')
     return savedWidths ? JSON.parse(savedWidths) : {
       "Montavimo data": 120, "Kliento įmonės kodas": 90, "Kliento pavadinimas": 160,
       "Adresas": 180, "Įrangos pavadinimas": 160, "Serijos numeris": 120,
-      "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110, 
+      "Prižiūri": 120, "Patikr. Periodiškumas": 90, "Patikros data": 110,
       "Sekanti patikra": 110, "Atk. Periodas": 100, "Komentaras": 180, "Sutartis YRA/NĖRA": 120, "Atlikta": 100
     }
   });
@@ -108,16 +116,21 @@ const fetchKlientoFailai = async (id) => {
   useEffect(() => { localStorage.setItem('crm_widths', JSON.stringify(widths)) }, [widths])
   useEffect(() => { fetchData() }, [])
   useEffect(() => {
-  if (selectedClient && selectedClient.id) {
-    fetchKlientoFailai(selectedClient.id);
-  }
-}, [selectedClient]);
+    if (selectedClient && selectedClient.id) {
+      // 1. Išvalom senus, kad nemaišytų
+      setKomentarai([]);
+
+      // 2. Kviečiam funkcijas, kurios užkraus duomenis iš bazės
+      fetchKomentarai(selectedClient.id);
+      fetchKlientoFailai(selectedClient.id);
+    }
+  }, [selectedClient]); // Svarbu: šis efektas pasileis kiekvieną kartą, kai pasikeis selectedClient
 
   async function fetchData() {
     setLoading(true)
     try {
-      const response = await fetch(`${BASE_URL}?select=*&order=id.desc`, { 
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } 
+      const response = await fetch(`${BASE_URL}?select=*&order=id.desc`, {
+        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
       })
       const data = await response.json()
       setEquipment(data || [])
@@ -125,7 +138,7 @@ const fetchKlientoFailai = async (id) => {
   }
 
   const sendUrgentEmail = async (item, faultDetails) => {
-    const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
+    const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM';
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
     const klientas = item["Kliento pavadinimas"] || 'Nenurodytas klientas';
     const adresas = item["Adresas"] || 'Nenurodytas adresas';
@@ -251,8 +264,8 @@ const fetchKlientoFailai = async (id) => {
 
   const handleStartEdit = (id, field, initialValue) => { setEditingCell({ id, field }); setInputValue(initialValue || ''); };
   const openClientCard = (item) => {
-  setSelectedClient(item);
-};
+    setSelectedClient(item);
+  };
   const moveColumn = (index, direction) => {
     const newCols = [...columns];
     const targetIndex = index + direction;
@@ -298,7 +311,7 @@ const fetchKlientoFailai = async (id) => {
 
   const visibleCols = columns.filter(c => c.visible);
   const filteredData = equipment.filter(item => {
-    if (!globalSearch.trim()) return true; 
+    if (!globalSearch.trim()) return true;
     const query = globalSearch.toLowerCase();
     return (item["Kliento pavadinimas"]?.toLowerCase() || '').includes(query) || (item["Įrangos pavadinimas"]?.toLowerCase() || '').includes(query) || (item["Adresas"]?.toLowerCase() || '').includes(query) || (item["Serijos numeris"]?.toLowerCase() || '').includes(query);
   });
@@ -364,8 +377,8 @@ const fetchKlientoFailai = async (id) => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {col.label}
                       <div style={{ marginTop: '5px' }}>
-                        <span style={{cursor:'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
-                        <span style={{cursor:'pointer', fontSize: '10px', color: '#b4965d'}} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
+                        <span style={{ cursor: 'pointer', marginRight: '8px', fontSize: '10px', color: '#b4965d' }} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), -1)}>◀</span>
+                        <span style={{ cursor: 'pointer', fontSize: '10px', color: '#b4965d' }} onClick={() => moveColumn(columns.findIndex(c => c.key === col.key), 1)}>▶</span>
                       </div>
                     </div>
                     <div className="resizer" onMouseDown={e => onMouseDown(e, col.key)} />
@@ -375,56 +388,56 @@ const fetchKlientoFailai = async (id) => {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan={visibleCols.length + 2} style={{textAlign: 'center', padding: '50px'}}>KRAUNAMA...</td></tr> : 
-              sortedAndFilteredData.map((item, index) => {
-                const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
-                const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
-                return (
-                  <tr key={item.id} className={hasFault ? 'row-fault' : isOverdue ? 'row-overdue' : ''}>
-                    <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
-                    {visibleCols.map(col => (
-                      <td key={col.key}>
-                        <div style={{ width: `${widths[col.key]}px` }}>
-                          {editingCell?.id === item.id && editingCell?.field === col.key ? (
-                            col.key === "Sutartis YRA/NĖRA" ? (
-                              <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
-                                <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
-                              </select>
-                            ) : col.key === "Atlikta" ? (
-                              <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
-                                <option value="Ne">Ne</option><option value="Taip">Taip</option>
-                              </select>
-                            ) : col.key === "Komentaras" ? (
-                              <span style={{ cursor: 'pointer', color: '#113c32', textDecoration: 'underline', padding: '12px 10px', display: 'block' }} onClick={() => { setSelectedEquipmentId(item.id); fetchKomentarai(item.id); }}>
-                                {item["Komentaras"] ? "Peržiūrėti" : "Įrašyti"}
-                              </span>
-                            ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                              <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
+              {loading ? <tr><td colSpan={visibleCols.length + 2} style={{ textAlign: 'center', padding: '50px' }}>KRAUNAMA...</td></tr> :
+                sortedAndFilteredData.map((item, index) => {
+                  const isOverdue = item["Sekanti patikra"] && new Date(item["Sekanti patikra"]) < new Date();
+                  const hasFault = item["Prižiūri"] && item["Prižiūri"].toLowerCase().includes('gedimas') && !item["Prižiūri"].toLowerCase().includes('sutaisyta');
+                  return (
+                    <tr key={item.id} className={hasFault ? 'row-fault' : isOverdue ? 'row-overdue' : ''}>
+                      <td style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>{index + 1}</td>
+                      {visibleCols.map(col => (
+                        <td key={col.key}>
+                          <div style={{ width: `${widths[col.key]}px` }}>
+                            {editingCell?.id === item.id && editingCell?.field === col.key ? (
+                              col.key === "Sutartis YRA/NĖRA" ? (
+                                <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
+                                  <option value="">—</option><option value="YES">YES</option><option value="NO">NO</option>
+                                </select>
+                              ) : col.key === "Atlikta" ? (
+                                <select className="cell-edit" autoFocus value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)}>
+                                  <option value="Ne">Ne</option><option value="Taip">Taip</option>
+                                </select>
+                              ) : col.key === "Komentaras" ? (
+                                <span style={{ cursor: 'pointer', color: '#113c32', textDecoration: 'underline', padding: '12px 10px', display: 'block' }} onClick={() => { setSelectedEquipmentId(item.id); fetchKomentarai(item.id); }}>
+                                  {item["Komentaras"] ? "Peržiūrėti" : "Įrašyti"}
+                                </span>
+                              ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
+                                <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
+                              ) : (
+                                <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
+                              )
                             ) : (
-                              <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
-                            )
-                          ) : (
-                            <span 
-    className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`} 
-    onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}
-    onClick={() => col.key === "Kliento pavadinimas" ? openClientCard(item) : null}
-    style={col.key === "Kliento pavadinimas" ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
-  >
-    {item[col.key] || '—'}
-  </span>
-                          )}
+                              <span
+                                className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`}
+                                onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}
+                                onClick={() => col.key === "Kliento pavadinimas" ? openClientCard(item) : null}
+                                style={col.key === "Kliento pavadinimas" ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
+                              >
+                                {item[col.key] || '—'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      ))}
+                      <td>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
+                          <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
                         </div>
                       </td>
-                    ))}
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <button className="action-btn btn-edit-icon" onClick={() => handleStartEdit(item.id, "Prižiūri", item["Prižiūri"])}>✏️</button>
-                        <button className="action-btn btn-del" onClick={() => handleDeleteRow(item.id)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                    </tr>
+                  )
+                })}
             </tbody>
           </table>
         </div>
@@ -432,22 +445,22 @@ const fetchKlientoFailai = async (id) => {
       {/* STULPELIŲ VALDYMAS */}
       {showColManager && (
         <div style={{ position: 'absolute', top: '90px', left: '30px', background: 'white', padding: '20px', zIndex: 100, border: '1px solid #113c32', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '280px' }}>
-          <h4 style={{marginTop: 0, fontSize: '12px', letterSpacing: '0.5px', borderBottom: '1px solid #e3e7eb', paddingBottom: '8px'}}>STULPELIŲ VALDYMAS</h4>
-          <div style={{maxHeight: '320px', overflowY: 'auto'}}>
+          <h4 style={{ marginTop: 0, fontSize: '12px', letterSpacing: '0.5px', borderBottom: '1px solid #e3e7eb', paddingBottom: '8px' }}>STULPELIŲ VALDYMAS</h4>
+          <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
             {columns.map(col => (
               <div key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', paddingRight: '5px' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{cursor: 'pointer'}} />
+                  <input type="checkbox" checked={col.visible} onChange={() => toggleColumn(col.key)} style={{ cursor: 'pointer' }} />
                   <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: col.visible ? 'bold' : 'normal', color: col.visible ? '#232323' : '#999' }}>{col.label}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '2px' }}>
                   <button className="col-manage-btn" title="Pervadinti stulpelį" onClick={() => renameColumnLabel(col.key)}>✏️</button>
-                  <button className="col-manage-btn" title="Visiškai ištrinti stulpelį" onClick={() => deleteColumnEntirely(col.key)} style={{color: '#e30613'}}>🗑️</button>
+                  <button className="col-manage-btn" title="Visiškai ištrinti stulpelį" onClick={() => deleteColumnEntirely(col.key)} style={{ color: '#e30613' }}>🗑️</button>
                 </div>
               </div>
             ))}
           </div>
-          <button 
+          <button
             onClick={() => {
               const label = prompt("Įveskite naujo stulpelio pavadinimą:");
               if (label) {
@@ -465,20 +478,20 @@ const fetchKlientoFailai = async (id) => {
       )}
 
       {/* KLIENTO KORTELĖ */}
-    {/* KLIENTO KORTELĖ */}
       {/* KLIENTO KORTELĖ */}
-        {/* KLIENTO KORTELĖ */}
-{/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
+      {/* KLIENTO KORTELĖ */}
       {/* KLIENTO KORTELĖ */}
       {/* KLIENTO KORTELĖ */}
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
-            
+
             {/* KAIRĖ: Redagavimo laukai */}
             <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
-              <h2 style={{marginTop: 0}}>{selectedClient["Kliento pavadinimas"]}</h2>
+              <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
               {columns.map(col => {
                 // JEI TAI KOMENTARAS, NEATVAIZDUOKIME JO KAIRĖJE
                 if (col.key === "Komentaras") return null;
@@ -486,9 +499,9 @@ const fetchKlientoFailai = async (id) => {
                 return (
                   <div key={col.key} style={{ marginBottom: '10px' }}>
                     <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-                    <input 
+                    <input
                       value={selectedClient[col.key] || ''}
-                      onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                      onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
                       style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                     />
                   </div>
@@ -498,90 +511,60 @@ const fetchKlientoFailai = async (id) => {
 
             {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
             <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-              
-              {/* Uždarymo mygtukas viršuje */}
-              <button 
+
+              {/* Uždarymo mygtukas */}
+              <button
                 style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
                 onClick={() => {
-  setSelectedClient(null);
-  setKomentarai([]); // Išvalom komentarus, kad kitą kartą atidarius būtų švaru
-}}
+                  setSelectedClient(null);
+                  setKomentarai([]);
+                }}
               >✕</button>
 
-              {/* 1. Failų įkėlimas */}
+              {/* Failų sekcija */}
               <div>
-                <label style={{fontSize: '10px', fontWeight: 'bold', color: '#666'}}>FAILŲ ĮKĖLIMAS:</label>
-                <input type="file" onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-                  const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`;
-                  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${fileName}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${API_KEY}`, 'apikey': API_KEY, 'Content-Type': file.type },
-                    body: file
-                  });
-                  if (res.ok) {
-                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-                      method: 'POST',
-                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                      body: JSON.stringify({ equipment_id: selectedClient.id, failo_pavadinimas: file.name, url: `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${fileName}` })
-                    });
-                    fetchKlientoFailai(selectedClient.id);
-                  }
-                }} />
-                <div style={{ marginTop: '5px' }}>
-                  {klientoFailai.map((f, i) => <div key={i}><a href={f.url} target="_blank" rel="noreferrer" style={{fontSize: '11px', color: '#113c32'}}>{f.failo_pavadinimas}</a></div>)}
+                <h4 style={{ fontSize: '12px', marginBottom: '8px', color: '#113c32' }}>FAILAI</h4>
+                {klientoFailai.length > 0 ? (
+                  klientoFailai.map((f, i) => (
+                    <div key={i} style={{ fontSize: '12px', padding: '5px', background: '#f9f9f9', marginBottom: '4px' }}>
+                      <a href={f.url} target="_blank" rel="noreferrer">{f.pavadinimas || 'Failas'}</a>
+                    </div>
+                  ))
+                ) : <p style={{ fontSize: '11px', color: '#999' }}>Failų nėra.</p>}
+              </div>
+
+              {/* Komentarų sekcija */}
+              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <h4 style={{ fontSize: '12px', marginBottom: '8px', color: '#113c32' }}>KOMENTARAI</h4>
+                <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '10px' }}>
+                  {komentarai.map(k => (
+                    <div key={k.id} style={{ fontSize: '12px', padding: '8px', borderBottom: '1px solid #eee' }}>
+                      <div style={{ color: '#666', fontSize: '10px' }}>{new Date(k.sukurta_data).toLocaleDateString()}</div>
+                      <div>{k.tekstas}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <input 
+                    id="new-comment-input"
+                    placeholder="Naujas komentaras..." 
+                    style={{ flex: 1, padding: '8px', fontSize: '12px', border: '1px solid #ccc' }}
+                  />
+                  <button onClick={async () => {
+                    const input = document.getElementById('new-comment-input');
+                    if (input.value) {
+                      await handleAddComment(input.value);
+                      input.value = '';
+                    }
+                  }} style={{ background: '#113c32', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>
+                    Siųsti
+                  </button>
                 </div>
               </div>
 
-              {/* 2. Gedimo eigos dashboard */}
-              <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', textTransform: 'uppercase' }}>Gedimo eiga (30 d.)</h4>
-                <div style={{ background: '#ddd', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                  {(() => {
-                    const sorted = [...komentarai].sort((a,b) => new Date(a.sukurta_data) - new Date(b.sukurta_data));
-                    const start = sorted.find(c => c.tekstas?.toLowerCase().includes('gedimas'))?.sukurta_data;
-                    if (!start) return <div style={{width:'0%'}} />;
-                    const dP = Math.min(30, Math.max(0, Math.ceil((new Date() - new Date(start)) / (1000*60*60*24))));
-                    const p = (dP / 30) * 100;
-                    const col = p < 50 ? `rgb(${p*3}, 200, 50)` : `rgb(255, ${200-(p-50)*4}, 50)`;
-                    return <div style={{ width: `${p}%`, height: '8px', background: col }} />;
-                  })()}
-                </div>
-              </div>
-
-              {/* 3. KOMENTARŲ LAUKAS (KURĮ TAISĖME) */}
-              <div>
-                <textarea id="comment-input" placeholder="Įrašyk komentarą..." style={{ width: '100%', height: '60px', marginBottom: '5px' }} />
-                <button style={{ width: '100%', padding: '8px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                  onClick={async () => {
-                    const textarea = document.getElementById('comment-input');
-                    const text = textarea.value;
-                    if (!text.trim()) return;
-                    await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai`, {
-                      method: 'POST',
-                      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ equipment_id: selectedClient.id, tekstas: text, sukurta_data: new Date().toISOString() })
-                    });
-                    textarea.value = '';
-                    fetchKomentarai(selectedClient.id);
-                  }}>IŠSAUGOTI KOMENTARĄ</button>
-
-                <div style={{ marginTop: '15px' }}>
-  {komentarai
-    .filter(k => k.equipment_id === selectedClient.id) // PAPILDOMAS SAUGIKLIS: rodom tik tai, kas priklauso šiam ID
-    .sort((a,b) => new Date(b.sukurta_data) - new Date(a.sukurta_data))
-    .map((k, i) => (
-      <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-        <div style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-        <div style={{ fontSize: '12px', marginTop: '2px' }}>{k.tekstas}</div>
-      </div>
-  ))}
-</div>
-              </div>
-            </div>
-          </div>
-        </div>
+            </div> {/* Pabaiga: Dešinė pusė */}
+          </div> {/* Pabaiga: Modalinis langas */}
+        </div> // Pabaiga: Fixed overlay
       )}
     </div>
   );
