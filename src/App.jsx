@@ -488,20 +488,52 @@ const handleAddComment = async (text) => {
         onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
       {/* KAIRĖ: Redagavimo laukai */}
-      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
-        <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
-        {columns.map(col => {
-          if (col.key === "Komentaras") return null;
-          return (
-            <div key={col.key} style={{ marginBottom: '10px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-              <input value={selectedClient[col.key] || ''} 
-                onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            </div>
-          );
-        })}
-      </div>
+<div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
+  <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
+  
+  <div style={{ flex: 1 }}>
+    {columns.map(col => {
+      if (col.key === "Komentaras") return null;
+      return (
+        <div key={col.key} style={{ marginBottom: '10px' }}>
+          <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+          <input value={selectedClient[col.key] || ''} 
+            onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+        </div>
+      );
+    })}
+  </div>
+
+  {/* IŠSAUGOJIMO MYGTUKAS */}
+  <button 
+    onClick={async () => {
+      try {
+        const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+          method: 'PATCH',
+          headers: { 
+            'apikey': API_KEY, 
+            'Authorization': `Bearer ${API_KEY}`, 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify(selectedClient)
+        });
+        
+        if (res.ok) {
+          // Atnaujiname pagrindinį sąrašą
+          setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
+          alert("Išsaugota!");
+          setSelectedClient(null); // Uždaro kortelę po išsaugojimo
+        } else {
+          alert("Nepavyko išsaugoti.");
+        }
+      } catch (err) { console.error(err); }
+    }}
+    style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+  >
+    IŠSAUGOTI PAKEITIMUS
+  </button>
+</div>
 
       {/* DEŠINĖ: Dashboard ir Komentarai */}
       <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
