@@ -477,16 +477,21 @@ const fetchKlientoFailai = async (id) => {
             {/* KAIRĖ: Redagavimo laukai */}
             <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px' }}>
               <h2 style={{marginTop: 0}}>{selectedClient["Kliento pavadinimas"]}</h2>
-              {columns.map(col => (
-                <div key={col.key} style={{ marginBottom: '10px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-                  <input 
-                    value={selectedClient[col.key] || ''}
-                    onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                  />
-                </div>
-              ))}
+              {columns.map(col => {
+                // JEI TAI KOMENTARAS, NEATVAIZDUOKIME JO KAIRĖJE
+                if (col.key === "Komentaras") return null;
+
+                return (
+                  <div key={col.key} style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+                    <input 
+                      value={selectedClient[col.key] || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, [col.key]: e.target.value})}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
             {/* DEŠINĖ: Failai, Dashboard ir Komentarai */}
