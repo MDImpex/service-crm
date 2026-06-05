@@ -539,39 +539,48 @@ const handleAddComment = async (text) => {
       <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
         
         {/* PROGRESO RODIKLIAI */}
-        <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
-          {(() => {
-            const getCol = (p) => `hsl(${Math.max(0, 120 - (p * 1.2))}, 70%, 45%)`;
-            const d1 = Math.round((new Date() - new Date(selectedClient["Montavimo data"] || new Date())) / 86400000);
-            const p1 = Math.min(100, Math.round(((d1 % 360) / 360) * 100));
-            const d2 = Math.round((new Date() - new Date(selectedClient["Patikros data"] || new Date())) / 86400000);
-            const p2 = Math.min(100, Math.round((d2 / 30) * 100));
+<div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
+  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
+  {(() => {
+    const dabar = new Date();
+    const sekantiPatikra = new Date(selectedClient["Sekanti patikra"]);
+    
+    // Skaičiuojame dienas iki patikros
+    const skirtumasDienomis = Math.round((sekantiPatikra - dabar) / 86400000);
+    
+    // Logika: 0% = 365 d. likus, 100% = patikros diena (arba vėluoja)
+    // Jei vėluoja (skirtumas neigiamas), rodom 100% ir raudoną spalvą
+    const progress = Math.min(100, Math.max(0, ((365 - skirtumasDienomis) / 365) * 100));
+    const spalva = skirtumasDienomis < 0 ? '#c62828' : (skirtumasDienomis < 30 ? '#ef6c00' : '#2e7d32');
 
-            return (
-              <>
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                    <span>Patikros ciklas</span>
-                    <span style={{ color: getCol(p1), fontWeight: 'bold' }}>{p1}% ({d1 % 360} d.)</span>
-                  </div>
-                  <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-                    <div style={{ width: `${p1}%`, height: '100%', background: getCol(p1), borderRadius: '4px' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                    <span>Gedimo progresas (30 d.)</span>
-                    <span style={{ color: getCol(p2), fontWeight: 'bold' }}>{p2}% ({d2} d.)</span>
-                  </div>
-                  <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-                    <div style={{ width: `${p2}%`, height: '100%', background: getCol(p2), borderRadius: '4px' }}></div>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
+    return (
+      <>
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+            <span>Patikros terminas</span>
+            <span style={{ color: spalva, fontWeight: 'bold' }}>
+              {skirtumasDienomis < 0 ? `Vėluoja ${Math.abs(skirtumasDienomis)} d.` : `Liko ${skirtumasDienomis} d.`}
+            </span>
+          </div>
+          <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: spalva, borderRadius: '4px' }}></div>
+          </div>
         </div>
+        
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+            <span>Remonto progresas</span>
+            <span>{selectedClient["Remonto progresas"] || "0%"}</span>
+          </div>
+          <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
+             {/* Čia galite susieti su lauku, jei turite "Remonto progresas" */}
+            <div style={{ width: `${parseInt(selectedClient["Remonto progresas"]) || 0}%`, height: '100%', background: '#1976d2', borderRadius: '4px' }}></div>
+          </div>
+        </div>
+      </>
+    );
+  })()}
+</div>
 
         {/* KOMENTARAI */}
         <h3 style={{ margin: 0 }}>Komentarai</h3>
