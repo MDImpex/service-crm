@@ -17,8 +17,31 @@ function App() {
   const [komentarai, setKomentarai] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [klientoFailai, setKlientoFailai] = useState([]);
+  const [editingComment, setEditingComment] = useState(null); // {id, tekstas}
   const fetchKomentarai = async (id) => {
     if (!id) return;
+    // Funkcijos komentarams:
+const deleteComment = async (id) => {
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  fetchKomentarai(selectedClient.id);
+};
+
+const updateComment = async (id, newText) => {
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { 
+      'apikey': API_KEY, 
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ tekstas: newText })
+  });
+  setEditingComment(null);
+  fetchKomentarai(selectedClient.id);
+};
     // Užklausa filtravimui: equipment_id turi būti lygus būtent šio kliento id
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
@@ -696,6 +719,16 @@ const handleFileUpload = async (event) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px', marginTop: '10px' }}>
   {klientoFailai.map((failas) => {
     const isImage = failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    const deleteFile = async (id) => {
+  if (!window.confirm("Ar tikrai norite ištrinti šį failą?")) return;
+  
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  
+  fetchKlientoFailai(selectedClient.id); // Atnaujiname sąrašą
+};
     return (
       <div key={failas.id} style={{ textAlign: 'center' }}>
         <a href={failas.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
