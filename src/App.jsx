@@ -28,6 +28,10 @@ function App() {
   const [editingComment, setEditingComment] = useState(null);
   const formatDateForInput = (dateString) => {
   if (!dateString) return '';
+  const toInputDate = (str) => {
+    if (!str) return "";
+    return str.toString().substring(0, 10);
+  };
   
   // Jei atėjo "2021.01.29 00:00", paimam tik pirmą dalį "2021.01.29"
   const cleanString = dateString.toString().split(' ')[0];
@@ -608,17 +612,19 @@ const handleFileUpload = async (event) => {
                                 </span>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
                                 <input 
-  autoFocus 
-  type="date" 
-  className="cell-edit" 
-  value={inputValue} // <--- Čia dabar tiesiog inputValue (jis jau suformatuotas)
-  onChange={e => setInputValue(e.target.value)} 
-  onBlur={() => handleSave(item.id, col.key, inputValue)} 
-  onKeyDown={e => { 
-    if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
-    if (e.key === 'Escape') setEditingCell(null); 
-  }} 
-/>
+        autoFocus 
+        type="date" 
+        className="cell-edit" 
+        // Jei naudojame inputValue (kuris jau suformatuotas per handleStartEdit), 
+        // tada funkcijos čia kviesti nebereikia:
+        value={inputValue} 
+        onChange={e => setInputValue(e.target.value)} 
+        onBlur={() => handleSave(item.id, col.key, inputValue)} 
+        onKeyDown={e => { 
+          if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
+          if (e.key === 'Escape') setEditingCell(null); 
+        }} 
+      />
 ) : (
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
