@@ -518,52 +518,49 @@ const handleFileUpload = async (event) => {
         </div>
       )}
 
-     {/* KLIENTO KORTELĖ - tęsinys */}
+      {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', cursor: 'pointer' }} onClick={() => setSelectedClient(null)}>UŽDARYTI ✕</button>
-            
-            <h2>{selectedClient["Kliento pavadinimas"]}</h2>
-            
-            {/* Čia galite įdėti formą laukų redagavimui */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <input 
-                value={selectedClient["Adresas"] || ''} 
-                onChange={(e) => updateClientField("Adresas", e.target.value)}
-                placeholder="Adresas"
-              />
-              <input 
-                type="date"
-                value={selectedClient["Patikros data"] || ''}
-                onChange={(e) => updateClientField("Patikros data", e.target.value)}
-              />
-            </div>
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'white', padding: '25px', width: '600px', borderRadius: '12px', position: 'relative' }}>
+      
+      {/* Antraštė ir uždarymas */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ margin: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
+        <button onClick={() => setSelectedClient(null)} style={{ cursor: 'pointer' }}>UŽDARYTI ✕</button>
+      </div>
 
-            {/* Failų įkėlimas */}
-            <div style={{ marginTop: '20px' }}>
-              <input type="file" onChange={handleFileUpload} />
-            </div>
+      {/* Pagrindinė informacija */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <input value={selectedClient.Adresas || ''} onChange={(e) => updateClientField("Adresas", e.target.value)} placeholder="Adresas" style={{ padding: '8px' }} />
+        <input type="date" value={selectedClient["Patikros data"] || ''} onChange={(e) => updateClientField("Patikros data", e.target.value)} style={{ padding: '8px' }} />
+      </div>
 
-            {/* Komentarų sąrašas */}
-            <div style={{ flex: 1, overflowY: 'auto', marginTop: '20px' }}>
-              {komentarai.map(k => <div key={k.id}>{k.tekstas}</div>)}
-            </div>
-            
-            <input 
-              placeholder="Rašyti komentarą..." 
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleAddComment(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Failų įkėlimas */}
+      <div style={{ marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
+        <input type="file" onChange={handleFileUpload} />
+        {klientoFailai.map(f => <div key={f.id}><a href={f.failo_url} target="_blank">{f.pavadinimas}</a></div>)}
+      </div>
+
+      {/* Komentarai */}
+      <div style={{ marginTop: '20px', height: '200px', overflowY: 'auto', background: '#f9f9f9', padding: '10px' }}>
+        {komentarai.map(k => <div key={k.id} style={{ marginBottom: '5px' }}>{k.tekstas}</div>)}
+      </div>
+
+      <input 
+        placeholder="Rašyti komentarą..." 
+        style={{ width: '100%', marginTop: '10px', padding: '10px' }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleAddComment(e.target.value);
+            e.target.value = '';
+          }
+        }}
+      />
     </div>
-  )
+  </div>
+)}
+    </div>
+  );
 }
 
-export default App
+export default App;
