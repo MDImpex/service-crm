@@ -217,8 +217,8 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Svarbu: Išvalome failo pavadinimą (pašaliname lietuviškas raides ir specialius simbolius)
-  const cleanFileName = file.name.replace(/[^\x00-\x7F]/g, "_"); 
+  // Išvalome pavadinimą: pašaliname lietuviškas raides, paliekame tik ASCII
+  const cleanFileName = file.name.replace(/[^\x00-\x7F]/g, "_");
   const fileName = `${Date.now()}_${cleanFileName}`;
 
   try {
@@ -234,29 +234,33 @@ const handleFileUpload = async (event) => {
       .from('klientai-failai')
       .getPublicUrl(fileName);
 
-    // 3. Išsaugome įrašą duomenų bazėje (tik su švariais duomenimis)
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+    // 3. Išsaugome įrašą duomenų bazėje
+    // SVARBU: headers objekte naudojame tik paprastus stringus
+    const response = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
       method: 'POST',
-      headers: { 
-        'apikey': API_KEY, 
-        'Authorization': `Bearer ${API_KEY}`, 
+      headers: {
+        'apikey': API_KEY,
+        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
         equipment_id: selectedClient.id,
         failo_url: publicUrlData.publicUrl,
-        pavadinimas: file.name // Čia lietuviškos raidės jau gali būti, nes siunčiame į body, o ne į headers
+        pavadinimas: file.name // Čia gali būti lietuviškos raidės, nes tai yra JSON body, o ne headers
       })
     });
 
-    if (!res.ok) throw new Error("Nepavyko išsaugoti bazėje");
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText);
+    }
 
     alert("Failas sėkmingai įkeltas!");
-    fetchKlientoFailai(selectedClient.id);
+    fetchKlientoFailai(selectedClient.id); // Atnaujiname sąrašą
   } catch (err) {
-    console.error(err);
-    alert("Klaida įkeliant: " + err.message);
+    console.error("Klaida:", err);
+    alert("Klaida įkeliant failą.");
   }
 };
   const handleSave = async (id, field, value) => {
