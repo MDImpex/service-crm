@@ -31,11 +31,11 @@ function App() {
   const fetchKomentarai = async (id) => {
     if (!id) return;
     const res = await fetch(`${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-    });
-    if (res.ok) {
-      setKomentarai(await res.json());
-    }
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  if (res.ok) {
+    setKomentarai(await res.json());
+  }
   };
 
   const deleteComment = async (id) => {
@@ -168,7 +168,7 @@ const handleAddComment = async (text) => {
   useEffect(() => {
     if (selectedClient && selectedClient.id) {
       fetchKomentarai(selectedClient.id);
-      fetchKlientoFailai(selectedClient.id); // Čia viskas atrodo teisingai
+      fetchKlientoFailai(selectedClient.id);
     }
   }, [selectedClient]);
 
