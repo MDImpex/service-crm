@@ -26,6 +26,13 @@ function App() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [klientoFailai, setKlientoFailai] = useState([]);
   const [editingComment, setEditingComment] = useState(null);
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return ''; 
+    return date.toISOString().split('T')[0];
+  };
 
   // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
@@ -571,7 +578,15 @@ const handleFileUpload = async (event) => {
                                   {item["Komentaras"] ? "Peržiūrėti" : "Įrašyti"}
                                 </span>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input autoFocus type="date" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
+                                <input 
+      autoFocus 
+      type="date" 
+      className="cell-edit" 
+      value={formatDateForInput(inputValue)} 
+      onChange={e => setInputValue(e.target.value)} 
+      onBlur={() => handleSave(item.id, col.key, inputValue)} 
+      onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} 
+    />
                               ) : (
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
