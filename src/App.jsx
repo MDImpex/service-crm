@@ -379,60 +379,39 @@ const handleFileUpload = async (event) => {
     const oldValue = currentItem[field] || '';
     const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
-    // Patikrinimas: ar vertė pasikeitė
     if (newValue === oldValue) { 
       setEditingCell(null); 
       return; 
     }
 
-    // 1. Sukuriam atnaujinimo objektą
     let updates = { [field]: newValue };
-    
-    // Logika, jei "Atlikta" -> perskaičiuojam datas
-    if (field === "Atlikta" && newValue === "Taip") {
-      const today = new Date();
-      updates["Patikros data"] = today.toISOString().split('T')[0];
-      
-      const period = currentItem["Patikr. Periodiškumas"]?.toString().toLowerCase() || "";
-      let nextDate = new Date(today);
-      if (period.includes("1") || period.includes("metus") || period.includes("12")) nextDate.setFullYear(nextDate.getFullYear() + 1);
-      else if (period.includes("2") || period.includes("6")) nextDate.setMonth(nextDate.getMonth() + 6);
-      else if (period.includes("4") || period.includes("3")) nextDate.setMonth(nextDate.getMonth() + 3);
-      else nextDate.setFullYear(nextDate.getFullYear() + 1);
-      
-      updates["Sekanti patikra"] = nextDate.toISOString().split('T')[0];
-    }
 
     try {
-      // PAKEISK ŠIĄ VIETĄ (pridėk /equipment):
-   await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
-  method: 'PATCH', 
-  headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }, 
-  body: JSON.stringify(rollbacks) 
-});
+      // SVARBU: Pridėtas /equipment prie URL
+      const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
+        method: 'PATCH',
+        headers: { 
+          'apikey': SUPABASE_ANON_KEY, 
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(updates)
+      });
 
-// PRIDĖK ŠITĄ DALĮ:
-if (!res.ok) {
-  const errorData = await res.json();
-  console.error("Supabase KLAIDA:", errorData);
-  alert("Klaida: " + JSON.stringify(errorData));
-}
-
-      // 3. Jei tai "Prižiūri" laukas su gedimu, siunčiam email
-      if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas') && !newValue.toLowerCase().includes('sutaisyta')) {
-        sendUrgentEmail({ ...currentItem, ...updates }, newValue);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(JSON.stringify(errorData));
       }
 
-      // 4. Atnaujinam sąrašą ekrane
       setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
       setEditingCell(null);
-      
     } catch (err) { 
       console.error("Klaida saugant:", err); 
       alert("Nepavyko išsaugoti: " + err.message);
       setEditingCell(null); 
     }
-  };
+};
 
  const handleUndo = async () => {
   if (history.length === 0) return;
