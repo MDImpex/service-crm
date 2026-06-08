@@ -405,16 +405,11 @@ const handleFileUpload = async (event) => {
 
     try {
       // PAKEISK ŠIĄ VIETĄ (pridėk /equipment):
-      const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
-        method: 'PATCH',
-        headers: { 
-          'apikey': SUPABASE_ANON_KEY, 
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(updates)
-      });
+   await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
+  method: 'PATCH', 
+  headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }, 
+  body: JSON.stringify(rollbacks) 
+});
 
 // PRIDĖK ŠITĄ DALĮ:
 if (!res.ok) {
@@ -439,27 +434,71 @@ if (!res.ok) {
     }
   };
 
-  const handleUndo = async () => {
-    if (history.length === 0) return;
-    const lastAction = history[0];
-    const nextHistory = history.slice(1);
-    try {
-      setLoading(true);
-      if (lastAction.type === 'EDIT_CELL') {
-        let rollbacks = { [lastAction.field]: lastAction.oldValue };
-        if (lastAction.field === 'Atlikta') { rollbacks["Patikros data"] = lastAction.oldPatikrosData; rollbacks["Sekanti patikra"] = lastAction.oldSekantiPatikra; }
-        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, { method: 'PATCH', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(rollbacks) });
-        setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
-      } else if (lastAction.type === 'DELETE_ROW') {
-        const res = await fetch(BASE_URL, { method: 'POST', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, body: JSON.stringify(lastAction.rowData) });
-        if (res.ok) { const [restoredItem] = await res.json(); setEquipment(prev => [restoredItem, ...prev]); }
-      } else if (lastAction.type === 'ADD_ROW') {
-        await fetch(`${BASE_URL}?id=eq.${lastAction.id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
-        setEquipment(prev => prev.filter(item => item.id !== lastAction.id));
-      } else if (lastAction.type === 'COLUMNS_STATE') { setColumns(lastAction.oldColumns); }
-      setHistory(nextHistory);
-    } catch (err) { console.error("Nepavyko įvykdyti undo:", err); } finally { setLoading(false); }
-  };
+ const handleUndo = async () => {
+  if (history.length === 0) return;
+  const lastAction = history[0];
+  const nextHistory = history.slice(1);
+  
+  try {
+    setLoading(true);
+    
+    if (lastAction.type === 'EDIT_CELL') {
+      let rollbacks = { [lastAction.field]: lastAction.oldValue };
+      if (lastAction.field === 'Atlikta') { 
+        rollbacks["Patikros data"] = lastAction.oldPatikrosData; 
+        rollbacks["Sekanti patikra"] = lastAction.oldSekantiPatikra; 
+      }
+      
+      // PATAISYTA: pridėtas /equipment ir teisingi headeriai
+      await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
+        method: 'PATCH', 
+        headers: { 
+          'apikey': SUPABASE_ANON_KEY, 
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+          'Content-Type': 'application/json' 
+        }, 
+        body: JSON.stringify(rollbacks) 
+      });
+      setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
+      
+    } else if (lastAction.type === 'DELETE_ROW') {
+      // PATAISYTA: pridėtas /equipment
+      const res = await fetch(`${BASE_URL}/equipment`, { 
+        method: 'POST', 
+        headers: { 
+          'apikey': SUPABASE_ANON_KEY, 
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+          'Content-Type': 'application/json', 
+          'Prefer': 'return=representation' 
+        }, 
+        body: JSON.stringify(lastAction.rowData) 
+      });
+      if (res.ok) { 
+        const [restoredItem] = await res.json(); 
+        setEquipment(prev => [restoredItem, ...prev]); 
+      }
+      
+    } else if (lastAction.type === 'ADD_ROW') {
+      // PATAISYTA: pridėtas /equipment
+      await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
+        method: 'DELETE', 
+        headers: { 
+          'apikey': SUPABASE_ANON_KEY, 
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}` 
+        } 
+      });
+      setEquipment(prev => prev.filter(item => item.id !== lastAction.id));
+    } else if (lastAction.type === 'COLUMNS_STATE') { 
+      setColumns(lastAction.oldColumns); 
+    }
+    
+    setHistory(nextHistory);
+  } catch (err) { 
+    console.error("Nepavyko įvykdyti undo:", err); 
+  } finally { 
+    setLoading(false); 
+  }
+};
 
   const handleStartEdit = (id, field, initialValue) => {
     setEditingCell({ id, field });
