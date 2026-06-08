@@ -75,10 +75,9 @@ function App() {
   const fetchKlientoFailai = async (id) => {
   if (!id) return;
   // IŠTRINKITE "equipment/" iš kelio!
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
-  method: 'DELETE',
-  headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-});
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
   if (res.ok) {
     setKlientoFailai(await res.json());
   } else {
