@@ -194,7 +194,47 @@ const handleAddComment = async (text) => {
       }
     } catch (err) { alert(err.message) }
   };
+// A. Įklijuokite šią funkciją (reikalinga datos skaičiavimui)
+const updateClientField = (key, value) => {
+  let updated = { ...selectedClient, [key]: value };
+  
+  if (key === "Patikros data" && value) {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      d.setFullYear(d.getFullYear() + 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      updated["Sekanti patikra"] = `${y}-${m}-${day}`;
+    }
+  }
+  setSelectedClient(updated);
+};
 
+// B. Įklijuokite šią funkciją (reikalinga failų/nuotraukų įkėlimui)
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  const { error } = await supabase.storage.from('klientai-failai').upload(fileName, file);
+
+  if (error) { alert("Klaida įkeliant"); return; }
+
+  const { data: publicUrlData } = supabase.storage.from('klientai-failai').getPublicUrl(fileName);
+
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+    method: 'POST',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      equipment_id: selectedClient.id,
+      failo_url: publicUrlData.publicUrl,
+      pavadinimas: file.name
+    })
+  });
+  fetchKlientoFailai(selectedClient.id);
+  alert("Failas įkeltas!");
+};
   const handleSave = async (id, field, value) => {
     const currentItem = equipment.find(item => item.id === id);
     if (!currentItem) return;
@@ -481,109 +521,77 @@ const handleAddComment = async (text) => {
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative' }}>
+      
+      <button style={{ position: 'absolute', top: '10px', right: '10px' }} onClick={() => setSelectedClient(null)}>✕</button>
       
       {/* Uždarymo mygtukas */}
       <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
         onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
       {/* KAIRĖ: Redagavimo laukai */}
-<div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
-  <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
-  
-  <div style={{ flex: 1 }}>
-    {columns.map(col => {
-      if (col.key === "Komentaras") return null;
-      return (
-        <div key={col.key} style={{ marginBottom: '10px' }}>
-          <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-          <input value={selectedClient[col.key] || ''} 
-            onChange={(e) => setSelectedClient({ ...selectedClient, [col.key]: e.target.value })}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-        </div>
-      );
-    })}
-  </div>
-
-  {/* IŠSAUGOJIMO MYGTUKAS */}
-  <button 
-    onClick={async () => {
-      try {
-        const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
-          method: 'PATCH',
-          headers: { 
-            'apikey': API_KEY, 
-            'Authorization': `Bearer ${API_KEY}`, 
-            'Content-Type': 'application/json' 
-          },
-          body: JSON.stringify(selectedClient)
-        });
+      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
         
-        if (res.ok) {
-          // Atnaujiname pagrindinį sąrašą
-          setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
-          alert("Išsaugota!");
-          setSelectedClient(null); // Uždaro kortelę po išsaugojimo
-        } else {
-          alert("Nepavyko išsaugoti.");
-        }
-      } catch (err) { console.error(err); }
-    }}
-    style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-  >
-    IŠSAUGOTI PAKEITIMUS
-  </button>
-</div>
+        <div style={{ flex: 1 }}>
+          {columns.map(col => {
+            if (col.key === "Komentaras") return null;
+            return (
+              <div key={col.key} style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+                <input 
+                  type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? 'date' : 'text'}
+                  value={selectedClient[col.key] || ''} 
+                  onChange={(e) => updateClientField(col.key, e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} 
+                />
+              </div>
+            );
+          })}
+        </div>
 
-      {/* DEŠINĖ: Dashboard ir Komentarai */}
+        <button 
+          onClick={async () => {
+            try {
+              const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+                method: 'PATCH',
+                headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedClient)
+              });
+              if (res.ok) {
+                setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
+                alert("Išsaugota!");
+                setSelectedClient(null);
+              }
+            } catch (err) { console.error(err); }
+          }}
+          style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          IŠSAUGOTI PAKEITIMUS
+        </button>
+      </div>
+
+      {/* DEŠINĖ: Įrenginio būklė, Kamera ir Komentarai */}
       <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
         
-        {/* PROGRESO RODIKLIAI */}
-<div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px' }}>ĮRENGINIO BŪKLĖ</h4>
-  {(() => {
-    const dabar = new Date();
-    const sekantiPatikra = new Date(selectedClient["Sekanti patikra"]);
-    
-    // Skaičiuojame dienas iki patikros
-    const skirtumasDienomis = Math.round((sekantiPatikra - dabar) / 86400000);
-    
-    // Logika: 0% = 365 d. likus, 100% = patikros diena (arba vėluoja)
-    // Jei vėluoja (skirtumas neigiamas), rodom 100% ir raudoną spalvą
-    const progress = Math.min(100, Math.max(0, ((365 - skirtumasDienomis) / 365) * 100));
-    const spalva = skirtumasDienomis < 0 ? '#c62828' : (skirtumasDienomis < 30 ? '#ef6c00' : '#2e7d32');
+        {/* FOTOAPARATO MYGTUKAS */}
+        <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
+          📷 FOTOGRAFUOTI ARBA ĮKELTI
+          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+        </label>
 
-    return (
-      <>
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-            <span>Patikros terminas</span>
-            <span style={{ color: spalva, fontWeight: 'bold' }}>
-              {skirtumasDienomis < 0 ? `Vėluoja ${Math.abs(skirtumasDienomis)} d.` : `Liko ${skirtumasDienomis} d.`}
-            </span>
-          </div>
-          <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: spalva, borderRadius: '4px' }}></div>
-          </div>
+        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
+        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
+          {klientoFailai.map((failas) => (
+            <div key={failas.id} style={{ fontSize: '12px', marginBottom: '5px' }}>
+              <a href={failas.failo_url} target="_blank" rel="noopener noreferrer" style={{ color: '#113c32' }}>{failas.pavadinimas}</a>
+            </div>
+          ))}
         </div>
-        
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-            <span>Remonto progresas</span>
-            <span>{selectedClient["Remonto progresas"] || "0%"}</span>
-          </div>
-          <div style={{ height: '8px', background: '#ddd', borderRadius: '4px' }}>
-             {/* Čia galite susieti su lauku, jei turite "Remonto progresas" */}
-            <div style={{ width: `${parseInt(selectedClient["Remonto progresas"]) || 0}%`, height: '100%', background: '#1976d2', borderRadius: '4px' }}></div>
-          </div>
-        </div>
-      </>
-    );
-  })()}
-</div>
 
         {/* KOMENTARAI */}
-        <h3 style={{ margin: 0 }}>Komentarai</h3>
+        <h4 style={{ margin: 0 }}>Komentarai</h4>
         <div style={{ display: 'flex', gap: '5px' }}>
           <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
           <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
