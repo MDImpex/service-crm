@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- VISI RAKTAI TIK VIENĄ KARTĄ ---
+// --- KONFIGŪRACIJA ---
 const SUPABASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k';
 const RESEND_API_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM';
-const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1';
+const BASE_URL = `${SUPABASE_URL}/rest/v1`;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- PAGALBINĖS FUNKCIJOS ---
+const getHeaders = () => ({
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+});
 
 const getProgressColor = (progress) => {
   const hue = (1 - progress) * 120;
   return `hsl(${hue}, 100%, 40%)`;
 };
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function App() {
   // --- STATE HOOKAI ---
