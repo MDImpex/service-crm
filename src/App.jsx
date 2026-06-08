@@ -655,35 +655,58 @@ const handleFileUpload = async (event) => {
   </div>
 ))}
         </div>
-<div style={{ margin: '15px 0' }}>
-          {/* Patikros juosta */}
-          <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>PATIKRA (365 d.)</div>
-          {(() => {
-            const pData = new Date(selectedClient["Patikros data"] || new Date());
-            const daysPassed = Math.min(Math.max((new Date() - pData) / (1000 * 60 * 60 * 24), 0), 365);
-            const progress = daysPassed / 365;
-            return (
-              <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-                <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
-              </div>
-            );
-          })()}
-
-          {/* Remonto juosta (rodoma tik jei yra gedimas) */}
-          {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
-            <div style={{ marginTop: '10px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d.)</div>
-              {(() => {
-                const progress = Math.min(Math.max((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 1, 0) / 30, 1);
-                return (
-                  <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
-                  </div>
-                );
-              })()}
-            </div>
-          )}
+<div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+  
+  {/* 1. PATIKROS PROGRESAS (Liko iki kitos patikros) */}
+  <div>
+    <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>PATIKROS PROGRESAS (Metinis)</div>
+    {(() => {
+      const sekantiData = new Date(selectedClient["Sekanti patikra"] || new Date());
+      const montavimoData = new Date(selectedClient["Montavimo data"] || new Date());
+      // Liko dienų (skirtumas tarp šiandien ir sekancios patikros)
+      const diffTime = sekantiData - new Date();
+      const daysLeft = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
+      
+      // Procentai: 100% yra 365 dienos nuo paskutinės patikros arba montavimo
+      const progress = Math.min(Math.max(1 - (daysLeft / 365), 0), 1);
+      
+      return (
+        <div>
+          <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
+          </div>
+          <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>
+            Liko iki patikros: {daysLeft} d. ({Math.round(progress * 100)}%)
+          </p>
         </div>
+      );
+    })()}
+  </div>
+
+  {/* 2. REMONTO PROGRESAS (Praėjo dienų nuo gedimo) */}
+  {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
+    <div>
+      <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d. terminas)</div>
+      {(() => {
+        // Čia skaičiuojame nuo šiandien, nes DB nėra gedimo datos stulpelio
+        // Jei įsidėsite gedimo_data, pakeiskite new Date() į new Date(selectedClient.gedimo_data)
+        const daysPassed = Math.min(Math.max((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 1, 0), 30);
+        const progress = daysPassed / 30;
+        
+        return (
+          <div>
+            <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
+            </div>
+            <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>
+              Praėjo nuo gedimo: {Math.round(daysPassed)} d. ({Math.round(progress * 100)}%)
+            </p>
+          </div>
+        );
+      })()}
+    </div>
+  )}
+</div>
         {/* KOMENTARAI */}
         <h4 style={{ margin: 0 }}>Komentarai</h4>
         <div style={{ display: 'flex', gap: '5px' }}>
