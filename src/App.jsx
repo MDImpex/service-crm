@@ -808,11 +808,18 @@ const handleFileUpload = async (event) => {
       {/* Failo nuoroda */}
       <a href={failas.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ width: '70px', height: '70px', background: '#f4f4f4', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', margin: '0 auto', border: '1px solid #ddd' }}>
-          {failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
-            <img src={failas.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="failas" /> : 
-            <span style={{ fontSize: '24px' }}>📄</span>
-          }
-        </div>
+  {/* Patikriname, ar failo_pavadinimas turi paveikslėlio plėtinį, arba tiesiog bandome rodyti img */}
+  {failas.failo_pavadinimas && failas.failo_pavadinimas.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
+    <img 
+      src={failas.url} 
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+      alt="nuotrauka" 
+      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} 
+    /> 
+    : 
+    <span style={{ fontSize: '24px' }}>📄</span>
+  }
+</div>
         {/* FAILO PAVADINIMAS (ČIA PAKEITIMAS) */}
         <div style={{ fontSize: '10px', marginTop: '5px', wordBreak: 'break-word', color: '#555', maxWidth: '70px', margin: '5px auto 0 auto' }}>
           {failas.failo_pavadinimas || "Nežinomas failas"}
