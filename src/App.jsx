@@ -12,7 +12,7 @@ const getProgressColor = (progress) => {
   return `hsl(${hue}, 100%, 40%)`;
 };
 
-const supabase = createClient('https://enucrtrjaoakachsrubi.supabase.co', API_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function App() {
   // --- STATE HOOKAI ---
