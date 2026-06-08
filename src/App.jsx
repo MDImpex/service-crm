@@ -29,14 +29,29 @@ function App() {
   const formatDateForInput = (dateString) => {
   if (!dateString) return '';
   
-  // Jei jau yra formatas yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) return dateString.substring(0, 10);
+  // Jei atėjo "2021.01.29 00:00", paimam tik pirmą dalį "2021.01.29"
+  const cleanString = dateString.toString().split(' ')[0];
+  
+  // Jei tai formatas su taškais (2021.01.29)
+  if (cleanString.includes('.')) {
+    const parts = cleanString.split('.');
+    if (parts.length === 3) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+  }
 
-  // Bandome išskaidyti įvairius formatus
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return ''; 
+  // Jei tai formatas su pasvirais brūkšniais (8/31/2025)
+  if (cleanString.includes('/')) {
+    const parts = cleanString.split('/');
+    if (parts.length === 3) {
+      // Bandome atspėti ar tai MM/DD/YYYY ar DD/MM/YYYY
+      // Pagal tavo klaidą "8/31/2025" atrodo kaip MM/DD/YYYY
+      return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+    }
+  }
 
-  return date.toISOString().split('T')[0];
+  // Galiausiai, jei jau yra yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanString)) return cleanString;
+
+  return ''; // Jei niekas netinka, grąžinam nieką
 };
 
   // --- KOMENTARŲ FUNKCIJOS ---
