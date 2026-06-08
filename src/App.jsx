@@ -658,120 +658,96 @@ const handleFileUpload = async (event) => {
         </button>
       </div>
 
-      {/* DEŠINĖ: Įrenginio būklė, Kamera ir Komentarai */}
-      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-        
-        {/* FOTOAPARATO MYGTUKAS */}
-        <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
-          📷 FOTOGRAFUOTI ARBA ĮKELTI
-          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
-        </label>
- {/* 1. PATIKROS PROGRESAS (Liko iki kitos patikros) */}
+      {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
+<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+  
+  {/* FOTOAPARATO MYGTUKAS */}
+  <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
+    📷 FOTOGRAFUOTI ARBA ĮKELTI
+    <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+  </label>
+
+  {/* 1. PATIKROS PROGRESAS (365 d.) */}
   <div>
     <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>PATIKROS PROGRESAS (Metinis)</div>
     {(() => {
       const sekantiData = new Date(selectedClient["Sekanti patikra"] || new Date());
-      const montavimoData = new Date(selectedClient["Montavimo data"] || new Date());
-      // Liko dienų (skirtumas tarp šiandien ir sekancios patikros)
       const diffTime = sekantiData - new Date();
       const daysLeft = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);
-      
-      // Procentai: 100% yra 365 dienos nuo paskutinės patikros arba montavimo
       const progress = Math.min(Math.max(1 - (daysLeft / 365), 0), 1);
-      
       return (
         <div>
           <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
             <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
           </div>
-          <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>
-            Liko iki patikros: {daysLeft} d. ({Math.round(progress * 100)}%)
-          </p>
+          <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>Liko iki patikros: {daysLeft} d. ({Math.round(progress * 100)}%)</p>
         </div>
       );
     })()}
   </div>
 
-  {/* 2. REMONTO PROGRESAS (Praėjo dienų nuo gedimo) */}
+  {/* 2. REMONTO PROGRESAS (30 d.) */}
   {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
     <div>
-      <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d. terminas)</div>
+      <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d.)</div>
       {(() => {
-        // Čia skaičiuojame nuo šiandien, nes DB nėra gedimo datos stulpelio
-        // Jei įsidėsite gedimo_data, pakeiskite new Date() į new Date(selectedClient.gedimo_data)
         const daysPassed = Math.min(Math.max((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 1, 0), 30);
         const progress = daysPassed / 30;
-        
         return (
           <div>
             <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
               <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
             </div>
-            <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>
-              Praėjo nuo gedimo: {Math.round(daysPassed)} d. ({Math.round(progress * 100)}%)
-            </p>
+            <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>Praėjo nuo gedimo: {Math.round(daysPassed)} d. ({Math.round(progress * 100)}%)</p>
           </div>
         );
       })()}
     </div>
   )}
-        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px', marginTop: '10px' }}>
-  {klientoFailai.map((failas) => {
-    const isImage = failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-    const deleteFile = async (id) => {
-  if (!window.confirm("Ar tikrai norite ištrinti šį failą?")) return;
-  
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
-    method: 'DELETE',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-  });
-  
-  fetchKlientoFailai(selectedClient.id); // Atnaujiname sąrašą
-};
-    return (
-      <div key={failas.id} style={{ textAlign: 'center' }}>
-        <a href={failas.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            background: '#eee', 
-            borderRadius: '8px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            overflow: 'hidden',
-            border: '1px solid #ddd'
-          }}>
-            {isImage ? (
-              <img src={failas.url} alt="thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '24px' }}>📄</span> // Bendrinė piktograma kitiems failams
-            )}
-          </div>
-          <div style={{ fontSize: '9px', marginTop: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {failas.failo_pavadinimas}
+
+  {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
+  <h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+    {klientoFailai.map((failas) => (
+      <div key={failas.id} style={{ position: 'relative', textAlign: 'center' }}>
+        <button onClick={() => deleteFile(failas.id)} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '10px', width: '18px', height: '18px' }}>x</button>
+        <a href={failas.url} target="_blank" rel="noopener noreferrer">
+          <div style={{ width: '60px', height: '60px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
+              <img src={failas.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{fontSize: '20px'}}>📄</span>}
           </div>
         </a>
       </div>
-    );
-  })}
-</div>
-        {/* KOMENTARAI */}
-        <h4 style={{ margin: 0 }}>Komentarai</h4>
-        <div style={{ display: 'flex', gap: '5px' }}>
-          <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
-          <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {komentarai.map((k, i) => (
-            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
-            </div>
-          ))}
-        </div>
+    ))}
+  </div>
+
+  {/* KOMENTARAI SU EDIT/DELETE */}
+  <h4 style={{ margin: '15px 0 5px 0' }}>Komentarai</h4>
+  <div style={{ display: 'flex', gap: '5px' }}>
+    <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
+    <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
+  </div>
+
+  <div style={{ flex: 1, overflowY: 'auto' }}>
+    {komentarai.map((k) => (
+      <div key={k.id} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+        {editingComment?.id === k.id ? (
+          <>
+            <textarea defaultValue={k.tekstas} id={`edit-${k.id}`} style={{ width: '100%' }} />
+            <button onClick={() => updateComment(k.id, document.getElementById(`edit-${k.id}`).value)}>Išsaugoti</button>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+            <div style={{ fontSize: '13px', marginBottom: '5px' }}>{k.tekstas}</div>
+            <button onClick={() => setEditingComment({id: k.id})} style={{ fontSize: '10px', marginRight: '5px' }}>Redaguoti</button>
+            <button onClick={() => deleteComment(k.id)} style={{ fontSize: '10px', color: 'red' }}>Trinti</button>
+          </>
+        )}
       </div>
+    ))}
+  </div>
+</div>
     </div>
   </div>
 )}
