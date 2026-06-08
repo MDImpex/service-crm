@@ -439,7 +439,16 @@ const handleFileUpload = async (event) => {
     } catch (err) { console.error("Nepavyko įvykdyti undo:", err); } finally { setLoading(false); }
   };
 
-  const handleStartEdit = (id, field, initialValue) => { setEditingCell({ id, field }); setInputValue(initialValue || ''); };
+  const handleStartEdit = (id, field, initialValue) => {
+    setEditingCell({ id, field });
+    
+    // Jei tai yra datos laukas, iškart konvertuojame į tinkamą formatą:
+    if (field.toLowerCase().includes('data') || field.toLowerCase().includes('patikra')) {
+      setInputValue(formatDateForInput(initialValue));
+    } else {
+      setInputValue(initialValue || '');
+    }
+  };
   const openClientCard = (item) => {
     setSelectedClient(item);
   };
