@@ -397,20 +397,21 @@ const handleFileUpload = async (event) => {
       // 2. SVARBU: Čia atnaujiname 'equipment' lentelę, o ne 'klientai_failai'
       const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
   method: 'PATCH',
-        headers: { 
-          'apikey': API_KEY, 
-          'Authorization': `Bearer ${API_KEY}`, 
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(updates)
-      });
+  headers: { 
+    'apikey': API_KEY, 
+    'Authorization': `Bearer ${API_KEY}`, 
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
+  body: JSON.stringify(updates)
+});
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Supabase API klaida:", errorData);
-        throw new Error(errorData.message);
-      }
+// PRIDĖK ŠITĄ DALĮ:
+if (!res.ok) {
+  const errorData = await res.json();
+  console.error("Supabase KLAIDA:", errorData);
+  alert("Klaida: " + JSON.stringify(errorData));
+}
 
       // 3. Jei tai "Prižiūri" laukas su gedimu, siunčiam email
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas') && !newValue.toLowerCase().includes('sutaisyta')) {
