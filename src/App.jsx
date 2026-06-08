@@ -29,27 +29,20 @@ function App() {
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     
-    // Konvertuojam į stringą ir paimam tik datą (be laiko "00:00")
-    const cleanString = dateString.toString().split(' ')[0];
-
-    // Jei formatas 2021.01.29
-    if (cleanString.includes('.')) {
-      const parts = cleanString.split('.');
-      if (parts.length === 3) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    // 1. Visada paimam tik pirmus 10 simbolių (kad atsikratytume " 00:00")
+    const s = dateString.toString().substring(0, 10);
+    
+    // 2. Jei formatas 2021.01.29 (taškai) -> keičiam į 2021-01-29
+    if (s.includes('.')) return s.replace(/\./g, '-');
+    
+    // 3. Jei formatas 8/31/2025 (MM/DD/YYYY) -> perstumiam į 2025-08-31
+    if (s.includes('/')) {
+       const parts = s.split('/');
+       if (parts.length === 3) return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
-
-    // Jei formatas 8/31/2025 (MM/DD/YYYY)
-    if (cleanString.includes('/')) {
-      const parts = cleanString.split('/');
-      if (parts.length === 3) {
-        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-      }
-    }
-
-    // Jei jau yra YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanString)) return cleanString;
-
-    return ""; 
+    
+    // 4. Jei jau YYYY-MM-DD, paliekam kaip yra
+    return s;
   };
 
   // --- KOMENTARŲ FUNKCIJOS ---
