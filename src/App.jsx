@@ -76,18 +76,20 @@ function App() {
 };
 
   const fetchKlientoFailai = async (id) => {
-  if (!id) return;
-  // IŠTRINKITE "equipment/" iš kelio!
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
-  method: 'DELETE',
-  headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-});
-  if (res.ok) {
-    setKlientoFailai(await res.json());
-  } else {
-    console.error("Klaida:", await res.text());
-  }
-};
+    if (!id) return;
+    
+    // Štai čia buvo problema: prieš tai tikriausiai trūko "const res ="
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setKlientoFailai(data);
+    } else {
+      console.error("Klaida gaunant failus:", await res.text());
+    }
+  };
  // 1. Atnaujinta komentarų pridėjimo funkcija
 const handleAddComment = async (text) => {
   if (!text.trim()) return;
