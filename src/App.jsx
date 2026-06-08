@@ -204,16 +204,24 @@ const handleAddComment = async (text) => {
   }, [selectedClient]);
 
  async function fetchData() {
-    setLoading(true)
-    try {
-      // Čia pridedame /equipment, kad lentelė veiktų:
-      const response = await fetch(`${BASE_URL}/equipment?select=*&order=id.desc`, {
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-      })
-      const data = await response.json()
-      setEquipment(data || [])
-    } catch (err) { console.error(err) } finally { setLoading(false) }
-  }
+  setLoading(true);
+  try {
+    const response = await fetch(`${BASE_URL}/equipment?select=*&order=id.desc`, {
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
+    const data = await response.json();
+    
+    // IŠVALOME DUOMENIS IŠKART GAVUS
+    const cleanedData = data.map(item => ({
+      ...item,
+      "Patikros data": formatDateForInput(item["Patikros data"]),
+      "Sekanti patikra": formatDateForInput(item["Sekanti patikra"]),
+      "Montavimo data": formatDateForInput(item["Montavimo data"])
+    }));
+    
+    setEquipment(cleanedData || []);
+  } catch (err) { console.error(err); } finally { setLoading(false); }
+}
 
   const sendUrgentEmail = async (item, faultDetails) => {
     const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM';
@@ -259,8 +267,8 @@ const handleAddComment = async (text) => {
 
   const handleAddRow = async () => {
     try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
+      const res = await fetch(`${BASE_URL}/equipment`, { // Pridėk /equipment
+  method: 'POST',
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS...", "Atlikta": "Ne" })
       });
@@ -384,8 +392,8 @@ const handleFileUpload = async (event) => {
 
     try {
       // 2. SVARBU: Čia atnaujiname 'equipment' lentelę, o ne 'klientai_failai'
-      const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
-        method: 'PATCH', // Naudojame PATCH atnaujinimui
+      const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
+  method: 'PATCH',
         headers: { 
           'apikey': API_KEY, 
           'Authorization': `Bearer ${API_KEY}`, 
@@ -598,12 +606,13 @@ const handleFileUpload = async (event) => {
                                 </span>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
   <input 
-    autoFocus 
-    type="date" 
-    className="cell-edit" 
-    value={inputValue && inputValue.length >= 10 ? inputValue.substring(0, 10) : ""} 
-    onChange={e => setInputValue(e.target.value)} 
-    onBlur={() => handleSave(item.id, col.key, inputValue)} 
+  autoFocus 
+  type="date" 
+  className="cell-edit" 
+  // Priverstinai konvertuojame į YYYY-MM-DD prieš pat atvaizduojant
+  value={formatDateForInput(inputValue)} 
+  onChange={e => setInputValue(e.target.value)} 
+  onBlur={() => handleSave(item.id, col.key, inputValue)}
     onKeyDown={e => { 
       if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
       if (e.key === 'Escape') setEditingCell(null); 
