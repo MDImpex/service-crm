@@ -51,7 +51,8 @@ function App() {
 };
 
   const updateComment = async (id, newText) => {
-    await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
+    // SVARBU: čia URL turi būti tik '/komentarai', o ne '/equipment/komentarai'
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
       method: 'PATCH',
       headers: { 
         'apikey': API_KEY, 
@@ -60,8 +61,13 @@ function App() {
       },
       body: JSON.stringify({ tekstas: newText })
     });
-    setEditingComment(null);
-    fetchKomentarai(selectedClient.id);
+    
+    if (res.ok) {
+      setEditingComment(null);
+      fetchKomentarai(selectedClient.id);
+    } else {
+      console.error("Klaida redaguojant:", await res.text());
+    }
   };
 
   // --- FAILŲ FUNKCIJOS ---
@@ -167,7 +173,7 @@ const handleAddComment = async (text) => {
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
-  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment'
+  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1';
 
   useEffect(() => { localStorage.setItem('crm_columns', JSON.stringify(columns)) }, [columns])
   useEffect(() => { localStorage.setItem('crm_widths', JSON.stringify(widths)) }, [widths])
