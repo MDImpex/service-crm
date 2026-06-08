@@ -404,17 +404,17 @@ const handleFileUpload = async (event) => {
     }
 
     try {
-      // 2. SVARBU: Čia atnaujiname 'equipment' lentelę, o ne 'klientai_failai'
+      // PAKEISK ŠIĄ VIETĄ (pridėk /equipment):
       const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
-  method: 'PATCH',
-  headers: { 
-    'apikey': API_KEY, 
-    'Authorization': `Bearer ${API_KEY}`, 
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  },
-  body: JSON.stringify(updates)
-});
+        method: 'PATCH',
+        headers: { 
+          'apikey': SUPABASE_ANON_KEY, 
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(updates)
+      });
 
 // PRIDĖK ŠITĄ DALĮ:
 if (!res.ok) {
