@@ -521,41 +521,90 @@ const handleFileUpload = async (event) => {
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'white', padding: '25px', width: '600px', borderRadius: '12px', position: 'relative' }}>
+    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative' }}>
       
-      {/* Antraštė ir uždarymas */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
-        <button onClick={() => setSelectedClient(null)} style={{ cursor: 'pointer' }}>UŽDARYTI ✕</button>
+      <button style={{ position: 'absolute', top: '10px', right: '10px' }} onClick={() => setSelectedClient(null)}>✕</button>
+      
+      {/* Uždarymo mygtukas */}
+      <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
+        onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
+
+      {/* KAIRĖ: Redagavimo laukai */}
+      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
+        
+        <div style={{ flex: 1 }}>
+          {columns.map(col => {
+            if (col.key === "Komentaras") return null;
+            return (
+              <div key={col.key} style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
+                <input 
+                  type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? 'date' : 'text'}
+                  value={selectedClient[col.key] || ''} 
+                  onChange={(e) => updateClientField(col.key, e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} 
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <button 
+          onClick={async () => {
+            try {
+              const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+                method: 'PATCH',
+                headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedClient)
+              });
+              if (res.ok) {
+                setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
+                alert("Išsaugota!");
+                setSelectedClient(null);
+              }
+            } catch (err) { console.error(err); }
+          }}
+          style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          IŠSAUGOTI PAKEITIMUS
+        </button>
       </div>
 
-      {/* Pagrindinė informacija */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <input value={selectedClient.Adresas || ''} onChange={(e) => updateClientField("Adresas", e.target.value)} placeholder="Adresas" style={{ padding: '8px' }} />
-        <input type="date" value={selectedClient["Patikros data"] || ''} onChange={(e) => updateClientField("Patikros data", e.target.value)} style={{ padding: '8px' }} />
-      </div>
+      {/* DEŠINĖ: Įrenginio būklė, Kamera ir Komentarai */}
+      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+        
+        {/* FOTOAPARATO MYGTUKAS */}
+        <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
+          📷 FOTOGRAFUOTI ARBA ĮKELTI
+          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+        </label>
 
-      {/* Failų įkėlimas */}
-      <div style={{ marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
-        <input type="file" onChange={handleFileUpload} />
-        {klientoFailai.map(f => <div key={f.id}><a href={f.failo_url} target="_blank">{f.pavadinimas}</a></div>)}
-      </div>
+        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
+        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
+          {klientoFailai.map((failas) => (
+            <div key={failas.id} style={{ fontSize: '12px', marginBottom: '5px' }}>
+              <a href={failas.failo_url} target="_blank" rel="noopener noreferrer" style={{ color: '#113c32' }}>{failas.pavadinimas}</a>
+            </div>
+          ))}
+        </div>
 
-      {/* Komentarai */}
-      <div style={{ marginTop: '20px', height: '200px', overflowY: 'auto', background: '#f9f9f9', padding: '10px' }}>
-        {komentarai.map(k => <div key={k.id} style={{ marginBottom: '5px' }}>{k.tekstas}</div>)}
+        {/* KOMENTARAI */}
+        <h4 style={{ margin: 0 }}>Komentarai</h4>
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
+          <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {komentarai.map((k, i) => (
+            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
+              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
+            </div>
+          ))}
+        </div>
       </div>
-
-      <input 
-        placeholder="Rašyti komentarą..." 
-        style={{ width: '100%', marginTop: '10px', padding: '10px' }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            handleAddComment(e.target.value);
-            e.target.value = '';
-          }
-        }}
-      />
     </div>
   </div>
 )}
