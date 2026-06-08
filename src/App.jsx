@@ -300,12 +300,27 @@ const handleFileUpload = async (event) => {
     }
 
     try {
-      const res = await fetch(`${BASE_URL}?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!res.ok) throw new Error("Nepavyko išsaugoti");
+      const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+      method: 'POST',
+      headers: { 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        equipment_id: selectedClient.id,
+        failo_url: publicUrl,
+        pavadinimas: file.name
+      })
+    });
+
+    if (!res.ok) {
+      // ŠI DALIS PARODYS TIKRĄJĄ KLAIDĄ:
+      const errorData = await res.json(); 
+      console.error("Supabase DB klaida:", errorData);
+      throw new Error(`DB klaida: ${errorData.message || res.statusText}`);
+    }
       const updatedItem = { ...currentItem, ...updates };
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas') && !newValue.toLowerCase().includes('sutaisyta')) {
         sendUrgentEmail(updatedItem, newValue);
