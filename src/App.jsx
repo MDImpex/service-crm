@@ -217,42 +217,46 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 1. Išvalome failo pavadinimą: visus nelotyniškus simbolius pakeičiame apatiniu brūkšniu
-  // Tai pašalins lietuviškas raides, tarpus ir specialius simbolius
-  const cleanFileName = file.name
-    .normalize("NFD") // Išskaido lietuviškas raides į bazinį simbolį ir diakritiką
-    .replace(/[\u0300-\u036f]/g, "") // Pašalina diakritiką (pvz., 'ą' tampa 'a')
-    .replace(/[^a-zA-Z0-9.-]/g, "_"); // Visą kitą (įskaitant tarpus) keičia į '_'
-
-  // 2. Pridedame timestamp, kad pavadinimas būtų unikalus
-  const fileName = `${Date.now()}_${cleanFileName}`;
+  // 1. Sukuriame unikalų, saugų failo pavadinimą (tik anglų raidės)
+  const timestamp = Date.now();
+  const safeFileName = `${timestamp}_file.bin`; 
 
   try {
-    // 3. Įkeliame failą į Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('klientai-failai') // Įsitikinkite, kad bucket pavadinimas tikslus
-      .upload(fileName, file);
+    // 2. Tiesioginis HTTP PUT failo įkėlimas į Supabase Storage (apeinant SDK headers apribojimus)
+    const uploadRes = await fetch(
+      `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${safeFileName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'apikey': API_KEY,
+          'Content-Type': file.type // Čia naudojame tik MIME type
+        },
+        body: file
+      }
+    );
 
-    if (uploadError) throw uploadError;
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      throw new Error(`Įkėlimas nepavyko: ${errText}`);
+    }
 
-    // 4. Gauname viešą URL
-    const { data: publicUrlData } = supabase.storage
-      .from('klientai-failai')
-      .getPublicUrl(fileName);
+    // 3. Gauname viešą URL
+    const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-    // 5. Išsaugome įrašą duomenų bazėje
+    // 4. Išsaugome įrašą duomenų bazėje
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
       method: 'POST',
       headers: { 
-        'apikey': 'JŪSŲ_API_KEY', // Naudokite savo kintamąjį
-        'Authorization': `Bearer JŪSŲ_API_KEY`, 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}`, 
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
         equipment_id: selectedClient.id,
-        failo_url: publicUrlData.publicUrl,
-        pavadinimas: file.name // Čia galite saugoti originalų pavadinimą, nes tai JSON body, o ne headeris!
+        failo_url: publicUrl,
+        pavadinimas: file.name // Čia JSON body, todėl lietuviškos raidės saugios!
       })
     });
 
@@ -262,7 +266,7 @@ const handleFileUpload = async (event) => {
     fetchKlientoFailai(selectedClient.id);
   } catch (err) {
     console.error("Klaida įkeliant:", err);
-    alert("Klaida įkeliant failą: " + err.message);
+    alert("Klaida: " + err.message);
   }
 };
   const handleSave = async (id, field, value) => {
