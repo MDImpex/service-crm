@@ -27,12 +27,23 @@ function App() {
   const [klientoFailai, setKlientoFailai] = useState([]);
   const [editingComment, setEditingComment] = useState(null);
   const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return ''; 
-    return date.toISOString().split('T')[0];
-  };
+  if (!dateString) return '';
+
+  // Jei tai jau yra formatas yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+
+  // Jei tai formatas 2021.01.29 arba 8/31/2025
+  const date = new Date(dateString);
+
+  if (!isNaN(date.getTime())) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  return ''; // Jei niekas netinka
+};
 
   // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
