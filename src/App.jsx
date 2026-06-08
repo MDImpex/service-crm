@@ -27,36 +27,30 @@ function App() {
   const [klientoFailai, setKlientoFailai] = useState([]);
   const [editingComment, setEditingComment] = useState(null);
   const formatDateForInput = (dateString) => {
-  if (!dateString) return '';
-  const toInputDate = (str) => {
-    if (!str) return "";
-    return str.toString().substring(0, 10);
-  };
-  
-  // Jei atėjo "2021.01.29 00:00", paimam tik pirmą dalį "2021.01.29"
-  const cleanString = dateString.toString().split(' ')[0];
-  
-  // Jei tai formatas su taškais (2021.01.29)
-  if (cleanString.includes('.')) {
-    const parts = cleanString.split('.');
-    if (parts.length === 3) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-  }
+    if (!dateString) return "";
+    
+    // Konvertuojam į stringą ir paimam tik datą (be laiko "00:00")
+    const cleanString = dateString.toString().split(' ')[0];
 
-  // Jei tai formatas su pasvirais brūkšniais (8/31/2025)
-  if (cleanString.includes('/')) {
-    const parts = cleanString.split('/');
-    if (parts.length === 3) {
-      // Bandome atspėti ar tai MM/DD/YYYY ar DD/MM/YYYY
-      // Pagal tavo klaidą "8/31/2025" atrodo kaip MM/DD/YYYY
-      return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+    // Jei formatas 2021.01.29
+    if (cleanString.includes('.')) {
+      const parts = cleanString.split('.');
+      if (parts.length === 3) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
-  }
 
-  // Galiausiai, jei jau yra yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanString)) return cleanString;
+    // Jei formatas 8/31/2025 (MM/DD/YYYY)
+    if (cleanString.includes('/')) {
+      const parts = cleanString.split('/');
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      }
+    }
 
-  return ''; // Jei niekas netinka, grąžinam nieką
-};
+    // Jei jau yra YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanString)) return cleanString;
+
+    return ""; 
+  };
 
   // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
@@ -453,15 +447,14 @@ const handleFileUpload = async (event) => {
   };
 
   const handleStartEdit = (id, field, initialValue) => {
-  setEditingCell({ id, field });
-  
-  // Prieš įdedant į state, suformatuojame datą
-  if (field.toLowerCase().includes('data') || field.toLowerCase().includes('patikra')) {
-    setInputValue(formatDateForInput(initialValue));
-  } else {
-    setInputValue(initialValue || '');
-  }
-};
+    setEditingCell({ id, field });
+    
+    if (field.toLowerCase().includes('data') || field.toLowerCase().includes('patikra')) {
+      setInputValue(formatDateForInput(initialValue));
+    } else {
+      setInputValue(initialValue || '');
+    }
+  };
   const openClientCard = (item) => {
     setSelectedClient(item);
   };
@@ -611,33 +604,42 @@ const handleFileUpload = async (event) => {
                                   {item["Komentaras"] ? "Peržiūrėti" : "Įrašyti"}
                                 </span>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
-                                <input 
-        autoFocus 
-        type="date" 
-        className="cell-edit" 
-        // Jei naudojame inputValue (kuris jau suformatuotas per handleStartEdit), 
-        // tada funkcijos čia kviesti nebereikia:
-        value={inputValue} 
-        onChange={e => setInputValue(e.target.value)} 
-        onBlur={() => handleSave(item.id, col.key, inputValue)} 
-        onKeyDown={e => { 
-          if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
-          if (e.key === 'Escape') setEditingCell(null); 
-        }} 
-      />
+  <input 
+    autoFocus 
+    type="date" 
+    className="cell-edit" 
+    value={inputValue && inputValue.length >= 10 ? inputValue.substring(0, 10) : ""} 
+    onChange={e => setInputValue(e.target.value)} 
+    onBlur={() => handleSave(item.id, col.key, inputValue)} 
+    onKeyDown={e => { 
+      if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
+      if (e.key === 'Escape') setEditingCell(null); 
+    }} 
+  />
 ) : (
-                                <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
-                              )
-                            ) : (
-                              <span
-                                className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`}
-                                onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}
-                                onClick={() => col.key === "Kliento pavadinimas" ? openClientCard(item) : null}
-                                style={col.key === "Kliento pavadinimas" ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
-                              >
-                                {item[col.key] || '—'}
-                              </span>
-                            )}
+  <input 
+    autoFocus 
+    type="text" 
+    className="cell-edit" 
+    value={inputValue} 
+    onChange={e => setInputValue(e.target.value)} 
+    onBlur={() => handleSave(item.id, col.key, inputValue)} 
+    onKeyDown={e => { 
+      if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
+      if (e.key === 'Escape') setEditingCell(null); 
+    }} 
+  />
+)
+) : (
+  <span
+    className={`cell-content ${col.key === "Sekanti patikra" && isOverdue ? 'text-overdue' : ''}`}
+    onDoubleClick={() => handleStartEdit(item.id, col.key, item[col.key])}
+    onClick={() => col.key === "Kliento pavadinimas" ? openClientCard(item) : null}
+    style={col.key === "Kliento pavadinimas" ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
+  >
+    {item[col.key] || '—'}
+  </span>
+)}
                           </div>
                         </td>
                       ))}
