@@ -23,16 +23,20 @@ function App() {
     setKomentarai(data); // Čia setinam tik tai, ką gavom konkrečiam klientui
   };
   const fetchKlientoFailai = async (id) => {
+    // Įsitikinkite, kad URL sutampa su jūsų lentelės pavadinimu
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+      headers: { 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}` 
+      }
     });
 
     if (res.ok) {
       const data = await res.json();
+      console.log("Gauti failai iš DB:", data); // PATIKRINKITE KONSOLĘ: ar čia matote failų sąrašą?
       setKlientoFailai(data);
     } else {
-      console.error("Klaida:", await res.text());
-      setKlientoFailai([]); // SVARBU: čia išvengiame "map is not a function"
+      console.error("Klaida gaunant failus:", await res.text());
     }
   };
  // 1. Atnaujinta komentarų pridėjimo funkcija
@@ -119,14 +123,10 @@ const handleAddComment = async (text) => {
   useEffect(() => { fetchData() }, [])
   useEffect(() => {
     if (selectedClient && selectedClient.id) {
-      // 1. Išvalom senus, kad nemaišytų
-      setKomentarai([]);
-
-      // 2. Kviečiam funkcijas, kurios užkraus duomenis iš bazės
       fetchKomentarai(selectedClient.id);
-      fetchKlientoFailai(selectedClient.id);
+      fetchKlientoFailai(selectedClient.id); // Čia viskas atrodo teisingai
     }
-  }, [selectedClient]); // Svarbu: šis efektas pasileis kiekvieną kartą, kai pasikeis selectedClient
+  }, [selectedClient]);
 
   async function fetchData() {
     setLoading(true)
@@ -644,10 +644,12 @@ const handleFileUpload = async (event) => {
         <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
           <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
           {klientoFailai.map((failas) => (
-            <div key={failas.id} style={{ fontSize: '12px', marginBottom: '5px' }}>
-              <a href={failas.failo_url} target="_blank" rel="noopener noreferrer" style={{ color: '#113c32' }}>{failas.pavadinimas}</a>
-            </div>
-          ))}
+  <div key={failas.id}>
+    <a href={failas.url} target="_blank" rel="noopener noreferrer">
+      {failas.failo_pavadinimas}
+    </a>
+  </div>
+))}
         </div>
 
         {/* KOMENTARAI */}
