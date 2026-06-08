@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-
+import { createClient } from '@supabase/supabase-js';
+const supabase = createClient('https://enucrtrjaoakachsrubi.supabase.co', 'JŪSŲ_ANON_API_KEY'); // Įveskite savo anon key
 function App() {
   const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
@@ -217,23 +218,36 @@ const handleFileUpload = async (event) => {
   if (!file) return;
 
   const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  
+  // 1. Įkeliame į "storage"
   const { error } = await supabase.storage.from('klientai-failai').upload(fileName, file);
 
-  if (error) { alert("Klaida įkeliant"); return; }
+  if (error) { 
+    alert("Klaida įkeliant failą: " + error.message); 
+    return; 
+  }
 
+  // 2. Gauname viešą URL
   const { data: publicUrlData } = supabase.storage.from('klientai-failai').getPublicUrl(fileName);
 
+  // 3. Išsaugome įrašą duomenų bazėje
   await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
     method: 'POST',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+    headers: { 
+      'apikey': API_KEY, 
+      'Authorization': `Bearer ${API_KEY}`, 
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
     body: JSON.stringify({
       equipment_id: selectedClient.id,
       failo_url: publicUrlData.publicUrl,
       pavadinimas: file.name
     })
   });
-  fetchKlientoFailai(selectedClient.id);
-  alert("Failas įkeltas!");
+  
+  alert("Failas sėkmingai įkeltas!");
+  fetchKlientoFailai(selectedClient.id); // Atnaujiname sąrašą
 };
   const handleSave = async (id, field, value) => {
     const currentItem = equipment.find(item => item.id === id);
@@ -521,90 +535,46 @@ const handleFileUpload = async (event) => {
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative' }}>
+    <div style={{ background: 'white', padding: '25px', width: '900px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '90vh', overflowY: 'auto' }}>
       
-      <button style={{ position: 'absolute', top: '10px', right: '10px' }} onClick={() => setSelectedClient(null)}>✕</button>
-      
-      {/* Uždarymo mygtukas */}
-      <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
-        onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h2>{selectedClient["Kliento pavadinimas"]}</h2>
+        <button onClick={() => setSelectedClient(null)}>UŽDARYTI ✕</button>
+      </div>
 
-      {/* KAIRĖ: Redagavimo laukai */}
-      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
-        <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
-        
-        <div style={{ flex: 1 }}>
-          {columns.map(col => {
-            if (col.key === "Komentaras") return null;
-            return (
-              <div key={col.key} style={{ marginBottom: '10px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', color: '#666' }}>{col.label}</label>
-                <input 
-                  type={col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? 'date' : 'text'}
-                  value={selectedClient[col.key] || ''} 
-                  onChange={(e) => updateClientField(col.key, e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} 
-                />
-              </div>
-            );
-          })}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div>
+           {/* Čia įdėkite savo input laukus, pvz: */}
+           <label>Adresas:</label>
+           <input value={selectedClient.Adresas || ''} onChange={(e) => updateClientField("Adresas", e.target.value)} style={{ width: '100%' }} />
         </div>
+        
+        <div>
+          <h3>Failai</h3>
+          <input type="file" onChange={handleFileUpload} />
+          <div style={{ marginTop: '10px' }}>
+            {klientoFailai.map(f => (
+              <div key={f.id}><a href={f.failo_url} target="_blank" rel="noreferrer">{f.pavadinimas}</a></div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        <button 
-          onClick={async () => {
-            try {
-              const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
-                method: 'PATCH',
-                headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(selectedClient)
-              });
-              if (res.ok) {
-                setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
-                alert("Išsaugota!");
-                setSelectedClient(null);
-              }
-            } catch (err) { console.error(err); }
+      <div>
+        <h3>Komentarai</h3>
+        {komentarai.map(k => <div key={k.id}>{k.tekstas}</div>)}
+        <input 
+          placeholder="Rašyti komentarą..." 
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleAddComment(e.target.value);
+              e.target.value = '';
+            }
           }}
-          style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          IŠSAUGOTI PAKEITIMUS
-        </button>
+          style={{ width: '100%', padding: '10px' }}
+        />
       </div>
-
-      {/* DEŠINĖ: Įrenginio būklė, Kamera ir Komentarai */}
-      <div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-        
-        {/* FOTOAPARATO MYGTUKAS */}
-        <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
-          📷 FOTOGRAFUOTI ARBA ĮKELTI
-          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
-        </label>
-
-        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
-        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
-          {klientoFailai.map((failas) => (
-            <div key={failas.id} style={{ fontSize: '12px', marginBottom: '5px' }}>
-              <a href={failas.failo_url} target="_blank" rel="noopener noreferrer" style={{ color: '#113c32' }}>{failas.pavadinimas}</a>
-            </div>
-          ))}
-        </div>
-
-        {/* KOMENTARAI */}
-        <h4 style={{ margin: 0 }}>Komentarai</h4>
-        <div style={{ display: 'flex', gap: '5px' }}>
-          <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
-          <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {komentarai.map((k, i) => (
-            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-              <div style={{ fontSize: '10px', color: '#888' }}>{new Date(k.sukurta_data).toLocaleString()}</div>
-              <div style={{ fontSize: '13px' }}>{k.tekstas}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      
     </div>
   </div>
 )}
