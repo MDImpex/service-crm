@@ -1,5 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js';
+const getProgressColor = (progress) => {
+  const hue = (1 - progress) * 120;
+  return `hsl(${hue}, 100%, 40%)`;
+};
 const supabase = createClient('https://enucrtrjaoakachsrubi.supabase.co', 'JŪSŲ_ANON_API_KEY'); // Įveskite savo anon key
 function App() {
   const [equipment, setEquipment] = useState([])
@@ -651,7 +655,35 @@ const handleFileUpload = async (event) => {
   </div>
 ))}
         </div>
+<div style={{ margin: '15px 0' }}>
+          {/* Patikros juosta */}
+          <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>PATIKRA (365 d.)</div>
+          {(() => {
+            const pData = new Date(selectedClient["Patikros data"] || new Date());
+            const daysPassed = Math.min(Math.max((new Date() - pData) / (1000 * 60 * 60 * 24), 0), 365);
+            const progress = daysPassed / 365;
+            return (
+              <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+                <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
+              </div>
+            );
+          })()}
 
+          {/* Remonto juosta (rodoma tik jei yra gedimas) */}
+          {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d.)</div>
+              {(() => {
+                const progress = Math.min(Math.max((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 1, 0) / 30, 1);
+                return (
+                  <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
         {/* KOMENTARAI */}
         <h4 style={{ margin: 0 }}>Komentarai</h4>
         <div style={{ display: 'flex', gap: '5px' }}>
