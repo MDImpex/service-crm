@@ -223,7 +223,7 @@ const handleAddComment = async (text) => {
   } catch (err) { console.error(err); } finally { setLoading(false); }
 }
 
-  const sendUrgentEmail = async (item, faultDetails) => {
+ const sendUrgentEmail = async (item, faultDetails) => {
     const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM';
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
     const klientas = item["Kliento pavadinimas"] || 'Nenurodytas klientas';
@@ -232,14 +232,12 @@ const handleAddComment = async (text) => {
     const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
 
     try {
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-      const targetUrl = 'https://api.resend.com/emails';
-      await fetch(proxyUrl + targetUrl, {
+      // SIUNČIAME TIESIAI Į API.RESEND.COM (be jokio proxyUrl)
+      const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MY_RESEND_KEY}`,
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
@@ -260,8 +258,13 @@ const handleAddComment = async (text) => {
   </div>`
         })
       });
-    } catch (err) { console.error(err) }
-  };
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Resend API klaida:", error);
+      }
+    } catch (err) { console.error("Tinklo klaida:", err) }
+};
 
   const pushActionToHistory = (action) => setHistory(prev => [action, ...prev].slice(0, 25));
 
