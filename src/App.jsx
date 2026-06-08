@@ -693,19 +693,36 @@ const handleFileUpload = async (event) => {
     </div>
   )}
         {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
-        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
-          {klientoFailai.map((failas) => (
-  <div key={failas.id}>
-    <a href={failas.url} target="_blank" rel="noopener noreferrer">
-      {failas.failo_pavadinimas}
-    </a>
-  </div>
-))}
-        </div>
-<div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-  
- 
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px', marginTop: '10px' }}>
+  {klientoFailai.map((failas) => {
+    const isImage = failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    return (
+      <div key={failas.id} style={{ textAlign: 'center' }}>
+        <a href={failas.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ 
+            width: '80px', 
+            height: '80px', 
+            background: '#eee', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            overflow: 'hidden',
+            border: '1px solid #ddd'
+          }}>
+            {isImage ? (
+              <img src={failas.url} alt="thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '24px' }}>📄</span> // Bendrinė piktograma kitiems failams
+            )}
+          </div>
+          <div style={{ fontSize: '9px', marginTop: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {failas.failo_pavadinimas}
+          </div>
+        </a>
+      </div>
+    );
+  })}
 </div>
         {/* KOMENTARAI */}
         <h4 style={{ margin: 0 }}>Komentarai</h4>
