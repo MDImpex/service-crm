@@ -28,21 +28,15 @@ function App() {
   const [editingComment, setEditingComment] = useState(null);
   const formatDateForInput = (dateString) => {
   if (!dateString) return '';
+  
+  // Jei jau yra formatas yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) return dateString.substring(0, 10);
 
-  // Jei tai jau yra formatas yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
-
-  // Jei tai formatas 2021.01.29 arba 8/31/2025
+  // Bandome išskaidyti įvairius formatus
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ''; 
 
-  if (!isNaN(date.getTime())) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-
-  return ''; // Jei niekas netinka
+  return date.toISOString().split('T')[0];
 };
 
   // --- KOMENTARŲ FUNKCIJOS ---
@@ -440,15 +434,15 @@ const handleFileUpload = async (event) => {
   };
 
   const handleStartEdit = (id, field, initialValue) => {
-    setEditingCell({ id, field });
-    
-    // Jei tai yra datos laukas, iškart konvertuojame į tinkamą formatą:
-    if (field.toLowerCase().includes('data') || field.toLowerCase().includes('patikra')) {
-      setInputValue(formatDateForInput(initialValue));
-    } else {
-      setInputValue(initialValue || '');
-    }
-  };
+  setEditingCell({ id, field });
+  
+  // Prieš įdedant į state, suformatuojame datą
+  if (field.toLowerCase().includes('data') || field.toLowerCase().includes('patikra')) {
+    setInputValue(formatDateForInput(initialValue));
+  } else {
+    setInputValue(initialValue || '');
+  }
+};
   const openClientCard = (item) => {
     setSelectedClient(item);
   };
@@ -599,17 +593,17 @@ const handleFileUpload = async (event) => {
                                 </span>
                               ) : col.key.toLowerCase().includes('data') || col.key.toLowerCase().includes('patikra') ? (
                                 <input 
-      autoFocus 
-      type="date" 
-      className="cell-edit" 
-      value={formatDateForInput(inputValue)} 
-      onChange={e => setInputValue(e.target.value)} 
-      onBlur={() => handleSave(item.id, col.key, inputValue)} 
-      onKeyDown={e => { 
-        if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
-        if (e.key === 'Escape') setEditingCell(null); 
-      }} 
-    />
+  autoFocus 
+  type="date" 
+  className="cell-edit" 
+  value={inputValue} // <--- Čia dabar tiesiog inputValue (jis jau suformatuotas)
+  onChange={e => setInputValue(e.target.value)} 
+  onBlur={() => handleSave(item.id, col.key, inputValue)} 
+  onKeyDown={e => { 
+    if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
+    if (e.key === 'Escape') setEditingCell(null); 
+  }} 
+/>
 ) : (
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
