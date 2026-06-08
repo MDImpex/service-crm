@@ -29,14 +29,15 @@ function App() {
 
   // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
-    if (!id) return;
-    const res = await fetch(`${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
+  if (!id) return;
+  // IŠTRINKITE "equipment/" iš kelio!
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
     headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
   });
   if (res.ok) {
     setKomentarai(await res.json());
   }
-  };
+};
 
   const deleteComment = async (id) => {
     if (!window.confirm("Ar tikrai norite trinti komentarą?")) return;
@@ -72,17 +73,17 @@ function App() {
   };
 
   const fetchKlientoFailai = async (id) => {
-    if (!id) return;
-    const res = await fetch(`${BASE_URL}/klientai_failai?equipment_id=eq.${id}`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setKlientoFailai(data);
-    } else {
-      console.error("Klaida gaunant failus:", await res.text());
-    }
-  };
+  if (!id) return;
+  // IŠTRINKITE "equipment/" iš kelio!
+  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  if (res.ok) {
+    setKlientoFailai(await res.json());
+  } else {
+    console.error("Klaida:", await res.text());
+  }
+};
  // 1. Atnaujinta komentarų pridėjimo funkcija
 const handleAddComment = async (text) => {
   if (!text.trim()) return;
