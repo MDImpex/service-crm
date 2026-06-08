@@ -794,20 +794,33 @@ const handleFileUpload = async (event) => {
   )}
 
   {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
-  <h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-    {klientoFailai.map((failas) => (
-      <div key={failas.id} style={{ position: 'relative', textAlign: 'center' }}>
-        <button onClick={() => deleteFile(failas.id)} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '10px', width: '18px', height: '18px' }}>x</button>
-        <a href={failas.url} target="_blank" rel="noopener noreferrer">
-          <div style={{ width: '60px', height: '60px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
-              <img src={failas.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{fontSize: '20px'}}>📄</span>}
-          </div>
-        </a>
-      </div>
-    ))}
-  </div>
+<h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+  {klientoFailai.map((failas) => (
+    <div key={failas.id} style={{ position: 'relative', textAlign: 'center' }}>
+      
+      {/* Trynimo mygtukas */}
+      <button 
+        onClick={() => deleteFile(failas.id)} 
+        style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e30613', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '10px', width: '20px', height: '20px', zIndex: 10 }}
+      >x</button>
+      
+      {/* Failo nuoroda */}
+      <a href={failas.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div style={{ width: '70px', height: '70px', background: '#f4f4f4', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', margin: '0 auto', border: '1px solid #ddd' }}>
+          {failas.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
+            <img src={failas.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="failas" /> : 
+            <span style={{ fontSize: '24px' }}>📄</span>
+          }
+        </div>
+        {/* FAILO PAVADINIMAS (ČIA PAKEITIMAS) */}
+        <div style={{ fontSize: '10px', marginTop: '5px', wordBreak: 'break-word', color: '#555', maxWidth: '70px', margin: '5px auto 0 auto' }}>
+          {failas.failo_pavadinimas || "Nežinomas failas"}
+        </div>
+      </a>
+    </div>
+  ))}
+</div>
 
   {/* KOMENTARAI SU EDIT/DELETE */}
   <h4 style={{ margin: '15px 0 5px 0' }}>Komentarai</h4>
