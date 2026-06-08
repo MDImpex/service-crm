@@ -321,6 +321,30 @@ const handleFileUpload = async (event) => {
       console.error("Supabase DB klaida:", errorData);
       throw new Error(`DB klaida: ${errorData.message || res.statusText}`);
     }
+    // 5. Išsaugome įrašą duomenų bazėje
+    const payload = {
+        equipment_id: selectedClient.id,
+        failo_url: publicUrl,
+        pavadinimas: file.name
+    };
+
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+      method: 'POST',
+      headers: { 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      // ČIA BUS PARAŠYTA TIKSLI PRIEŽASTIS (pvz. "column does not exist")
+      console.error("Supabase API klaida:", errorData); 
+      throw new Error(`DB klaida: ${errorData.message}`);
+    }
       const updatedItem = { ...currentItem, ...updates };
       if (field === "Prižiūri" && newValue.toLowerCase().includes('gedimas') && !newValue.toLowerCase().includes('sutaisyta')) {
         sendUrgentEmail(updatedItem, newValue);
