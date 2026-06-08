@@ -30,23 +30,25 @@ function App() {
   // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
   if (!id) return;
-  // IŠTRINKITE "equipment/" iš kelio!
+  // JOKIO "equipment/" ČIA!
   const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
     headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
   });
   if (res.ok) {
-    setKomentarai(await res.json());
+    const data = await res.json();
+    setKomentarai(data);
   }
 };
 
   const deleteComment = async (id) => {
-    if (!window.confirm("Ar tikrai norite trinti komentarą?")) return;
-    await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-    });
-    fetchKomentarai(selectedClient.id);
-  };
+  if (!window.confirm("Ar tikrai norite trinti?")) return;
+  // JOKIO "equipment/" ČIA!
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  fetchKomentarai(selectedClient.id);
+};
 
   const updateComment = async (id, newText) => {
     await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
@@ -64,13 +66,14 @@ function App() {
 
   // --- FAILŲ FUNKCIJOS ---
   const deleteFile = async (id) => {
-    if (!window.confirm("Ar tikrai norite ištrinti failą?")) return;
-    await fetch(`${BASE_URL}/klientai_failai?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-    });
-    fetchKlientoFailai(selectedClient.id);
-  };
+  if (!window.confirm("Ar tikrai norite ištrinti failą?")) return;
+  // JOKIO "equipment/" ČIA!
+  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  });
+  fetchKlientoFailai(selectedClient.id);
+};
 
   const fetchKlientoFailai = async (id) => {
   if (!id) return;
