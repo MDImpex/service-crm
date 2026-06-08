@@ -585,9 +585,12 @@ const handleFileUpload = async (event) => {
       value={formatDateForInput(inputValue)} 
       onChange={e => setInputValue(e.target.value)} 
       onBlur={() => handleSave(item.id, col.key, inputValue)} 
-      onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} 
+      onKeyDown={e => { 
+        if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); 
+        if (e.key === 'Escape') setEditingCell(null); 
+      }} 
     />
-                              ) : (
+) : (
                                 <input autoFocus type="text" className="cell-edit" value={inputValue} onChange={e => setInputValue(e.target.value)} onBlur={() => handleSave(item.id, col.key, inputValue)} onKeyDown={e => { if (e.key === 'Enter') handleSave(item.id, col.key, inputValue); if (e.key === 'Escape') setEditingCell(null); }} />
                               )
                             ) : (
