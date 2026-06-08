@@ -1,66 +1,83 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+
+// Konstantos
+const API_KEY = 'JŪSŲ_ANON_API_KEY'; // Įsirašykite savo raktą čia
+const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1';
+
 const getProgressColor = (progress) => {
   const hue = (1 - progress) * 120;
   return `hsl(${hue}, 100%, 40%)`;
 };
-const supabase = createClient('https://enucrtrjaoakachsrubi.supabase.co', 'JŪSŲ_ANON_API_KEY'); // Įveskite savo anon key
+
+const supabase = createClient('https://enucrtrjaoakachsrubi.supabase.co', API_KEY);
+
 function App() {
-  const [equipment, setEquipment] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [globalSearch, setGlobalSearch] = useState('')
-  const [editingCell, setEditingCell] = useState(null)
-  const [showColManager, setShowColManager] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const [history, setHistory] = useState([])
+  // --- STATE HOOKAI ---
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [editingCell, setEditingCell] = useState(null);
+  const [showColManager, setShowColManager] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [history, setHistory] = useState([]);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
   const [komentarai, setKomentarai] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [klientoFailai, setKlientoFailai] = useState([]);
-  const [editingComment, setEditingComment] = useState(null); // {id, tekstas}
+  const [editingComment, setEditingComment] = useState(null);
+
+  // --- KOMENTARŲ FUNKCIJOS ---
   const fetchKomentarai = async (id) => {
     if (!id) return;
-    // Funkcijos komentarams:
-const deleteComment = async (id) => {
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
-    method: 'DELETE',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-  });
-  fetchKomentarai(selectedClient.id);
-};
-
-const updateComment = async (id, newText) => {
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: { 
-      'apikey': API_KEY, 
-      'Authorization': `Bearer ${API_KEY}`,
-      'Content-Type': 'application/json' 
-    },
-    body: JSON.stringify({ tekstas: newText })
-  });
-  setEditingComment(null);
-  fetchKomentarai(selectedClient.id);
-};
-    // Užklausa filtravimui: equipment_id turi būti lygus būtent šio kliento id
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
+    const res = await fetch(`${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
       headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
     });
-    const data = await res.json();
-    setKomentarai(data); // Čia setinam tik tai, ką gavom konkrečiam klientui
+    if (res.ok) {
+      setKomentarai(await res.json());
+    }
   };
-  const fetchKlientoFailai = async (id) => {
-    // Įsitikinkite, kad URL sutampa su jūsų lentelės pavadinimu
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
+
+  const deleteComment = async (id) => {
+    if (!window.confirm("Ar tikrai norite trinti komentarą?")) return;
+    await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
+    fetchKomentarai(selectedClient.id);
+  };
+
+  const updateComment = async (id, newText) => {
+    await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
+      method: 'PATCH',
       headers: { 
         'apikey': API_KEY, 
-        'Authorization': `Bearer ${API_KEY}` 
-      }
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ tekstas: newText })
     });
+    setEditingComment(null);
+    fetchKomentarai(selectedClient.id);
+  };
 
+  // --- FAILŲ FUNKCIJOS ---
+  const deleteFile = async (id) => {
+    if (!window.confirm("Ar tikrai norite ištrinti failą?")) return;
+    await fetch(`${BASE_URL}/klientai_failai?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
+    fetchKlientoFailai(selectedClient.id);
+  };
+
+  const fetchKlientoFailai = async (id) => {
+    if (!id) return;
+    const res = await fetch(`${BASE_URL}/klientai_failai?equipment_id=eq.${id}`, {
+      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    });
     if (res.ok) {
       const data = await res.json();
-      console.log("Gauti failai iš DB:", data); // PATIKRINKITE KONSOLĘ: ar čia matote failų sąrašą?
       setKlientoFailai(data);
     } else {
       console.error("Klaida gaunant failus:", await res.text());
