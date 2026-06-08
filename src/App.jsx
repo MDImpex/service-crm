@@ -217,12 +217,11 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 1. Sukuriame unikalų, saugų failo pavadinimą (tik anglų raidės)
   const timestamp = Date.now();
-  const safeFileName = `${timestamp}_file.bin`; 
+  const safeFileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`; 
 
   try {
-    // 2. Tiesioginis HTTP PUT failo įkėlimas į Supabase Storage (apeinant SDK headers apribojimus)
+    // 1. Įkėlimas į storage
     const uploadRes = await fetch(
       `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${safeFileName}`,
       {
@@ -230,21 +229,23 @@ const handleFileUpload = async (event) => {
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
           'apikey': API_KEY,
-          'Content-Type': file.type // Čia naudojame tik MIME type
+          'Content-Type': file.type
         },
         body: file
       }
     );
 
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      throw new Error(`Įkėlimas nepavyko: ${errText}`);
-    }
+    if (!uploadRes.ok) throw new Error("Nepavyko įkelti failo į storage");
 
-    // 3. Gauname viešą URL
     const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-    // 4. Išsaugome įrašą duomenų bazėje
+    // 2. Duomenų bazės įrašas
+    const payload = {
+        equipment_id: selectedClient.id,
+        failo_url: publicUrl,
+        pavadinimas: file.name
+    };
+
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
       method: 'POST',
       headers: { 
@@ -253,14 +254,14 @@ const handleFileUpload = async (event) => {
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
-      body: JSON.stringify({
-        equipment_id: selectedClient.id,
-        failo_url: publicUrl,
-        pavadinimas: file.name // Čia JSON body, todėl lietuviškos raidės saugios!
-      })
+      body: JSON.stringify(payload)
     });
 
-    if (!res.ok) throw new Error("Nepavyko įrašyti į duomenų bazę");
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error("Tiksli Supabase klaida:", errorData); // <--- PAŽIŪRĖKITE Į KONSOLĘ PO ŠITO!
+      throw new Error(`DB klaida: ${errorData.message || 'Nepavyko įrašyti'}`);
+    }
 
     alert("Failas sėkmingai įkeltas!");
     fetchKlientoFailai(selectedClient.id);
