@@ -217,37 +217,47 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-  
-  // 1. Įkeliame į "storage"
-  const { error } = await supabase.storage.from('klientai-failai').upload(fileName, file);
+  // Svarbu: Išvalome failo pavadinimą (pašaliname lietuviškas raides ir specialius simbolius)
+  const cleanFileName = file.name.replace(/[^\x00-\x7F]/g, "_"); 
+  const fileName = `${Date.now()}_${cleanFileName}`;
 
-  if (error) { 
-    alert("Klaida įkeliant failą: " + error.message); 
-    return; 
+  try {
+    // 1. Įkeliame failą į Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('klientai-failai')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    // 2. Gauname viešą URL
+    const { data: publicUrlData } = supabase.storage
+      .from('klientai-failai')
+      .getPublicUrl(fileName);
+
+    // 3. Išsaugome įrašą duomenų bazėje (tik su švariais duomenimis)
+    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+      method: 'POST',
+      headers: { 
+        'apikey': API_KEY, 
+        'Authorization': `Bearer ${API_KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        equipment_id: selectedClient.id,
+        failo_url: publicUrlData.publicUrl,
+        pavadinimas: file.name // Čia lietuviškos raidės jau gali būti, nes siunčiame į body, o ne į headers
+      })
+    });
+
+    if (!res.ok) throw new Error("Nepavyko išsaugoti bazėje");
+
+    alert("Failas sėkmingai įkeltas!");
+    fetchKlientoFailai(selectedClient.id);
+  } catch (err) {
+    console.error(err);
+    alert("Klaida įkeliant: " + err.message);
   }
-
-  // 2. Gauname viešą URL
-  const { data: publicUrlData } = supabase.storage.from('klientai-failai').getPublicUrl(fileName);
-
-  // 3. Išsaugome įrašą duomenų bazėje
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
-    method: 'POST',
-    headers: { 
-      'apikey': API_KEY, 
-      'Authorization': `Bearer ${API_KEY}`, 
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({
-      equipment_id: selectedClient.id,
-      failo_url: publicUrlData.publicUrl,
-      pavadinimas: file.name
-    })
-  });
-  
-  alert("Failas sėkmingai įkeltas!");
-  fetchKlientoFailai(selectedClient.id); // Atnaujiname sąrašą
 };
   const handleSave = async (id, field, value) => {
     const currentItem = equipment.find(item => item.id === id);
