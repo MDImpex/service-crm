@@ -185,10 +185,11 @@ const handleAddComment = async (text) => {
     }
   }, [selectedClient]);
 
-  async function fetchData() {
+ async function fetchData() {
     setLoading(true)
     try {
-      const response = await fetch(`${BASE_URL}?select=*&order=id.desc`, {
+      // Čia pridedame /equipment, kad lentelė veiktų:
+      const response = await fetch(`${BASE_URL}/equipment?select=*&order=id.desc`, {
         headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
       })
       const data = await response.json()
