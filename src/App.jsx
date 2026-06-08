@@ -217,11 +217,12 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
+  // 1. Sukuriame saugų failo pavadinimą (tik anglų raidės ir skaičiai)
   const timestamp = Date.now();
-  const safeFileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`; 
+  const safeFileName = `${timestamp}_file`; 
 
   try {
-    // 1. Įkėlimas į storage
+    // 2. Įkėlimas į storage (naudojame tik ASCII simbolius header'iuose)
     const uploadRes = await fetch(
       `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${safeFileName}`,
       {
@@ -235,15 +236,19 @@ const handleFileUpload = async (event) => {
       }
     );
 
-    if (!uploadRes.ok) throw new Error("Nepavyko įkelti failo į storage");
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      throw new Error(`Storage klaida: ${errText}`);
+    }
 
     const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-    // 2. Duomenų bazės įrašas
+    // 3. Išsaugome įrašą duomenų bazėje
+    // Svarbu: stulpelių pavadinimai turi atitikti lentelę (failo_pavadinimas ir url)
     const payload = {
         equipment_id: selectedClient.id,
-        failo_url: publicUrl,
-        pavadinimas: file.name
+        url: publicUrl,
+        failo_pavadinimas: file.name // Čia JSON body, todėl lietuviškos raidės yra saugios!
     };
 
     const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
@@ -259,15 +264,15 @@ const handleFileUpload = async (event) => {
 
     if (!res.ok) {
       const errorData = await res.json();
-      console.error("Tiksli Supabase klaida:", errorData); // <--- PAŽIŪRĖKITE Į KONSOLĘ PO ŠITO!
-      throw new Error(`DB klaida: ${errorData.message || 'Nepavyko įrašyti'}`);
+      console.error("DB klaida:", errorData);
+      throw new Error("Nepavyko įrašyti į duomenų bazę");
     }
 
     alert("Failas sėkmingai įkeltas!");
     fetchKlientoFailai(selectedClient.id);
   } catch (err) {
-    console.error("Klaida įkeliant:", err);
-    alert("Klaida: " + err.message);
+    console.error("Klaida:", err);
+    alert("Klaida įkeliant: " + err.message);
   }
 };
   const handleSave = async (id, field, value) => {
