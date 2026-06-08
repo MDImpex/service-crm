@@ -643,21 +643,7 @@ const handleFileUpload = async (event) => {
           📷 FOTOGRAFUOTI ARBA ĮKELTI
           <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
         </label>
-
-        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
-        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
-          {klientoFailai.map((failas) => (
-  <div key={failas.id}>
-    <a href={failas.url} target="_blank" rel="noopener noreferrer">
-      {failas.failo_pavadinimas}
-    </a>
-  </div>
-))}
-        </div>
-<div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-  
-  {/* 1. PATIKROS PROGRESAS (Liko iki kitos patikros) */}
+ {/* 1. PATIKROS PROGRESAS (Liko iki kitos patikros) */}
   <div>
     <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>PATIKROS PROGRESAS (Metinis)</div>
     {(() => {
@@ -706,6 +692,20 @@ const handleFileUpload = async (event) => {
       })()}
     </div>
   )}
+        {/* ĮKELTŲ FAILŲ SĄRAŠAS */}
+        <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '6px' }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
+          {klientoFailai.map((failas) => (
+  <div key={failas.id}>
+    <a href={failas.url} target="_blank" rel="noopener noreferrer">
+      {failas.failo_pavadinimas}
+    </a>
+  </div>
+))}
+        </div>
+<div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+  
+ 
 </div>
         {/* KOMENTARAI */}
         <h4 style={{ margin: 0 }}>Komentarai</h4>
