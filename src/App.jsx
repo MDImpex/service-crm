@@ -260,19 +260,22 @@ const handleAddComment = async (text) => {
     const iranga = item["Įrangos pavadinimas"] || 'Nenurodyta įranga';
     const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
 
-    try {
-      // SIUNČIAME TIESIAI Į API.RESEND.COM (be jokio proxyUrl)
-      const res = await fetch('https://api.resend.com/emails', {
+     try {
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+      const targetUrl = 'https://api.resend.com/emails';
+
+      await fetch(proxyUrl + targetUrl, {
         method: 'POST',
         headers: {
-  'Authorization': `Bearer ${MY_RESEND_KEY}`, // Čia naudojame kintamąjį, kurį apibrėžėte viršuje
-  'Content-Type': 'application/json'
-},
+          'Authorization': `Bearer ${MY_RESEND_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
           to: [MY_RECEIVER_EMAIL],
           subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${klientas}`,
-          html: `<div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+          html: `<div style="font-family:Arial,sans-serif;color:#333;">
     <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
     <table style="width:100%;border-collapse:collapse;margin-top:15px;">
       <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td></tr>
