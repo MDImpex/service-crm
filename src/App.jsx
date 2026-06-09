@@ -281,7 +281,7 @@ const handleAddComment = async (text) => {
         },
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
-          to: [MY_RECEIVER_EMAIL],
+          to: 'valdasjanciauskas@gmail.com',
           subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${klientas}`,
           html: `
   <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
