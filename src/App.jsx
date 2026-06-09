@@ -389,12 +389,7 @@ const handleFileUpload = async (event) => {
   try {
     const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
       method: 'PATCH',
-      headers: { 
-        'apikey': SUPABASE_ANON_KEY, 
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
+      headers: getHeaders(), // <--- Štai čia! Daug švariau ir be klaidų.
       body: JSON.stringify(updates)
     });
 
@@ -402,6 +397,10 @@ const handleFileUpload = async (event) => {
 
     setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
     setEditingCell(null);
+    if (field === "Prižiūri" && value.toString().toLowerCase().includes('gedimas')) {
+  const itemToEmail = equipment.find(i => i.id === id);
+  sendUrgentEmail({ ...itemToEmail, ...updates }, value);
+}
   } catch (err) { 
     console.error("Klaida saugant:", err); 
     alert("Klaida: " + err.message);
