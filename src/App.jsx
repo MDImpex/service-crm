@@ -56,15 +56,36 @@ function App() {
   };
 
   // --- KOMENTARŲ FUNKCIJOS ---
-  const fetchKomentarai = async (id) => {
+ const fetchKomentarai = async (id) => {
   if (!id) return;
-  // JOKIO "equipment/" ČIA!
-  const res = await fetch(`${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
-    headers: getHeaders()
-  });
-  if (res.ok) {
+
+  try {
+    // 1. Suformuojame užklausą
+    const url = `${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`;
+    
+    // 2. Atliekame užklausą
+    const res = await fetch(url, {
+      headers: getHeaders()
+    });
+
+    // 3. Tikriname, ar serveris atsakė sėkmingai
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Klaida gaunant komentarus:", errorText);
+      setKomentarai([]); // Nustatome tuščią sąrašą, kad programa nelūžtų
+      return;
+    }
+
+    // 4. Gauname ir nustatome duomenis
     const data = await res.json();
-    setKomentarai(data);
+    
+    // Jei duomenys yra masyvas, nustatome jį, kitu atveju - tuščią masyvą
+    setKomentarai(Array.isArray(data) ? data : []);
+
+  } catch (err) {
+    // 5. Pagrindinė klaidos gaudyklė (pvz., interneto ryšio nutrūkimas)
+    console.error("Nepavyko prisijungti prie komentarų DB:", err);
+    setKomentarai([]);
   }
 };
 
