@@ -787,75 +787,35 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
        <button 
   onClick={async () => {
-    // 1. Kintamieji (užtikriname, kad jie pasiekiami funkcijos viduje)
-    const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
-    const komentaras = selectedClient["Komentaras"] || "";
+  const MY_RESEND_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM"; // Įrašykite savo raktą čia
+  const targetUrl = "https://api.resend.com/emails";
 
-    // 2. PATIKRINIMAS
-    if (yraGedimas && komentaras.trim().length < 3) {
-      alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
-      return;
+  try {
+    const emailRes = await fetch(targetUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MY_RESEND_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev', // Su nemokamu raktu veikia tik šis siuntėjas
+        to: ['valdasjanciauskas@gmail.com'],
+        subject: `🚨 SKUBUS IŠKVIETIMAS: ${selectedClient["Kliento pavadinimas"]}`,
+        html: `<p>Gedimas: ${selectedClient["Komentaras"]}</p>`
+      })
+    });
+
+    if (!emailRes.ok) {
+      const errorData = await emailRes.json();
+      throw new Error("Resend klaida: " + JSON.stringify(errorData));
     }
-
-    try {
-      const updatedClient = { ...selectedClient };
-      
-      // Automatinis datos įrašymas (išvaliau dubliavimą)
-      if (yraGedimas && !updatedClient.gedimo_pradzia) {
-        updatedClient.gedimo_pradzia = new Date().toISOString();
-      }
-
-      // 3. Duomenų siuntimas į bazę
-      const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify(updatedClient)
-      });
-
-      if (!res.ok) throw new Error("Nepavyko atnaujinti įrenginio duomenų.");
-
-      // 4. LAIŠKO SIUNTIMAS (tik jei gedimas)
-      if (yraGedimas) {
-        // PASTABA: Jei naudojate cors-anywhere, būtinai įsitikinkite, kad jis veikia.
-        // Jei vis dar gaunate 403, siūlau naudoti serverinę funkciją.
-        const emailRes = await fetch(`${proxyUrl}${targetUrl}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${MY_RESEND_KEY}`,
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify({
-            from: 'MD Impex CRM <onboarding@resend.dev>',
-            to: ['valdasjanciauskas@gmail.com'],
-            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
-            html: `
-              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
-                <p>Klientas: <strong>${updatedClient["Kliento pavadinimas"]}</strong></p>
-                <p>Gedimo aprašymas: <strong>${updatedClient["Komentaras"]}</strong></p>
-                <a href="https://service-crm-nine.vercel.app/client/${updatedClient.id}">👉 Peržiūrėti CRM sistemoje</a>
-              </div>
-            `
-          })
-        });
-
-        if (!emailRes.ok) {
-          const errData = await emailRes.json();
-          throw new Error("Laiško siuntimas nepavyko: " + JSON.stringify(errData));
-        }
-      }
-
-      // 5. Atnaujiname sąrašą sąsajoje
-      setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
-      alert("Išsaugota ir laiškas išsiųstas!");
-      setSelectedClient(null);
-      
-    } catch (err) { 
-      console.error("Klaida:", err); 
-      alert("Klaida: " + err.message);
-    }
-  }}
+    
+    alert("Laiškas sėkmingai išsiųstas!");
+  } catch (err) {
+    console.error(err);
+    alert("Klaida: " + err.message);
+  }
+}}
   style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
 >
   IŠSAUGOTI PAKEITIMUS
