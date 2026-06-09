@@ -394,6 +394,8 @@ const handleFileUpload = async (event) => {
   const updates = { [field]: newValue };
 
   try {
+    console.log("KVIEČIAMAS URL:", `${BASE_URL}/equipment?id=eq.${id}`);
+console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes('/equipment'));
     const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
       method: 'PATCH',
       headers: getHeaders(), // <--- Štai čia! Daug švariau ir be klaidų.
