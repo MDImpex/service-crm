@@ -788,6 +788,10 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
         <button 
           onClick={async () => {
             try {
+              const updatedClient = { ...selectedClient };
+  if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
+    updatedClient.gedimo_pradzia = new Date().toISOString();
+  }
               const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
                 method: 'PATCH',
                 headers: getHeaders(),
@@ -836,22 +840,28 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
   {/* 2. REMONTO PROGRESAS (30 d.) */}
   {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
-    <div>
-      <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d.)</div>
-      {(() => {
-        const daysPassed = Math.min(Math.max((new Date() - new Date()) / (1000 * 60 * 60 * 24) + 1, 0), 30);
-        const progress = daysPassed / 30;
-        return (
-          <div>
-            <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-              <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
-            </div>
-            <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>Praėjo nuo gedimo: {Math.round(daysPassed)} d. ({Math.round(progress * 100)}%)</p>
+  <div>
+    <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>REMONTO PROGRESAS (30 d.)</div>
+    {(() => {
+      // Jei gedimo pradžia yra, skaičiuojame nuo jos, jei ne - nuo šiandien
+      const startDate = selectedClient.gedimo_pradzia ? new Date(selectedClient.gedimo_pradzia) : new Date();
+      const diffTime = Math.abs(new Date() - startDate);
+      const daysPassed = Math.min(Math.floor(diffTime / (1000 * 60 * 60 * 24)), 30);
+      const progress = daysPassed / 30;
+      
+      return (
+        <div>
+          <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{ width: `${progress * 100}%`, height: '100%', background: getProgressColor(progress), transition: '0.3s' }} />
           </div>
-        );
-      })()}
-    </div>
-  )}
+          <p style={{ fontSize: '10px', marginTop: '3px', color: '#555' }}>
+            Praėjo nuo gedimo: {daysPassed} d.
+          </p>
+        </div>
+      );
+    })()}
+  </div>
+)}  
 
   {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
 <h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
