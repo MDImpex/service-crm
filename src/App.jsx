@@ -736,7 +736,9 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     justifyContent: 'center',
     padding: '10px' // Pridėta, kad langas neliestų ekrano kraštų
   }}>
-    <div className="kliento-kortele" style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative' }}>
+    <div className="kliento-kortele" style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative',
+      overflowY: 'auto'    // Svarbu: jei turinio daug, leis slinkti
+    }}>
       
       {/* Uždarymo mygtukas */}
       <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
