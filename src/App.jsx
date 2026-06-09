@@ -264,7 +264,10 @@ const handleAddComment = async (text) => {
       // SIUNČIAME TIESIAI Į API.RESEND.COM (be jokio proxyUrl)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: getHeaders(),
+        headers: {
+  'Authorization': `Bearer ${re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM}`,
+  'Content-Type': 'application/json'
+},
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
           to: [MY_RECEIVER_EMAIL],
