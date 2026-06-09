@@ -383,7 +383,6 @@ const handleFileUpload = async (event) => {
   }
 };
   const handleSave = async (id, field, value) => {
-    alert("TESTAS")
   const currentItem = equipment.find(item => item.id === id);
   if (!currentItem) return;
   
