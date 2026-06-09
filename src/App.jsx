@@ -792,15 +792,13 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
         <button 
   onClick={async () => {
-  // 1. KINTAMIEJŲ APIBRĖŽIMAS (Kad nereikėtų ieškoti kitur)
-  const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
-  const targetUrl = "https://api.resend.com/emails";
-  const MY_RECEIVER_EMAIL = "jusu-el-pastas@pavyzdys.lt"; // Įrašykite savo el. paštą čia!
+  // Įrašykite savo duomenis tiesiai čia, kad jie visada būtų pasiekiami
+  const MY_RECEIVER_EMAIL = "jusu-el-pastas@pavyzdys.lt";
+  const RESEND_API_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM";
   
   const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
   const komentaras = selectedClient["Komentaras"] || "";
 
-  // 2. PATIKRINIMAS
   if (yraGedimas && komentaras.trim().length < 3) {
     alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
     return;
@@ -812,7 +810,6 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       updatedClient.gedimo_pradzia = new Date().toISOString();
     }
 
-    // 3. DUOMENŲ SIUNTIMAS
     const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
       method: 'PATCH',
       headers: getHeaders(),
@@ -820,32 +817,27 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     });
 
     if (res.ok) {
-      // 4. LAIŠKO SIUNTIMAS
       if (yraGedimas) {
-        const emailRes = await fetch(proxyUrl + targetUrl, {
+        // Kreipiamės TIESIAI į Resend API (be cors-anywhere)
+        const emailRes = await fetch("https://api.resend.com/emails", {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: 'MD Impex CRM <onboarding@resend.dev>',
+            from: 'onboarding@resend.dev', // BŪTINA: su šiuo raktu veikia tik šis siuntėjas
             to: [MY_RECEIVER_EMAIL],
-            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
-            html: `
-              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
-                <p>Klientas: <strong>${updatedClient["Kliento pavadinimas"]}</strong></p>
-                <p>Komentaras: <strong>${updatedClient["Komentaras"]}</strong></p>
-                <a href="https://service-crm-nine.vercel.app/">Atidaryti CRM sistemą</a>
-              </div>
-            `
+            subject: `🚨 SKUBUS IŠKVIETIMAS: ${updatedClient["Kliento pavadinimas"]}`,
+            html: `<p>Klientas: ${updatedClient["Kliento pavadinimas"]}</p><p>Gedimas: ${updatedClient["Komentaras"]}</p>`
           })
         });
-        if (!emailRes.ok) throw new Error("Laiško siuntimas nepavyko.");
+        
+        if (!emailRes.ok) {
+            const err = await emailRes.json();
+            throw new Error("Resend klaida: " + JSON.stringify(err));
+        }
       }
-      
       setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
       alert("Išsaugota ir laiškas išsiųstas!");
       setSelectedClient(null);
