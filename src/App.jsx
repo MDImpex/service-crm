@@ -805,7 +805,10 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
       updatedClient.gedimo_pradzia = new Date().toISOString();
     }
-
+if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && 
+   (!updatedClient["Komentaras"] || updatedClient["Komentaras"].trim() === "")) {
+    updatedClient["Komentaras"] = "Gedimas: nenurodytas detalus aprašymas.";
+}
     // 2. Duomenų siuntimas į bazę
     const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
       method: 'PATCH',
