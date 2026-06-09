@@ -755,11 +755,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
         onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
       {/* KAIRĖ: Redagavimo laukai */}
-      <div style={{ 
-  flex: 'none', // Svarbu: pasakome, kad kairė pusė nebėra "flex", ji tiesiog užima savo vietą
-  width: '100%', // Turi užimti visą plotį
-  paddingRight: '0' 
-}}>
+      <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
         
         <div style={{ flex: 1 }}>
@@ -801,14 +797,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       </div>
 
       {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
-<div style={{ 
-  flex: 'none', // Svarbu: pasakome, kad dešinė pusė nebėra "flex"
-  width: '100%', 
-  borderLeft: 'none', // Kadangi stulpeliai vienas po kito, šoninė linija nebereikalinga
-  borderTop: '1px solid #eee', // Geriau dėti viršutinę liniją atskyrimui
-  paddingLeft: '0',
-  marginTop: '20px'
-}}>
+<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
   {/* FOTOAPARATO MYGTUKAS */}
   <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
