@@ -787,9 +787,20 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
         <button 
           onClick={async () => {
+  // 1. PATIKRINIMAS: Jei yra "gedimas", bet komentaras tuščias - neleidžiame išsaugoti
+  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && 
+     (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
+    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą, kad žinotume, kas nutiko!");
+    return; // Nutraukiame vykdymą, nieko nesiunčiame
+  }
+
   try {
     const updatedClient = { ...selectedClient };
     
+    // 2. Automatinis gedimo datos įrašymas
+    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
+      updatedClient.gedimo_pradzia = new Date().toISOString();
+    }
     // 1. Data įrašymas
     if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
       updatedClient.gedimo_pradzia = new Date().toISOString();
