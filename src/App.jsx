@@ -373,44 +373,40 @@ const handleFileUpload = async (event) => {
   }
 };
   const handleSave = async (id, field, value) => {
-    const currentItem = equipment.find(item => item.id === id);
-    if (!currentItem) return;
-    
-    const oldValue = currentItem[field] || '';
-    const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
+  const currentItem = equipment.find(item => item.id === id);
+  if (!currentItem) return;
+  
+  const oldValue = currentItem[field] || '';
+  const newValue = value !== undefined && value !== null ? value.toString().trim() : '';
 
-    if (newValue === oldValue) { 
-      setEditingCell(null); 
-      return; 
-    }
+  if (newValue === oldValue) { 
+    setEditingCell(null); 
+    return; 
+  }
 
-    let updates = { [field]: newValue };
+  const updates = { [field]: newValue };
 
-    try {
-      // SVARBU: Pridėtas /equipment prie URL
-      const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
-        method: 'PATCH',
-        headers: { 
-          'apikey': SUPABASE_ANON_KEY, 
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(updates)
-      });
+  try {
+    const res = await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { 
+      method: 'PATCH',
+      headers: { 
+        'apikey': SUPABASE_ANON_KEY, 
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(updates)
+    });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(JSON.stringify(errorData));
-      }
+    if (!res.ok) throw new Error("Nepavyko išsaugoti DB");
 
-      setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
-      setEditingCell(null);
-    } catch (err) { 
-      console.error("Klaida saugant:", err); 
-      alert("Nepavyko išsaugoti: " + err.message);
-      setEditingCell(null); 
-    }
+    setEquipment(equipment.map(item => item.id === id ? { ...item, ...updates } : item));
+    setEditingCell(null);
+  } catch (err) { 
+    console.error("Klaida saugant:", err); 
+    alert("Klaida: " + err.message);
+    setEditingCell(null); 
+  }
 };
 
  const handleUndo = async () => {
@@ -422,13 +418,12 @@ const handleFileUpload = async (event) => {
     setLoading(true);
     
     if (lastAction.type === 'EDIT_CELL') {
-      let rollbacks = { [lastAction.field]: lastAction.oldValue };
+      const rollbacks = { [lastAction.field]: lastAction.oldValue };
       if (lastAction.field === 'Atlikta') { 
         rollbacks["Patikros data"] = lastAction.oldPatikrosData; 
         rollbacks["Sekanti patikra"] = lastAction.oldSekantiPatikra; 
       }
       
-      // PATAISYTA: pridėtas /equipment ir teisingi headeriai
       await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
         method: 'PATCH', 
         headers: { 
@@ -441,7 +436,6 @@ const handleFileUpload = async (event) => {
       setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
       
     } else if (lastAction.type === 'DELETE_ROW') {
-      // PATAISYTA: pridėtas /equipment
       const res = await fetch(`${BASE_URL}/equipment`, { 
         method: 'POST', 
         headers: { 
@@ -458,7 +452,6 @@ const handleFileUpload = async (event) => {
       }
       
     } else if (lastAction.type === 'ADD_ROW') {
-      // PATAISYTA: pridėtas /equipment
       await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
         method: 'DELETE', 
         headers: { 
