@@ -792,6 +792,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
         <button 
           onClick={async () => {
+  console.log("Dabartinis komentaras prieš patikrą:", selectedClient["Komentaras"]);
   const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
   const komentaras = selectedClient["Komentaras"] || "";
 
