@@ -726,17 +726,36 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
       {/* KLIENTO KORTELĖ */}
       {selectedClient && (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative' }}>
-      
-      <button style={{ position: 'absolute', top: '10px', right: '10px' }} onClick={() => setSelectedClient(null)}>✕</button>
+  <div style={{ 
+    position: 'fixed', 
+    inset: 0, 
+    background: 'rgba(0,0,0,0.6)', 
+    zIndex: 1000, 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    padding: '10px' // Pridėta, kad langas neliestų ekrano kraštų
+  }}>
+    <div style={{ 
+      background: 'white', 
+      padding: '25px', 
+      width: '950px', 
+      maxWidth: '100%',    // Svarbu: neleidžia išlįsti už ekrano ribų
+      maxHeight: '90vh',   // Svarbu: neleidžia išlįsti vertikaliai
+      borderRadius: '12px', 
+      display: 'flex', 
+      flexDirection: window.innerWidth < 768 ? 'column' : 'row', // Automatinis išdėstymas
+      gap: '25px', 
+      position: 'relative',
+      overflowY: 'auto'    // Svarbu: jei turinio daug, leis slinkti
+    }}>
       
       {/* Uždarymo mygtukas */}
       <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
         onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
       {/* KAIRĖ: Redagavimo laukai */}
-      <div style={{ flex: 1.5, overflowY: 'auto', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
         
         <div style={{ flex: 1 }}>
