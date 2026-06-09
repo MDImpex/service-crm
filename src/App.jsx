@@ -785,38 +785,40 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
           })}
         </div>
 
-        <button 
-          onClick={async () => {
-  // 1. PATIKRINIMAS: Jei yra "gedimas", bet komentaras tuščias - neleidžiame išsaugoti
-  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && 
-     (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
-    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą, kad žinotume, kas nutiko!");
-    return; // Nutraukiame vykdymą, nieko nesiunčiame
-  }
+       <button 
+  onClick={async () => {
+    // 1. Kintamieji (užtikriname, kad jie pasiekiami funkcijos viduje)
+    const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
+    const komentaras = selectedClient["Komentaras"] || "";
 
-  try {
-    const updatedClient = { ...selectedClient };
-    
-    // 2. Automatinis gedimo datos įrašymas
-    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
-      updatedClient.gedimo_pradzia = new Date().toISOString();
-    }
-    // 1. Data įrašymas
-    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
-      updatedClient.gedimo_pradzia = new Date().toISOString();
+    // 2. PATIKRINIMAS
+    if (yraGedimas && komentaras.trim().length < 3) {
+      alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
+      return;
     }
 
-    // 2. Duomenų siuntimas į bazę
-    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(updatedClient)
-    });
+    try {
+      const updatedClient = { ...selectedClient };
+      
+      // Automatinis datos įrašymas (išvaliau dubliavimą)
+      if (yraGedimas && !updatedClient.gedimo_pradzia) {
+        updatedClient.gedimo_pradzia = new Date().toISOString();
+      }
 
-    if (res.ok) {
-      // 3. LAIŠKO SIUNTIMAS (tik jei gedimas)
-      if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas')) {
-        const emailRes = await fetch(proxyUrl + targetUrl, {
+      // 3. Duomenų siuntimas į bazę
+      const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(updatedClient)
+      });
+
+      if (!res.ok) throw new Error("Nepavyko atnaujinti įrenginio duomenų.");
+
+      // 4. LAIŠKO SIUNTIMAS (tik jei gedimas)
+      if (yraGedimas) {
+        // PASTABA: Jei naudojate cors-anywhere, būtinai įsitikinkite, kad jis veikia.
+        // Jei vis dar gaunate 403, siūlau naudoti serverinę funkciją.
+        const emailRes = await fetch(`${proxyUrl}${targetUrl}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${MY_RESEND_KEY}`,
@@ -828,47 +830,36 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
             to: ['valdasjanciauskas@gmail.com'],
             subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
             html: `
-  <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-    <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-    <table style="width:100%;border-collapse:collapse;margin-top:15px;">
-      <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Kliento pavadinimas"]}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Adresas"] || 'Nenurodyta'}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Įrangos pavadinimas"] || 'Nenurodyta'}</td></tr>
-      <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${updatedClient["Komentaras"] || 'Nėra'}</td></tr>
-    </table>
-    
-    <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e3e7eb; text-align: center;">
-      <a href="https://service-crm-nine.vercel.app/client/${updatedClient.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-        👉 Peržiūrėti CRM sistemoje
-      </a>
-    </div>
-  </div>
-`
+              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
+                <p>Klientas: <strong>${updatedClient["Kliento pavadinimas"]}</strong></p>
+                <p>Gedimo aprašymas: <strong>${updatedClient["Komentaras"]}</strong></p>
+                <a href="https://service-crm-nine.vercel.app/client/${updatedClient.id}">👉 Peržiūrėti CRM sistemoje</a>
+              </div>
+            `
           })
         });
 
-        const emailData = await emailRes.json();
-        console.log("Resend atsakymas:", emailData);
-
         if (!emailRes.ok) {
-          throw new Error("Laiško siuntimas nepavyko: " + JSON.stringify(emailData));
+          const errData = await emailRes.json();
+          throw new Error("Laiško siuntimas nepavyko: " + JSON.stringify(errData));
         }
       }
 
-      // 4. Užbaigimas (tik jei viskas pavyko)
+      // 5. Atnaujiname sąrašą sąsajoje
       setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
       alert("Išsaugota ir laiškas išsiųstas!");
       setSelectedClient(null);
+      
+    } catch (err) { 
+      console.error("Klaida:", err); 
+      alert("Klaida: " + err.message);
     }
-  } catch (err) { 
-    console.error(err); 
-    alert("Klaida: " + err.message);
-  }
-}}
-          style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          IŠSAUGOTI PAKEITIMUS
-        </button>
+  }}
+  style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+>
+  IŠSAUGOTI PAKEITIMUS
+</button>
       </div>
 
       {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
