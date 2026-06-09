@@ -787,23 +787,30 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
         <button 
           onClick={async () => {
-            try {
-              const updatedClient = { ...selectedClient };
-  if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
-    updatedClient.gedimo_pradzia = new Date().toISOString();
-  }
-              const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
-                method: 'PATCH',
-                headers: getHeaders(),
-                body: JSON.stringify(selectedClient)
-              });
-              if (res.ok) {
-                setEquipment(equipment.map(item => item.id === selectedClient.id ? selectedClient : item));
-                alert("Išsaugota!");
-                setSelectedClient(null);
-              }
-            } catch (err) { console.error(err); }
-          }}
+  try {
+    // 1. Sukuriame atnaujintą objektą su data
+    const updatedClient = { ...selectedClient };
+    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
+      updatedClient.gedimo_pradzia = new Date().toISOString();
+    }
+
+    // 2. Siunčiame būtent updatedClient!
+    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(updatedClient) // Pakeista iš selectedClient į updatedClient
+    });
+
+    if (res.ok) {
+      // 3. JEI ČIA ANKSČIAU BŪDAVO LAIŠKO SIUNTIMAS, ĮDĖKITE JĮ ČIA:
+      // Pavyzdžiui: await sendEmailFunction(updatedClient); 
+      
+      setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
+      alert("Išsaugota!");
+      setSelectedClient(null);
+    }
+  } catch (err) { console.error(err); }
+}}
           style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           IŠSAUGOTI PAKEITIMUS
