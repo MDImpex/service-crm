@@ -253,14 +253,15 @@ const handleAddComment = async (text) => {
 }
 
  const sendUrgentEmail = async (item, faultDetails) => {
-    const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM';
+    const MY_RESEND_KEY = 're_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM'; 
     const MY_RECEIVER_EMAIL = 'valdasjanciauskas@gmail.com';
+
     const klientas = item["Kliento pavadinimas"] || 'Nenurodytas klientas';
     const adresas = item["Adresas"] || 'Nenurodytas adresas';
     const iranga = item["Įrangos pavadinimas"] || 'Nenurodyta įranga';
     const serijosNumeris = item["Serijos numeris"] || 'Nenurodytas S/N';
 
-     try {
+    try {
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const targetUrl = 'https://api.resend.com/emails';
 
@@ -275,28 +276,22 @@ const handleAddComment = async (text) => {
           from: 'MD Impex CRM <onboarding@resend.dev>',
           to: [MY_RECEIVER_EMAIL],
           subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${klientas}`,
-          html: `<div style="font-family:Arial,sans-serif;color:#333;">
-    <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-    <table style="width:100%;border-collapse:collapse;margin-top:15px;">
-      <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${adresas}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${iranga}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">S/N:</td><td style="padding:8px 0;font-size:15px;color:#000;">${serijosNumeris}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Gedimas:</td><td style="padding:8px 0;font-size:15px;color:#e30613;font-weight:bold;">${faultDetails}</td></tr>
-      <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Komentaras:</td><td style="padding:8px 0;font-size:15px;color:#333;background-color:#f9f9f9;padding:5px;">${item["Komentaras"] || 'Nėra'}</td></tr>
-    </table>
-    <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-    <p style="font-size: 13px; color: #666;">Šį įrašą galite peržiūrėti CRM sistemoje: <br/><a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: underline;">Atidaryti MD Impex CRM</a></p>
-  </div>`
+          html: `
+            <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+              <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
+              <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+                <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${klientas}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${adresas}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${iranga}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Serijos numeris:</td><td style="padding:8px 0;font-size:15px;color:#000;font-family:monospace;">${serijosNumeris}</td></tr>
+                <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${faultDetails}</td></tr>
+              </table>
+            </div>
+          `
         })
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        console.error("Resend API klaida:", error);
-      }
-    } catch (err) { console.error("Tinklo klaida:", err) }
-};
+    } catch (err) { console.error(err) }
+  };
 
   const pushActionToHistory = (action) => setHistory(prev => [action, ...prev].slice(0, 25));
 
