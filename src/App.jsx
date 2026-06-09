@@ -485,7 +485,7 @@ const handleFileUpload = async (event) => {
     const rowToDelete = equipment.find(item => item.id === id);
     if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
-    await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: getHeaders() });
+    await fetch(`${BASE_URL}/equipment?id=eq.${id}`, { method: 'DELETE', headers: getHeaders() });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
