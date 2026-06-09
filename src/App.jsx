@@ -790,7 +790,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   try {
     const updatedClient = { ...selectedClient };
     
-    // 1. Data įrašymas (jei gedimas)
+    // 1. Data įrašymas
     if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
       updatedClient.gedimo_pradzia = new Date().toISOString();
     }
@@ -803,9 +803,9 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     });
 
     if (res.ok) {
-      // 3. LAIŠKO SIUNTIMAS (įdėkite čia)
+      // 3. LAIŠKO SIUNTIMAS (tik jei gedimas)
       if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas')) {
-        await fetch(proxyUrl + targetUrl, {
+        const emailRes = await fetch(proxyUrl + targetUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${MY_RESEND_KEY}`,
@@ -816,29 +816,26 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
             from: 'MD Impex CRM <onboarding@resend.dev>',
             to: [MY_RECEIVER_EMAIL],
             subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
-            html: `
-              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-                <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-                <table style="width:100%;border-collapse:collapse;margin-top:15px;">
-                  <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Kliento pavadinimas"]}</td></tr>
-                  <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Adresas"] || 'Nenurodyta'}</td></tr>
-                  <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${updatedClient["Įrangos pavadinimas"] || 'Nenurodyta'}</td></tr>
-                  <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${updatedClient["Komentaras"] || 'Nėra'}</td></tr>
-                </table>
-              </div>
-            `
+            html: `... (čia jūsų HTML kodas) ...`
           })
         });
+
+        const emailData = await emailRes.json();
+        console.log("Resend atsakymas:", emailData);
+
+        if (!emailRes.ok) {
+          throw new Error("Laiško siuntimas nepavyko: " + JSON.stringify(emailData));
+        }
       }
 
-      // 4. Užbaigimas
+      // 4. Užbaigimas (tik jei viskas pavyko)
       setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
       alert("Išsaugota ir laiškas išsiųstas!");
       setSelectedClient(null);
     }
   } catch (err) { 
     console.error(err); 
-    alert("Klaida išsaugant arba siunčiant laišką.");
+    alert("Klaida: " + err.message);
   }
 }}
           style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
