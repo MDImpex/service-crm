@@ -297,7 +297,7 @@ const handleAddComment = async (text) => {
       
     </table>
     <div style="margin-top: 20px; text-align: center;">
-      <a href="https://JUSU-CRM-NUORODA.LT" style="color: #113c32; font-weight: bold; text-decoration: none;">
+      <a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: none;">
         👉 Peržiūrėti CRM sistemoje
       </a>
     </div>
