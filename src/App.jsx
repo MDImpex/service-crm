@@ -265,7 +265,7 @@ const handleAddComment = async (text) => {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-  'Authorization': `Bearer ${re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM}`,
+  'Authorization': `Bearer ${MY_RESEND_KEY}`, // Čia naudojame kintamąjį, kurį apibrėžėte viršuje
   'Content-Type': 'application/json'
 },
         body: JSON.stringify({
