@@ -756,7 +756,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
         <button 
           onClick={async () => {
             try {
-              const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
+              const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify(selectedClient)
