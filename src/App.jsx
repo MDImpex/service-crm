@@ -962,8 +962,16 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   {/* KOMENTARAI SU EDIT/DELETE */}
   <h4 style={{ margin: '15px 0 5px 0' }}>Komentarai</h4>
   <div style={{ display: 'flex', gap: '5px' }}>
-    <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
-    <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
+    <input 
+  value={selectedClient["Komentaras"] || ""} 
+  onChange={(e) => setSelectedClient({ ...selectedClient, Komentaras: e.target.value })}
+  placeholder="Įrašykite komentarą..."
+  style={{ flex: 1, padding: '5px' }} 
+/>
+    <button onClick={() => {
+  handleAddComment(selectedClient["Komentaras"]); 
+  // Čia galite išvalyti, jei reikia, arba tiesiog palikti
+}}>Siųsti</button>
   </div>
 
   <div style={{ flex: 1, overflowY: 'auto' }}>
