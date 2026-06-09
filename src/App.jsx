@@ -787,30 +787,57 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
        <button 
   onClick={async () => {
-  const MY_RESEND_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM"; // Įrašykite savo raktą čia
-  const targetUrl = "https://api.resend.com/emails";
+  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
+    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
+    return;
+  }
 
   try {
-    const emailRes = await fetch(targetUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MY_RESEND_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'onboarding@resend.dev', // Su nemokamu raktu veikia tik šis siuntėjas
-        to: ['valdasjanciauskas@gmail.com'],
-        subject: `🚨 SKUBUS IŠKVIETIMAS: ${selectedClient["Kliento pavadinimas"]}`,
-        html: `<p>Gedimas: ${selectedClient["Komentaras"]}</p>`
-      })
+    let e = { ...selectedClient };
+    if (e.Prižiūri?.toLowerCase().includes('gedimas') && !e.gedimo_pradzia) {
+      e.gedimo_pradzia = new Date().toISOString();
+    }
+
+    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(e)
     });
 
-    if (!emailRes.ok) {
-      const errorData = await emailRes.json();
-      throw new Error("Resend klaida: " + JSON.stringify(errorData));
+    if (res.ok) {
+      if (e.Prižiūri?.toLowerCase().includes('gedimas')) {
+        let t = await fetch(proxyUrl + targetUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${MY_RESEND_KEY}`,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            from: 'MD Impex CRM <onboarding@resend.dev>',
+            to: ['valdasjanciauskas@gmail.com'],
+            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${e["Kliento pavadinimas"]}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
+                <p>Klientas: <strong>${e["Kliento pavadinimas"]}</strong></p>
+                <p>Komentaras: <strong>${e["Komentaras"] || "Nėra"}</strong></p>
+                <br>
+                <a href="https://service-crm-nine.vercel.app/client/${e.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  👉 Peržiūrėti CRM sistemoje
+                </a>
+              </div>
+            `
+          })
+        });
+
+        if (!t.ok) throw new Error("Laiško siuntimas nepavyko.");
+      }
+
+      setEquipment(equipment.map(item => item.id === selectedClient.id ? e : item));
+      alert("Išsaugota ir laiškas išsiųstas!");
+      setSelectedClient(null);
     }
-    
-    alert("Laiškas sėkmingai išsiųstas!");
   } catch (err) {
     console.error(err);
     alert("Klaida: " + err.message);
