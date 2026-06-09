@@ -792,70 +792,69 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 
         <button 
   onClick={async () => {
-    // Apibrėžiame proxy ir raktą funkcijos viduje, kad būtų garantuotai pasiekiami
-    const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
-    const targetUrl = "https://api.resend.com/emails";
-    
-    const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
-    const komentaras = selectedClient["Komentaras"] || "";
+  // 1. KINTAMIEJŲ APIBRĖŽIMAS (Kad nereikėtų ieškoti kitur)
+  const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
+  const targetUrl = "https://api.resend.com/emails";
+  const MY_RECEIVER_EMAIL = "jusu-el-pastas@pavyzdys.lt"; // Įrašykite savo el. paštą čia!
+  
+  const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
+  const komentaras = selectedClient["Komentaras"] || "";
 
-    // Patikrinimas
-    if (yraGedimas && komentaras.trim().length < 3) {
-      alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
-      return;
+  // 2. PATIKRINIMAS
+  if (yraGedimas && komentaras.trim().length < 3) {
+    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
+    return;
+  }
+
+  try {
+    const updatedClient = { ...selectedClient };
+    if (yraGedimas && !updatedClient.gedimo_pradzia) {
+      updatedClient.gedimo_pradzia = new Date().toISOString();
     }
 
-    try {
-      const updatedClient = { ...selectedClient };
+    // 3. DUOMENŲ SIUNTIMAS
+    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(updatedClient)
+    });
+
+    if (res.ok) {
+      // 4. LAIŠKO SIUNTIMAS
+      if (yraGedimas) {
+        const emailRes = await fetch(proxyUrl + targetUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            from: 'MD Impex CRM <onboarding@resend.dev>',
+            to: [MY_RECEIVER_EMAIL],
+            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
+                <p>Klientas: <strong>${updatedClient["Kliento pavadinimas"]}</strong></p>
+                <p>Komentaras: <strong>${updatedClient["Komentaras"]}</strong></p>
+                <a href="https://service-crm-nine.vercel.app/">Atidaryti CRM sistemą</a>
+              </div>
+            `
+          })
+        });
+        if (!emailRes.ok) throw new Error("Laiško siuntimas nepavyko.");
+      }
       
-      if (yraGedimas && !updatedClient.gedimo_pradzia) {
-        updatedClient.gedimo_pradzia = new Date().toISOString();
-      }
-
-      // Duomenų siuntimas
-      const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify(updatedClient)
-      });
-
-      if (res.ok) {
-        // Laiško siuntimas
-        if (yraGedimas) {
-          const emailRes = await fetch(proxyUrl + targetUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${RESEND_API_KEY}`, // PATAISYTA: naudotas RESEND_API_KEY
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-              from: 'MD Impex CRM <onboarding@resend.dev>',
-              to: [MY_RECEIVER_EMAIL],
-              subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
-              html: `
-                <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-                  <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-                  <p>Klientas: <strong>${updatedClient["Kliento pavadinimas"]}</strong></p>
-                  <p>Gedimo aprašymas: <strong>${updatedClient["Komentaras"]}</strong></p>
-                  <a href="https://JUSU-CRM-NUORODA.LT">Atidaryti CRM</a>
-                </div>
-              `
-            })
-          });
-
-          if (!emailRes.ok) throw new Error("Laiško siuntimas nepavyko.");
-        }
-
-        setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
-        alert("Išsaugota ir laiškas išsiųstas!");
-        setSelectedClient(null);
-      }
-    } catch (err) { 
-      console.error(err); 
-      alert("Klaida: " + err.message);
+      setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
+      alert("Išsaugota ir laiškas išsiųstas!");
+      setSelectedClient(null);
     }
-  }}
+  } catch (err) { 
+    console.error(err); 
+    alert("Klaida: " + err.message);
+  }
+}}
   style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
 >
   IŠSAUGOTI PAKEITIMUS
