@@ -59,8 +59,8 @@ function App() {
   const fetchKomentarai = async (id) => {
   if (!id) return;
   // JOKIO "equipment/" ČIA!
-  const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+  const res = await fetch(`${BASE_URL}/komentarai?equipment_id=eq.${id}&order=sukurta_data.desc`, {
+    headers: getHeaders()
   });
   if (res.ok) {
     const data = await res.json();
@@ -71,22 +71,18 @@ function App() {
   const deleteComment = async (id) => {
   if (!window.confirm("Ar tikrai norite trinti?")) return;
   // JOKIO "equipment/" ČIA!
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
+  await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
     method: 'DELETE',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    headers: getHeaders()
   });
   fetchKomentarai(selectedClient.id);
 };
 
   const updateComment = async (id, newText) => {
     // SVARBU: čia URL turi būti tik '/komentarai', o ne '/equipment/komentarai'
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai?id=eq.${id}`, {
+    const res = await fetch(`${BASE_URL}/komentarai?id=eq.${id}`, {
       method: 'PATCH',
-      headers: { 
-        'apikey': API_KEY, 
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json' 
-      },
+      headers: getHeaders(),
       body: JSON.stringify({ tekstas: newText })
     });
     
@@ -102,9 +98,9 @@ function App() {
   const deleteFile = async (id) => {
   if (!window.confirm("Ar tikrai norite ištrinti failą?")) return;
   // JOKIO "equipment/" ČIA!
-  await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?id=eq.${id}`, {
+  await fetch(`${BASE_URL}/klientai_failai?id=eq.${id}`, {
     method: 'DELETE',
-    headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    headers: getHeaders()
   });
   fetchKlientoFailai(selectedClient.id);
 };
@@ -113,8 +109,8 @@ function App() {
     if (!id) return;
     
     // Štai čia buvo problema: prieš tai tikriausiai trūko "const res ="
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai?equipment_id=eq.${id}`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+    const res = await fetch(`${BASE_URL}/klientai_failai?equipment_id=eq.${id}`, {
+      headers: getHeaders()
     });
 
     if (res.ok) {
@@ -129,14 +125,9 @@ const handleAddComment = async (text) => {
   if (!text.trim()) return;
 
   // 1. Siunčiame į duomenų bazę
-  const res = await fetch('https://enucrtrjaoakachsrubi.supabase.co/rest/v1/komentarai', {
+  const res = await fetch(`${BASE_URL}/komentarai`, {
     method: 'POST',
-    headers: { 
-      'apikey': API_KEY, 
-      'Authorization': `Bearer ${API_KEY}`, 
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation' 
-    },
+    headers: getHeaders(),
     body: JSON.stringify({ 
       equipment_id: selectedClient.id, 
       tekstas: text,
@@ -217,7 +208,7 @@ const handleAddComment = async (text) => {
   setLoading(true);
   try {
     const response = await fetch(`${BASE_URL}/equipment?select=*&order=id.desc`, {
-      headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+      headers: getHeaders()
     });
     const data = await response.json();
     
@@ -245,10 +236,7 @@ const handleAddComment = async (text) => {
       // SIUNČIAME TIESIAI Į API.RESEND.COM (be jokio proxyUrl)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${MY_RESEND_KEY}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({
           from: 'MD Impex CRM <onboarding@resend.dev>',
           to: [MY_RECEIVER_EMAIL],
@@ -282,7 +270,7 @@ const handleAddComment = async (text) => {
     try {
       const res = await fetch(`${BASE_URL}/equipment`, { // Pridėk /equipment
   method: 'POST',
-        headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: getHeaders(),
         body: JSON.stringify({ "Kliento pavadinimas": "NAUJAS ĮRAŠAS...", "Atlikta": "Ne" })
       });
       if (res.ok) {
@@ -321,14 +309,10 @@ const handleFileUpload = async (event) => {
   try {
     // 2. Įkėlimas į storage (naudojame tik ASCII simbolius header'iuose)
     const uploadRes = await fetch(
-      `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/klientai-failai/${safeFileName}`,
+      `${BASE_URL}/failai/${safeFileName}`,
       {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'apikey': API_KEY,
-          'Content-Type': file.type
-        },
+        headers: getHeaders(),
         body: file
       }
     );
@@ -338,7 +322,7 @@ const handleFileUpload = async (event) => {
       throw new Error(`Storage klaida: ${errText}`);
     }
 
-    const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
+    const publicUrl = `${BASE_URL}/failai/${safeFileName}`;
 
     // 3. Išsaugome įrašą duomenų bazėje
     // Svarbu: stulpelių pavadinimai turi atitikti lentelę (failo_pavadinimas ir url)
@@ -348,14 +332,9 @@ const handleFileUpload = async (event) => {
         failo_pavadinimas: file.name // Čia JSON body, todėl lietuviškos raidės yra saugios!
     };
 
-    const res = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+    const res = await fetch(`${BASE_URL}/klientai_failai`, {
       method: 'POST',
-      headers: { 
-        'apikey': API_KEY, 
-        'Authorization': `Bearer ${API_KEY}`, 
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
+      headers: getHeaders(),
       body: JSON.stringify(payload)
     });
 
@@ -425,11 +404,7 @@ const handleFileUpload = async (event) => {
       
       await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
         method: 'PATCH', 
-        headers: { 
-          'apikey': SUPABASE_ANON_KEY, 
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 
-          'Content-Type': 'application/json' 
-        }, 
+        headers: getHeaders(),
         body: JSON.stringify(rollbacks) 
       });
       setEquipment(prev => prev.map(item => item.id === lastAction.id ? { ...item, ...rollbacks } : item));
@@ -453,10 +428,7 @@ const handleFileUpload = async (event) => {
     } else if (lastAction.type === 'ADD_ROW') {
       await fetch(`${BASE_URL}/equipment?id=eq.${lastAction.id}`, { 
         method: 'DELETE', 
-        headers: { 
-          'apikey': SUPABASE_ANON_KEY, 
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}` 
-        } 
+        headers: getHeaders(),
       });
       setEquipment(prev => prev.filter(item => item.id !== lastAction.id));
     } else if (lastAction.type === 'COLUMNS_STATE') { 
@@ -513,7 +485,7 @@ const handleFileUpload = async (event) => {
     const rowToDelete = equipment.find(item => item.id === id);
     if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
-    await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
+    await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: getHeaders() });
     setEquipment(prev => prev.filter(item => item.id !== id));
   };
 
@@ -754,7 +726,7 @@ const handleFileUpload = async (event) => {
             try {
               const res = await fetch(`${BASE_URL}?id=eq.${selectedClient.id}`, {
                 method: 'PATCH',
-                headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify(selectedClient)
               });
               if (res.ok) {
