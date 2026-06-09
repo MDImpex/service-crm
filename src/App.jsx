@@ -23,6 +23,13 @@ const getProgressColor = (progress) => {
 };
 
 function App() {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // --- STATE HOOKAI ---
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -736,16 +743,29 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     justifyContent: 'center',
     padding: '10px' // Pridėta, kad langas neliestų ekrano kraštų
   }}>
-    <div className="kliento-kortele" style={{ background: 'white', padding: '25px', width: '950px', height: '85vh', borderRadius: '12px', display: 'flex', gap: '25px', position: 'relative',
-      overflowY: 'auto'    // Svarbu: jei turinio daug, leis slinkti
-    }}>
+    <div 
+  className="kliento-kortele" 
+  style={{ 
+    background: 'white', 
+    padding: '25px', 
+    width: '950px', 
+    maxWidth: '95vw',        // Tai leis langui susitraukti telefone
+    maxHeight: '90vh',       // Tai neleis jam būti aukštesniam už ekraną
+    borderRadius: '12px', 
+    display: 'flex', 
+    flexWrap: 'wrap',        // TAI SVARBIAUSIA: jei netelpa, kelia į apačią
+    gap: '25px', 
+    position: 'relative',
+    overflowY: 'auto' 
+  }}
+>
       
       {/* Uždarymo mygtukas */}
       <button style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}
         onClick={() => { setSelectedClient(null); setKomentarai([]); }}>✕</button>
 
       {/* KAIRĖ: Redagavimo laukai */}
-      <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ marginTop: 0 }}>{selectedClient["Kliento pavadinimas"]}</h2>
         
         <div style={{ flex: 1 }}>
@@ -787,7 +807,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       </div>
 
       {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
-<div style={{ flex: 1, borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
+<div style={{ flex: '1 1 300px', borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
   {/* FOTOAPARATO MYGTUKAS */}
   <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
