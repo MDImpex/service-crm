@@ -192,7 +192,7 @@ const handleAddComment = async (text) => {
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
-  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment?id=eq.419'
+  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1';
 
   useEffect(() => { localStorage.setItem('crm_columns', JSON.stringify(columns)) }, [columns])
   useEffect(() => { localStorage.setItem('crm_widths', JSON.stringify(widths)) }, [widths])
@@ -213,15 +213,22 @@ const handleAddComment = async (text) => {
     const data = await response.json();
     
     // IŠVALOME DUOMENIS IŠKART GAVUS
-    const cleanedData = data.map(item => ({
-      ...item,
-      "Patikros data": formatDateForInput(item["Patikros data"]),
-      "Sekanti patikra": formatDateForInput(item["Sekanti patikra"]),
-      "Montavimo data": formatDateForInput(item["Montavimo data"])
-    }));
-    
-    setEquipment(cleanedData || []);
-  } catch (err) { console.error(err); } finally { setLoading(false); }
+    if (Array.isArray(data)) {
+        const cleanedData = data.map(item => ({
+          ...item,
+          "Patikros data": formatDateForInput(item["Patikros data"]),
+          "Sekanti patikra": formatDateForInput(item["Sekanti patikra"]),
+          "Montavimo data": formatDateForInput(item["Montavimo data"])
+        }));
+        setEquipment(cleanedData);
+    } else {
+        console.error("Klaida gaunant duomenis:", data);
+    }
+  } catch (err) { 
+    console.error("Tinklo klaida:", err); 
+  } finally { 
+    setLoading(false); 
+  }
 }
 
  const sendUrgentEmail = async (item, faultDetails) => {
