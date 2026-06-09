@@ -296,11 +296,6 @@ const handleAddComment = async (text) => {
       <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Komentaras:</td><td style="padding:8px 0;font-size:15px;color:#333;background-color:#f9f9f9;padding:5px;">${item["Komentaras"] || 'Nėra'}</td></tr>
       
     </table>
-    <div style="margin-top: 20px; text-align: center;">
-      <a href="https://service-crm-nine.vercel.app/" style="color: #113c32; font-weight: bold; text-decoration: none;">
-        👉 Peržiūrėti CRM sistemoje
-      </a>
-    </div>
   </div>
 `
         })
@@ -791,25 +786,27 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
         </div>
 
         <button 
-  onClick={async () => {
-  // Įrašykite savo duomenis tiesiai čia, kad jie visada būtų pasiekiami
-  const MY_RECEIVER_EMAIL = "jusu-el-pastas@pavyzdys.lt";
-  const RESEND_API_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM";
-  
-  const yraGedimas = selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas');
-  const komentaras = selectedClient["Komentaras"] || "";
-
-  if (yraGedimas && komentaras.trim().length < 3) {
-    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
-    return;
+          onClick={async () => {
+  // 1. PATIKRINIMAS: Jei yra "gedimas", bet komentaras tuščias - neleidžiame išsaugoti
+  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && 
+     (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
+    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą, kad žinotume, kas nutiko!");
+    return; // Nutraukiame vykdymą, nieko nesiunčiame
   }
 
   try {
     const updatedClient = { ...selectedClient };
-    if (yraGedimas && !updatedClient.gedimo_pradzia) {
+    
+    // 2. Automatinis gedimo datos įrašymas
+    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
+      updatedClient.gedimo_pradzia = new Date().toISOString();
+    }
+    // 1. Data įrašymas
+    if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !updatedClient.gedimo_pradzia) {
       updatedClient.gedimo_pradzia = new Date().toISOString();
     }
 
+    // 2. Duomenų siuntimas į bazę
     const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
       method: 'PATCH',
       headers: getHeaders(),
@@ -817,27 +814,32 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     });
 
     if (res.ok) {
-      if (yraGedimas) {
-        // Kreipiamės TIESIAI į Resend API (be cors-anywhere)
-        const emailRes = await fetch("https://api.resend.com/emails", {
+      // 3. LAIŠKO SIUNTIMAS (tik jei gedimas)
+      if (updatedClient["Prižiūri"]?.toLowerCase().includes('gedimas')) {
+        const emailRes = await fetch(proxyUrl + targetUrl, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${MY_RESEND_KEY}`,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
           },
           body: JSON.stringify({
-            from: 'onboarding@resend.dev', // BŪTINA: su šiuo raktu veikia tik šis siuntėjas
+            from: 'MD Impex CRM <onboarding@resend.dev>',
             to: [MY_RECEIVER_EMAIL],
-            subject: `🚨 SKUBUS IŠKVIETIMAS: ${updatedClient["Kliento pavadinimas"]}`,
-            html: `<p>Klientas: ${updatedClient["Kliento pavadinimas"]}</p><p>Gedimas: ${updatedClient["Komentaras"]}</p>`
+            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${updatedClient["Kliento pavadinimas"]}`,
+            html: `... (čia jūsų HTML kodas) ...`
           })
         });
-        
+
+        const emailData = await emailRes.json();
+        console.log("Resend atsakymas:", emailData);
+
         if (!emailRes.ok) {
-            const err = await emailRes.json();
-            throw new Error("Resend klaida: " + JSON.stringify(err));
+          throw new Error("Laiško siuntimas nepavyko: " + JSON.stringify(emailData));
         }
       }
+
+      // 4. Užbaigimas (tik jei viskas pavyko)
       setEquipment(equipment.map(item => item.id === selectedClient.id ? updatedClient : item));
       alert("Išsaugota ir laiškas išsiųstas!");
       setSelectedClient(null);
@@ -847,10 +849,10 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     alert("Klaida: " + err.message);
   }
 }}
-  style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
->
-  IŠSAUGOTI PAKEITIMUS
-</button>
+          style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          IŠSAUGOTI PAKEITIMUS
+        </button>
       </div>
 
       {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
@@ -945,16 +947,8 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   {/* KOMENTARAI SU EDIT/DELETE */}
   <h4 style={{ margin: '15px 0 5px 0' }}>Komentarai</h4>
   <div style={{ display: 'flex', gap: '5px' }}>
-    <input 
-  value={selectedClient["Komentaras"] || ""} 
-  onChange={(e) => setSelectedClient({ ...selectedClient, Komentaras: e.target.value })}
-  placeholder="Įrašykite komentarą..."
-  style={{ flex: 1, padding: '5px' }} 
-/>
-    <button onClick={() => {
-  handleAddComment(selectedClient["Komentaras"]); 
-  // Čia galite išvalyti, jei reikia, arba tiesiog palikti
-}}>Siųsti</button>
+    <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
+    <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
   </div>
 
   <div style={{ flex: 1, overflowY: 'auto' }}>
