@@ -192,7 +192,7 @@ const handleAddComment = async (text) => {
   });
 
   const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudWNydHJqYW9ha2FjaHNydWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMzA5NjgsImV4cCI6MjA5MzcwNjk2OH0.srfXrYR5MCzUMBwV-mm7mkiepg2ATOW2WsG8ldm920k'
-  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1';
+  const BASE_URL = 'https://enucrtrjaoakachsrubi.supabase.co/rest/v1/equipment?id=eq.419'
 
   useEffect(() => { localStorage.setItem('crm_columns', JSON.stringify(columns)) }, [columns])
   useEffect(() => { localStorage.setItem('crm_widths', JSON.stringify(widths)) }, [widths])
@@ -482,6 +482,7 @@ const handleFileUpload = async (event) => {
   };
 
   const handleDeleteRow = async (id) => {
+    console.log("Tikrinam URL:", `${BASE_URL}/equipment?id=eq.${id}`);
     const rowToDelete = equipment.find(item => item.id === id);
     if (!rowToDelete || !window.confirm("Ar tikrai norite IŠTRINTI šį įrašą?")) return;
     pushActionToHistory({ type: 'DELETE_ROW', rowData: rowToDelete });
