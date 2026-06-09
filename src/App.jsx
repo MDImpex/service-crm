@@ -296,6 +296,11 @@ const handleAddComment = async (text) => {
       <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Komentaras:</td><td style="padding:8px 0;font-size:15px;color:#333;background-color:#f9f9f9;padding:5px;">${item["Komentaras"] || 'Nėra'}</td></tr>
       
     </table>
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="https://JUSU-CRM-NUORODA.LT" style="color: #113c32; font-weight: bold; text-decoration: none;">
+        👉 Peržiūrėti CRM sistemoje
+      </a>
+    </div>
   </div>
 `
         })
