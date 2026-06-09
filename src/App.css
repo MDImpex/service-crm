@@ -1,0 +1,8 @@
+@media (max-width: 768px) {
+  .kliento-kortele {
+    flex-direction: column !important; /* Telefonuose bus stulpelis */
+    width: 95vw !important;           /* Telefonuose bus lankstus plotis */
+    height: 90vh !important;          /* Telefonuose prisitaikys prie aukščio */
+    overflow-y: auto !important;      /* Telefonuose bus scroll'as */
+  }
+}
