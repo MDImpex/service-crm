@@ -364,40 +364,37 @@ const handleFileUpload = async (event) => {
     );
 
     if (!uploadRes.ok) {
-      const errorData = await uploadRes.json();
-      throw new Error(errorData.message || "Nepavyko įkelti failo");
+      throw new Error("Nepavyko įkelti failo į saugyklą");
     }
 
-    // 3. Jei įkėlimas sėkmingas, gautas atsakymas
-    const result = await uploadRes.json();
-    console.log("Failas įkeltas:", result);
-    
-    alert("Failas sėkmingai įkeltas!");
-    
-    const fileUrl = `${BASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/klientai-failai/${safeFileName}`;
+    // 1. Sukonstruojame viešą nuorodą (būtina, kad CRM ją matytų)
+    const publicUrl = `${BASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-// Įrašome nuorodą į duomenų bazę (lentelę 'failai')
-const dbRes = await fetch(`${BASE_URL}/failai`, {
-  method: 'POST',
-  headers: {
-    ...getHeaders(),
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    equipment_id: selectedClient.id, // Svarbu: susiejame su įrenginiu
-    failo_pavadinimas: file.name,
-    url: fileUrl
-  })
-});
+    // 2. Įrašome į duomenų bazę (lentelė 'failai')
+    const dbRes = await fetch(`${BASE_URL}/failai`, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        kliento_id: selectedClient.id, // Svarbu: pasitikrink, ar stulpelis vadinasi 'kliento_id' ar 'equipment_id'
+        failo_pavadinimas: file.name,
+        url: publicUrl
+      })
+    });
 
-if (dbRes.ok) {
-  // Atnaujiname failų sąrašą sąsajoje, kad iškart pamatytumėte naują failą
-  fetchFiles(); // Funkcija, kuri atnaujina failų sąrašą
-}
+    if (dbRes.ok) {
+      // 3. SVARBIAUSIA DALIS: Atnaujiname failų sąrašą ekrane!
+      // Iškviesk funkciją, kuri užkrauna failus (pvz., 'fetchKlientoFailus' arba panašiai)
+      // Jei tokios funkcijos neturi, pridėk šį:
+      await fetchKlientoFailus(selectedClient.id); 
+      alert("Failas įkeltas ir rodomas!");
+    }
 
   } catch (err) {
-    console.error("Klaida įkeliant:", err);
-    alert("Klaida įkeliant: " + err.message);
+    console.error("Klaida:", err);
+    alert("Klaida: " + err.message);
   }
 };
   const handleSave = async (id, field, value) => {
