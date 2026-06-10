@@ -909,30 +909,45 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
  {selectedClient?.["Prižiūri"]?.toLowerCase().includes('gedimas') && (
   <div style={{ marginTop: '15px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
     
-    <div style={{ marginBottom: '15px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-         <span>Remonto progresas</span>
-         <span>{Math.round(calculateProgress(selectedClient.gedimo_pradzia) * 100)}%</span>
-      </div>
-      <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-        <div style={{ 
-          width: `${calculateProgress(selectedClient.gedimo_pradzia) * 100}%`, 
-          height: '100%', 
-          background: calculateProgress(selectedClient.gedimo_pradzia) > 0.8 ? '#28a745' : '#ffc107', 
-          transition: '0.3s' 
-        }} />
-      </div>
-    </div>
+    {(() => {
+      // 1. Apskaičiuojame praėjusias dienas (kintamasis 'days')
+      const start = selectedClient.gedimo_pradzia ? new Date(selectedClient.gedimo_pradzia) : new Date();
+      const diffTime = Math.abs(new Date() - start);
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // 2. Progresas (tarkime 30 dienų yra 100%)
+      const p = Math.min(days / 30, 1);
+      const perc = Math.round(p * 100);
+      
+      // 3. Spalvos logika: nuo žalios (0%) iki raudonos (100%)
+      // 120 (žalia) -> 0 (raudona)
+      const color = `hsl(${120 * (1 - p)}, 100%, 40%)`;
 
-    <div>
-      <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
-      <input 
-        type="date" 
-        value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
-        onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
-        style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-      />
-    </div>
+      return (
+        <>
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+               <span>Remonto progresas</span>
+               {/* Rodome ir procentus, ir praėjusias dienas */}
+               <span>{perc}% ({days} d.)</span>
+            </div>
+            <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ width: `${perc}%`, height: '100%', background: color, transition: '0.3s' }} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
+            <input 
+              type="date" 
+              value={selectedClient.gedimo_pradzia?.split('T')[0] || ''}
+              onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
+              style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+          </div>
+        </>
+      );
+    })()}
   </div>
 )}
   {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
