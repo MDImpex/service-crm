@@ -21,7 +21,15 @@ const getProgressColor = (progress) => {
   const hue = (1 - progress) * 120;
   return `hsl(${hue}, 100%, 40%)`;
 };
-
+const calculateProgress = (gedimoData) => {
+  if (!gedimoData) return 0;
+  const start = new Date(gedimoData);
+  if (isNaN(start.getTime())) return 0;
+  const now = new Date();
+  const diffTime = Math.abs(now - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.min(diffDays / 30, 1);
+};
 function App() {
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
@@ -904,14 +912,13 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     <div style={{ marginBottom: '15px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
          <span>Remonto progresas</span>
-         {/* Saugus skaičiavimas naudojant kintamąjį */}
-         <span>{Math.round((selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) * 100)}%</span>
+         <span>{Math.round(calculateProgress(selectedClient.gedimo_pradzia) * 100)}%</span>
       </div>
       <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
         <div style={{ 
-          width: `${(selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) * 100}%`, 
+          width: `${calculateProgress(selectedClient.gedimo_pradzia) * 100}%`, 
           height: '100%', 
-          background: (selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) > 0.8 ? '#28a745' : '#ffc107', 
+          background: calculateProgress(selectedClient.gedimo_pradzia) > 0.8 ? '#28a745' : '#ffc107', 
           transition: '0.3s' 
         }} />
       </div>
@@ -921,7 +928,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
       <input 
         type="date" 
-        value={selectedClient?.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
+        value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
         onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
         style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
       />
