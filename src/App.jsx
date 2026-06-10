@@ -341,52 +341,44 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 1. Sukuriame saugų failo pavadinimą (tik anglų raidės ir skaičiai)
+  // Saugus failo vardas (timestamp + originalus pavadinimas)
   const timestamp = Date.now();
-  const safeFileName = `${timestamp}_file`; 
+  const safeFileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
   try {
-    // 2. Įkėlimas į storage (naudojame tik ASCII simbolius header'iuose)
+    // 1. Suformuojame URL į teisingą storage bucket'ą
+    // BASE_URL paprastai baigiasi "/rest/v1", todėl pakeičiame į "/storage/v1"
+    const storageUrl = BASE_URL.replace('/rest/v1', '/storage/v1');
+    
+    // 2. Siunčiame failą į Supabase Storage
     const uploadRes = await fetch(
-      `${BASE_URL}/failai/${safeFileName}`,
+      `${storageUrl}/object/klientai-failai/${safeFileName}`, 
       {
         method: 'POST',
-        headers: getHeaders(),
+        headers: {
+          ...getHeaders(), // Čia automatiškai įsideda tavo apibrėžti apikey ir Authorization
+          'Content-Type': file.type
+        },
         body: file
       }
     );
 
     if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      throw new Error(`Storage klaida: ${errText}`);
+      const errorData = await uploadRes.json();
+      throw new Error(errorData.message || "Nepavyko įkelti failo");
     }
 
-    const publicUrl = `${BASE_URL}/failai/${safeFileName}`;
-
-    // 3. Išsaugome įrašą duomenų bazėje
-    // Svarbu: stulpelių pavadinimai turi atitikti lentelę (failo_pavadinimas ir url)
-    const payload = {
-        equipment_id: selectedClient.id,
-        url: publicUrl,
-        failo_pavadinimas: file.name // Čia JSON body, todėl lietuviškos raidės yra saugios!
-    };
-
-    const res = await fetch(`${BASE_URL}/klientai_failai`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      console.error("DB klaida:", errorData);
-      throw new Error("Nepavyko įrašyti į duomenų bazę");
-    }
-
+    // 3. Jei įkėlimas sėkmingas, gautas atsakymas
+    const result = await uploadRes.json();
+    console.log("Failas įkeltas:", result);
+    
     alert("Failas sėkmingai įkeltas!");
-    fetchKlientoFailai(selectedClient.id);
+    
+    // Čia gali pridėti kodą, kuris išsaugo failo nuorodą į tavo duomenų bazę
+    // pavyzdžiui: const fileUrl = `${BASE_URL.replace('/rest/v1', '/storage/v1')}/object/public/klientai-failai/${safeFileName}`;
+
   } catch (err) {
-    console.error("Klaida:", err);
+    console.error("Klaida įkeliant:", err);
     alert("Klaida įkeliant: " + err.message);
   }
 };
