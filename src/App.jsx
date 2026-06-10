@@ -886,24 +886,45 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     })()}
   </div>
 
-  {/* 2. REMONTO PROGRESAS (30 d.) */}
+ {/* 2. GEDIMO IR REMONTO INFORMACIJA */}
   {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
-  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-    <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Gedimo pradžia:</label>
-    <input 
-      type="date" 
-      value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
-      onChange={(e) => {
-        // Atnaujiname selectedClient būseną su pasirinkta data
-        setSelectedClient({
-          ...selectedClient,
-          gedimo_pradzia: new Date(e.target.value).toISOString()
-        });
-      }}
-      style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-    />
-  </div>
-)}
+    <div style={{ marginTop: '15px', padding: '10px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
+      
+      {/* Gedimo pradžia */}
+      <div style={{ marginBottom: '8px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block' }}>Gedimo pradžia:</label>
+        <input 
+          type="date" 
+          value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
+          onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: new Date(e.target.value).toISOString()})}
+          style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+      </div>
+
+      {/* Remonto pradžia */}
+      <div style={{ marginBottom: '8px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block' }}>Remonto pradžia:</label>
+        <input 
+          type="date" 
+          value={selectedClient.remonto_pradzia ? selectedClient.remonto_pradzia.split('T')[0] : ''}
+          onChange={(e) => setSelectedClient({...selectedClient, remonto_pradzia: new Date(e.target.value).toISOString()})}
+          style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+      </div>
+
+      {/* Remonto progresas */}
+      <div>
+        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block' }}>Remonto progresas:</label>
+        <input 
+          type="text" 
+          placeholder="Aprašykite eigą..."
+          value={selectedClient.remonto_progresas || ''}
+          onChange={(e) => setSelectedClient({...selectedClient, remonto_progresas: e.target.value})}
+          style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+      </div>
+    </div>
+  )}
 
   {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
 <h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
