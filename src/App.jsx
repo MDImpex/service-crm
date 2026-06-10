@@ -414,10 +414,10 @@ const calculateProgress = (gedimoData) => {
   const arYraKomentaras = selectedClient["Komentaras"] || (komentaraiIsInput && komentaraiIsInput.trim() !== "");
 
   // 3. DABAR ŠI TIKRINIMO SĄLYGA NEBEBUS KLAIDINGA
-  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !arYraKomentaras) {
+ //f (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !arYraKomentaras) {
     alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
     return;
-  }
+  
   const currentItem = equipment.find(item => item.id === id);
   if (!currentItem) return;
   
