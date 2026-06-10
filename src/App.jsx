@@ -351,7 +351,15 @@ const handleFileUpload = async (event) => {
       headers: { ...getHeaders(), 'Content-Type': file.type },
       body: file
     });
-
+const calculateProgress = (gedimoData) => {
+    if (!gedimoData) return 0;
+    const start = new Date(gedimoData);
+    const now = new Date();
+    const diffTime = Math.abs(now - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const totalDays = 30; // Čia gali pakeisti į tiek dienų, kiek vidutiniškai trunka remontas
+    return Math.min(diffDays / totalDays, 1);
+  };
     if (uploadRes.ok) {
   // Sukonstruojame viešą nuorodą (Supabase viešas formatas)
   const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
