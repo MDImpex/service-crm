@@ -358,19 +358,19 @@ const handleFileUpload = async (event) => {
 
   // Kad išvengtumėte 'Invalid path' klaidos, naudojame paprastą Supabase lentelės endpoint'ą
   // Įsitikink, kad lentelė duomenų bazėje tikrai vadinasi 'failai'
-  const dbRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/failai`, {
-    method: 'POST',
-    headers: {
-      ...getHeaders(), // Čia tavo raktai
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({
-      equipment_id: selectedClient.id, // Įsitikink, kad stulpelis tikrai vadinasi 'equipment_id'
-      failo_pavadinimas: file.name,
-      url: publicUrl
-    })
-  });
+  const dbRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/klientai_failai`, {
+  method: 'POST',
+  headers: {
+    ...getHeaders(),
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
+  body: JSON.stringify({
+    equipment_id: selectedClient.id, // Jei vis dar meta klaidą, pasitikrinkite, ar stulpelis tikrai vadinasi 'equipment_id'
+    failo_pavadinimas: file.name,
+    url: publicUrl
+  })
+});
 
   if (dbRes.ok) {
     alert("Failas įkeltas ir įrašytas į DB!");
