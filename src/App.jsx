@@ -352,14 +352,17 @@ const handleFileUpload = async (event) => {
       body: file
     });
 const calculateProgress = (gedimoData) => {
-    if (!gedimoData) return 0;
-    const start = new Date(gedimoData);
-    const now = new Date();
-    const diffTime = Math.abs(now - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const totalDays = 30; // Čia gali pakeisti į tiek dienų, kiek vidutiniškai trunka remontas
-    return Math.min(diffDays / totalDays, 1);
-  };
+  if (!gedimoData) return 0; // Jei nėra datos, progresas 0
+  const start = new Date(gedimoData);
+  if (isNaN(start.getTime())) return 0; // Papildoma apsauga nuo blogo datos formato
+  
+  const now = new Date();
+  const diffTime = Math.abs(now - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const totalDays = 30;
+  return Math.min(diffDays / totalDays, 1);
+};
     if (uploadRes.ok) {
   // Sukonstruojame viešą nuorodą (Supabase viešas formatas)
   const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
@@ -895,31 +898,30 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   </div>
 
  {/* 2. GEDIMO IR REMONTO INFORMACIJA */}
-  {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
+ {selectedClient?.["Prižiūri"]?.toLowerCase().includes('gedimas') && (
   <div style={{ marginTop: '15px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
     
-    {/* PROGRESAS (Automatinis) */}
     <div style={{ marginBottom: '15px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
          <span>Remonto progresas</span>
-         <span>{Math.round(calculateProgress(selectedClient.gedimo_pradzia) * 100)}%</span>
+         {/* Saugus skaičiavimas naudojant kintamąjį */}
+         <span>{Math.round((selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) * 100)}%</span>
       </div>
       <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
         <div style={{ 
-          width: `${calculateProgress(selectedClient.gedimo_pradzia) * 100}%`, 
+          width: `${(selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) * 100}%`, 
           height: '100%', 
-          background: calculateProgress(selectedClient.gedimo_pradzia) > 0.8 ? '#28a745' : '#ffc107', 
+          background: (selectedClient?.gedimo_pradzia ? calculateProgress(selectedClient.gedimo_pradzia) : 0) > 0.8 ? '#28a745' : '#ffc107', 
           transition: '0.3s' 
         }} />
       </div>
     </div>
 
-    {/* Gedimo pradžios data - tik ji viena */}
     <div>
       <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
       <input 
         type="date" 
-        value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
+        value={selectedClient?.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
         onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
         style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
       />
