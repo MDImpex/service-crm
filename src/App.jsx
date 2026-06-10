@@ -408,10 +408,10 @@ const calculateProgress = (gedimoData) => {
   }
 };
   const handleSave = async (id, field, value) => {
-    const komentaraiIsInput = document.getElementById('new-comment')?.value;
+   //onst komentaraiIsInput = document.getElementById('new-comment')?.value;
   
   // 2. PATIKSLINAME SĄLYGĄ: dabar tikriname ar yra komentaras 'Komentaras' lauke ARBA inpute
-  const arYraKomentaras = selectedClient["Komentaras"] || (komentaraiIsInput && komentaraiIsInput.trim() !== "");
+  //const arYraKomentaras = selectedClient["Komentaras"] || (komentaraiIsInput && komentaraiIsInput.trim() !== "");
 
   // 3. DABAR ŠI TIKRINIMO SĄLYGA NEBEBUS KLAIDINGA
  //f (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !arYraKomentaras) {
