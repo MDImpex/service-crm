@@ -341,59 +341,42 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Saugus failo vardas (timestamp + originalus pavadinimas)
-  const timestamp = Date.now();
-  const safeFileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+  const safeFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
   try {
-    // 1. Suformuojame URL į teisingą storage bucket'ą
-    // BASE_URL paprastai baigiasi "/rest/v1", todėl pakeičiame į "/storage/v1"
+    // 1. Įkeliame į Storage (tai jau veikia, paliekam kaip yra)
     const storageUrl = BASE_URL.replace('/rest/v1', '/storage/v1');
-    
-    // 2. Siunčiame failą į Supabase Storage
-    const uploadRes = await fetch(
-      `${storageUrl}/object/klientai-failai/${safeFileName}`, 
-      {
-        method: 'POST',
-        headers: {
-          ...getHeaders(), // Čia automatiškai įsideda tavo apibrėžti apikey ir Authorization
-          'Content-Type': file.type
-        },
-        body: file
-      }
-    );
+    const uploadRes = await fetch(`${storageUrl}/object/klientai-failai/${safeFileName}`, {
+      method: 'POST',
+      headers: { ...getHeaders(), 'Content-Type': file.type },
+      body: file
+    });
 
-    if (!uploadRes.ok) {
-      throw new Error("Nepavyko įkelti failo į saugyklą");
-    }
+    if (!uploadRes.ok) throw new Error("Nepavyko įkelti į Storage");
 
-    // 1. Sukonstruojame viešą nuorodą (būtina, kad CRM ją matytų)
+    // 2. GAUNAME VIEŠĄ NUORODĄ (svarbu, kad CRM rodytų nuotrauką)
     const publicUrl = `${BASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-    // 2. Įrašome į duomenų bazę (lentelė 'failai')
+    // 3. ĮRAŠOME Į DUOMENŲ BAZĘ (kad atsirastų kortelėje)
+    // Naudojame POST į lentelę, kurioje saugomi failų įrašai
     const dbRes = await fetch(`${BASE_URL}/failai`, {
       method: 'POST',
-      headers: {
-        ...getHeaders(),
-        'Content-Type': 'application/json'
-      },
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        kliento_id: selectedClient.id, // Svarbu: pasitikrink, ar stulpelis vadinasi 'kliento_id' ar 'equipment_id'
+        equipment_id: selectedClient.id, // Svarbu: užtikrink, kad šis stulpelis atitinka tavo DB
         failo_pavadinimas: file.name,
         url: publicUrl
       })
     });
 
     if (dbRes.ok) {
-      // 3. SVARBIAUSIA DALIS: Atnaujiname failų sąrašą ekrane!
-      // Iškviesk funkciją, kuri užkrauna failus (pvz., 'fetchKlientoFailus' arba panašiai)
-      // Jei tokios funkcijos neturi, pridėk šį:
-      await fetchKlientoFailus(selectedClient.id); 
-      alert("Failas įkeltas ir rodomas!");
+      alert("Failas sėkmingai įkeltas!");
+      // 4. ATNAUJINAME SĄRAŠĄ (kad iškart pamatytum failą kortelėje)
+      // Čia iškviesk tą funkciją, kuri užkrauna failus iš DB (pvz., fetchFiles())
+      await fetchKlientoFailus(); 
     }
-
   } catch (err) {
-    console.error("Klaida:", err);
+    console.error(err);
     alert("Klaida: " + err.message);
   }
 };
