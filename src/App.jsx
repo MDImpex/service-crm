@@ -158,9 +158,12 @@ function App() {
   };
  // 1. Atnaujinta komentarų pridėjimo funkcija
 const handleAddComment = async (text) => {
-  if (!text.trim()) return;
+  // JEI TUŠČIA – GRĄŽINAM "false", kad tavo išsaugojimo logika žinotų, jog nepavyko
+  if (!text || text.trim().length === 0) {
+    alert("Būtina įrašyti komentarą!");
+    return false; 
+  }
 
-  // 1. Siunčiame į duomenų bazę
   const res = await fetch(`${BASE_URL}/komentarai`, {
     method: 'POST',
     headers: getHeaders(),
@@ -173,14 +176,11 @@ const handleAddComment = async (text) => {
 
   if (res.ok) {
     const [newComment] = await res.json();
-    
-    // 2. ATNAUJINAME TIK BŪSENĄ (React automatiškai perpieš Jūsų jau turimą gražų sąrašą)
     setKomentarai(prev => [newComment, ...prev]);
-    
-    // 3. Jei turite įvesties lauko "state", jį išvalome
-    // setCommentInputValue(''); 
+    return true; // Pavyko!
   } else {
-    console.error("Nepavyko pridėti komentaro");
+    alert("Klaida įrašant komentarą į duomenų bazę.");
+    return false;
   }
 };
 
@@ -986,7 +986,18 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   <h4 style={{ margin: '15px 0 5px 0' }}>Komentarai</h4>
   <div style={{ display: 'flex', gap: '5px' }}>
     <input id="new-comment" style={{ flex: 1, padding: '5px' }} />
-    <button onClick={() => { handleAddComment(document.getElementById('new-comment').value); document.getElementById('new-comment').value = ''; }}>Siųsti</button>
+    
+    {/* ŠITĄ VIETĄ PAKEISK Į TĄ, KURIĄ PARAŠIAU APAČIOJE */}
+    <button onClick={async () => {
+      const inputVal = document.getElementById('new-comment').value;
+      const success = await handleAddComment(inputVal);
+      if (success) {
+        await handleSave(selectedClient.id, 'Prižiūri', 'GEDIMAS');
+        document.getElementById('new-comment').value = ''; 
+      }
+    }}>
+      Siųsti
+    </button>
   </div>
 
   <div style={{ flex: 1, overflowY: 'auto' }}>
