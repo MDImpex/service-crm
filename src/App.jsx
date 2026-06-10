@@ -887,50 +887,37 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   </div>
 
  {/* 2. GEDIMO IR REMONTO INFORMACIJA */}
-  {/* 2. REMONTO PROGRESAS IR INFORMACIJA */}
   {selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (
-    <div style={{ marginTop: '15px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
-      
-      {/* PROGRESAS (Vaizdinė juosta) */}
-      <div style={{ marginBottom: '15px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-           <span>Remonto progresas</span>
-           <span>{Math.round((selectedClient.progresas || 0) * 100)}%</span>
-        </div>
-        <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-          <div style={{ 
-            width: `${(selectedClient.progresas || 0) * 100}%`, 
-            height: '100%', 
-            background: (selectedClient.progresas || 0) > 0.8 ? '#28a745' : '#ffc107', 
-            transition: '0.3s' 
-          }} />
-        </div>
+  <div style={{ marginTop: '15px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
+    
+    {/* PROGRESAS (Automatinis) */}
+    <div style={{ marginBottom: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+         <span>Remonto progresas</span>
+         <span>{Math.round(calculateProgress(selectedClient.gedimo_pradzia) * 100)}%</span>
       </div>
-
-      {/* Datos */}
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžia:</label>
-          <input 
-            type="date" 
-            value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
-            onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: new Date(e.target.value).toISOString()})}
-            style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Remonto pradžia:</label>
-          <input 
-            type="date" 
-            value={selectedClient.remonto_pradzia ? selectedClient.remonto_pradzia.split('T')[0] : ''}
-            onChange={(e) => setSelectedClient({...selectedClient, remonto_pradzia: new Date(e.target.value).toISOString()})}
-            style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
+      <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+        <div style={{ 
+          width: `${calculateProgress(selectedClient.gedimo_pradzia) * 100}%`, 
+          height: '100%', 
+          background: calculateProgress(selectedClient.gedimo_pradzia) > 0.8 ? '#28a745' : '#ffc107', 
+          transition: '0.3s' 
+        }} />
       </div>
     </div>
-  )}
 
+    {/* Gedimo pradžios data - tik ji viena */}
+    <div>
+      <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
+      <input 
+        type="date" 
+        value={selectedClient.gedimo_pradzia ? selectedClient.gedimo_pradzia.split('T')[0] : ''}
+        onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
+        style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+      />
+    </div>
+  </div>
+)}
   {/* FAILŲ SĄRAŠAS SU TRYNIMU */}
 <h4 style={{ margin: '10px 0 5px 0', fontSize: '12px' }}>ĮKELTI FAILAI</h4>
 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
