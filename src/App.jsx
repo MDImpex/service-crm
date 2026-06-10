@@ -374,8 +374,26 @@ const handleFileUpload = async (event) => {
     
     alert("Failas sėkmingai įkeltas!");
     
-    // Čia gali pridėti kodą, kuris išsaugo failo nuorodą į tavo duomenų bazę
-    // pavyzdžiui: const fileUrl = `${BASE_URL.replace('/rest/v1', '/storage/v1')}/object/public/klientai-failai/${safeFileName}`;
+    const fileUrl = `${BASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/klientai-failai/${safeFileName}`;
+
+// Įrašome nuorodą į duomenų bazę (lentelę 'failai')
+const dbRes = await fetch(`${BASE_URL}/failai`, {
+  method: 'POST',
+  headers: {
+    ...getHeaders(),
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    equipment_id: selectedClient.id, // Svarbu: susiejame su įrenginiu
+    failo_pavadinimas: file.name,
+    url: fileUrl
+  })
+});
+
+if (dbRes.ok) {
+  // Atnaujiname failų sąrašą sąsajoje, kad iškart pamatytumėte naują failą
+  fetchFiles(); // Funkcija, kuri atnaujina failų sąrašą
+}
 
   } catch (err) {
     console.error("Klaida įkeliant:", err);
