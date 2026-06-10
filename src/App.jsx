@@ -906,47 +906,43 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   </div>
 
  {/* 2. GEDIMO IR REMONTO INFORMACIJA */}
- {selectedClient?.["Prižiūri"]?.toLowerCase().includes('gedimas') && (
+{selectedClient?.["Prižiūri"]?.toLowerCase().includes('gedimas') && (
   <div style={{ marginTop: '15px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #ddd' }}>
     
+    {/* Čia prasideda tas blokas, kurį tu jau turi */}
     {(() => {
-      // 1. Apskaičiuojame praėjusias dienas (kintamasis 'days')
-      const start = selectedClient.gedimo_pradzia ? new Date(selectedClient.gedimo_pradzia) : new Date();
-      const diffTime = Math.abs(new Date() - start);
-      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      // 2. Progresas (tarkime 30 dienų yra 100%)
-      const p = Math.min(days / 30, 1);
-      const perc = Math.round(p * 100);
-      
-      // 3. Spalvos logika: nuo žalios (0%) iki raudonos (100%)
-      // 120 (žalia) -> 0 (raudona)
-      const color = `hsl(${120 * (1 - p)}, 100%, 40%)`;
+       const start = selectedClient.gedimo_pradzia ? new Date(selectedClient.gedimo_pradzia) : new Date();
+       const diffTime = Math.abs(new Date() - start);
+       const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+       const p = Math.min(days / 30, 1);
+       const perc = Math.round(p * 100);
+       const color = `hsl(${120 * (1 - p)}, 100%, 40%)`;
 
-      return (
-        <>
-          <div style={{ marginBottom: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-               <span>Remonto progresas</span>
-               {/* Rodome ir procentus, ir praėjusias dienas */}
-               <span>{perc}% ({days} d.)</span>
-            </div>
-            <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-              <div style={{ width: `${perc}%`, height: '100%', background: color, transition: '0.3s' }} />
-            </div>
-          </div>
+       return (
+         <>
+           <div style={{ marginBottom: '15px' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                <span>Remonto progresas</span>
+                <span>{perc}% ({days} d.)</span>
+             </div>
+             <div style={{ background: '#eee', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
+               <div style={{ width: `${perc}%`, height: '100%', background: color, transition: '0.3s' }} />
+             </div>
+           </div>
 
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
-            <input 
-              type="date" 
-              value={selectedClient.gedimo_pradzia?.split('T')[0] || ''}
-              onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
-              style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-          </div>
-        </>
-      );
+           <div>
+             <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Gedimo pradžios data:</label>
+             <input 
+               type="date" 
+               value={selectedClient.gedimo_pradzia?.split('T')[0] || ''}
+               onChange={(e) => setSelectedClient({...selectedClient, gedimo_pradzia: e.target.value})}
+               // Štai čia pridedame onBlur (išsaugojimui):
+               onBlur={(e) => handleSave(selectedClient.id, 'gedimo_pradzia', e.target.value)}
+               style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+             />
+           </div>
+         </>
+       );
     })()}
   </div>
 )}
