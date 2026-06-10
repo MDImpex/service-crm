@@ -819,21 +819,27 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
             'X-Requested-With': 'XMLHttpRequest'
           },
           body: JSON.stringify({
-            from: 'MD Impex CRM <onboarding@resend.dev>',
-            to: ['valdasjanciauskas@gmail.com'],
-            subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${e["Kliento pavadinimas"]}`,
-            html: `
-              <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-                <h2 style="color:#e30613;">🚨 Užregistruotas skubus gedimas!</h2>
-                <p>Klientas: <strong>${e["Kliento pavadinimas"]}</strong></p>
-                <p>Komentaras: <strong>${e["Komentaras"] || "Nėra"}</strong></p>
-                <br>
-                <a href="https://service-crm-nine.vercel.app/client/${e.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                  👉 Peržiūrėti CRM sistemoje
-                </a>
-              </div>
-            `
-          })
+  from: 'MD Impex CRM <onboarding@resend.dev>',
+  to: ['valdasjanciauskas@gmail.com'],
+  subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${e["Kliento pavadinimas"]}`,
+  html: `
+    <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+      <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+        <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Kliento pavadinimas"]}</td></tr>
+        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Adresas"] || 'Nenurodyta'}</td></tr>
+        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Įrangos pavadinimas"] || 'Nenurodyta'}</td></tr>
+        <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${e["Komentaras"] || 'Nėra'}</td></tr>
+      </table>
+      
+      <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e3e7eb; text-align: center;">
+        <a href="https://service-crm-nine.vercel.app/client/${e.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          👉 Peržiūrėti CRM sistemoje
+        </a>
+      </div>
+    </div>
+  `
+})
         });
 
         if (!t.ok) throw new Error("Laiško siuntimas nepavyko.");
