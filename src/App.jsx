@@ -408,16 +408,16 @@ const calculateProgress = (gedimoData) => {
   }
 };
   const handleSave = async (id, field, value) => {
-   const komentaraiIsInput = document.getElementById('new-comment')?.value;
+    const komentaraiIsInput = document.getElementById('new-comment')?.value;
   
   // 2. PATIKSLINAME SĄLYGĄ: dabar tikriname ar yra komentaras 'Komentaras' lauke ARBA inpute
   const arYraKomentaras = selectedClient["Komentaras"] || (komentaraiIsInput && komentaraiIsInput.trim() !== "");
 
   // 3. DABAR ŠI TIKRINIMO SĄLYGA NEBEBUS KLAIDINGA
- //f (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !arYraKomentaras) {
+  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && !arYraKomentaras) {
     alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
     return;
-  
+  }
   const currentItem = equipment.find(item => item.id === id);
   if (!currentItem) return;
   
