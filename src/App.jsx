@@ -352,29 +352,37 @@ const handleFileUpload = async (event) => {
       body: file
     });
 
-    if (!uploadRes.ok) throw new Error("Nepavyko įkelti į Storage");
+    if (uploadRes.ok) {
+  // Sukonstruojame viešą nuorodą (Supabase viešas formatas)
+  const publicUrl = `https://enucrtrjaoakachsrubi.supabase.co/storage/v1/object/public/klientai-failai/${safeFileName}`;
 
-    // 2. GAUNAME VIEŠĄ NUORODĄ (svarbu, kad CRM rodytų nuotrauką)
-    const publicUrl = `${BASE_URL.replace('/rest/v1', '')}/storage/v1/object/public/klientai-failai/${safeFileName}`;
+  // Kad išvengtumėte 'Invalid path' klaidos, naudojame paprastą Supabase lentelės endpoint'ą
+  // Įsitikink, kad lentelė duomenų bazėje tikrai vadinasi 'failai'
+  const dbRes = await fetch(`https://enucrtrjaoakachsrubi.supabase.co/rest/v1/failai`, {
+    method: 'POST',
+    headers: {
+      ...getHeaders(), // Čia tavo raktai
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      equipment_id: selectedClient.id, // Įsitikink, kad stulpelis tikrai vadinasi 'equipment_id'
+      failo_pavadinimas: file.name,
+      url: publicUrl
+    })
+  });
 
-    // 3. ĮRAŠOME Į DUOMENŲ BAZĘ (kad atsirastų kortelėje)
-    // Naudojame POST į lentelę, kurioje saugomi failų įrašai
-    const dbRes = await fetch(`${BASE_URL}/failai`, {
-      method: 'POST',
-      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        equipment_id: selectedClient.id, // Svarbu: užtikrink, kad šis stulpelis atitinka tavo DB
-        failo_pavadinimas: file.name,
-        url: publicUrl
-      })
-    });
-
-    if (dbRes.ok) {
-      alert("Failas sėkmingai įkeltas!");
-      // 4. ATNAUJINAME SĄRAŠĄ (kad iškart pamatytum failą kortelėje)
-      // Čia iškviesk tą funkciją, kuri užkrauna failus iš DB (pvz., fetchFiles())
-      await fetchKlientoFailus(); 
-    }
+  if (dbRes.ok) {
+    alert("Failas įkeltas ir įrašytas į DB!");
+    // BŪTINA: Atnaujiname sąrašą, kad pamatytum failą
+    // Jei tavo funkcija vadinasi kitaip, įrašyk ją čia
+    if (typeof fetchFiles === 'function') await fetchFiles();
+  } else {
+    const err = await dbRes.json();
+    console.error("DB įrašymo klaida:", err);
+    alert("Failas įkeltas, bet neįrašytas į DB: " + err.message);
+  }
+}
   } catch (err) {
     console.error(err);
     alert("Klaida: " + err.message);
