@@ -786,7 +786,12 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
         </div>
 
        <button 
-  onClick={async () => {
+ onClick={async () => {
+  // BŪTINI KINTAMIEJI, kad nedingtų tavo aplinkoje
+  const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
+  const targetUrl = "https://api.resend.com/emails";
+  const MY_RESEND_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM";
+
   if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
     alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
     return;
