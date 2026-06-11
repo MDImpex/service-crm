@@ -1005,9 +1005,6 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
     }}>
       Siųsti
     </button>
-    <div style={{ marginTop: 'auto', padding: '10px', background: '#eee', textAlign: 'center' }}>
-     Čia bus „Išsaugoti pakeitimus“
-  </div>
   </div>
 
   <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -1026,6 +1023,9 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
             <button onClick={() => deleteComment(k.id)} style={{ fontSize: '10px', color: 'red' }}>Trinti</button>
           </>
         )}
+        <div style={{ marginTop: 'auto', padding: '10px', background: '#eee', textAlign: 'center' }}>
+     Čia bus „Išsaugoti pakeitimus“
+  </div>
       </div>
     ))}
   </div>
