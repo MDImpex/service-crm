@@ -882,16 +882,19 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   
   {/* FOTOAPARATO MYGTUKAS */}
  {/* 1. PASIRINKIMAS IŠ GALERIJOS */}
-<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}>
-  📂 Įkelti iš galerijos
-  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
-</label>
+<div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+  {/* 1. Įkelti iš galerijos */}
+  <label style={{ flex: 1, padding: '8px', background: '#e0e7e5', color: '#113c32', borderRadius: '4px', textAlign: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', border: '1px solid #113c32' }}>
+    📂 Galerija
+    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+  </label>
 
-{/* 2. PASIRINKIMAS IŠ KAMEROS */}
-<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
-  📷 Fotografuoti
-  <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
-</label>
+  {/* 2. Fotografuoti */}
+  <label style={{ flex: 1, padding: '8px', background: '#113c32', color: 'white', borderRadius: '4px', textAlign: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+    📷 Kamera
+    <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+  </label>
+</div>
 
   {/* 1. PATIKROS PROGRESAS (365 d.) */}
   <div>
