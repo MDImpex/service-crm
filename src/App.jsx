@@ -802,26 +802,96 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
           })}
         </div>
 
-       
+       <button 
+ onClick={async () => {
+  // BŪTINI KINTAMIEJI, kad nedingtų tavo aplinkoje
+  const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
+  const targetUrl = "https://api.resend.com/emails";
+  const MY_RESEND_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM";
+
+  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
+    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
+    return;
+  }
+
+  try {
+    let e = { ...selectedClient };
+    if (e.Prižiūri?.toLowerCase().includes('gedimas') && !e.gedimo_pradzia) {
+      e.gedimo_pradzia = new Date().toISOString();
+    }
+
+    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(e)
+    });
+
+    if (res.ok) {
+      if (e.Prižiūri?.toLowerCase().includes('gedimas')) {
+        let t = await fetch(proxyUrl + targetUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${MY_RESEND_KEY}`,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+  from: 'MD Impex CRM <onboarding@resend.dev>',
+  to: ['valdasjanciauskas@gmail.com'],
+  subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${e["Kliento pavadinimas"]}`,
+  html: `
+    <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
+      <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+        <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Kliento pavadinimas"]}</td></tr>
+        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Adresas"] || 'Nenurodyta'}</td></tr>
+        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Įrangos pavadinimas"] || 'Nenurodyta'}</td></tr>
+        <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${e["Komentaras"] || 'Nėra'}</td></tr>
+      </table>
+      
+      <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e3e7eb; text-align: center;">
+        <a href="https://service-crm-nine.vercel.app/client/${e.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          👉 Peržiūrėti CRM sistemoje
+        </a>
+      </div>
+    </div>
+  `
+})
+        });
+
+        if (!t.ok) throw new Error("Laiško siuntimas nepavyko.");
+      }
+
+      setEquipment(equipment.map(item => item.id === selectedClient.id ? e : item));
+      alert("Išsaugota ir laiškas išsiųstas!");
+      setSelectedClient(null);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Klaida: " + err.message);
+  }
+}}
+  style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+>
+  IŠSAUGOTI PAKEITIMUS
+</button>
+      </div>
 
       {/* DEŠINĖ: Įrenginio būklė, Kamera, Failai ir Komentarai */}
 <div style={{ flex: '1 1 300px', borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
   {/* FOTOAPARATO MYGTUKAS */}
  {/* 1. PASIRINKIMAS IŠ GALERIJOS */}
-<div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-  {/* 1. Įkelti iš galerijos */}
-  <label style={{ flex: 1, padding: '8px', background: '#e0e7e5', color: '#113c32', borderRadius: '4px', textAlign: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', border: '1px solid #113c32' }}>
-    📂 Galerija
-    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
-  </label>
+<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}>
+  📂 Įkelti iš galerijos
+  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+</label>
 
-  {/* 2. Fotografuoti */}
-  <label style={{ flex: 1, padding: '8px', background: '#113c32', color: 'white', borderRadius: '4px', textAlign: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-    📷 Kamera
-    <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
-  </label>
-</div>
+{/* 2. PASIRINKIMAS IŠ KAMEROS */}
+<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
+  📷 Fotografuoti
+  <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+</label>
 
   {/* 1. PATIKROS PROGRESAS (365 d.) */}
   <div>
@@ -956,80 +1026,6 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       </div>
     ))}
   </div>
-  <button 
- onClick={async () => {
-  // BŪTINI KINTAMIEJI, kad nedingtų tavo aplinkoje
-  const proxyUrl = "https://cors-anywhere.herokuapp.com/"; 
-  const targetUrl = "https://api.resend.com/emails";
-  const MY_RESEND_KEY = "re_Sj2Kx2LS_3VFCkGgt4ZfWkSZuVCnB2eGM";
-
-  if (selectedClient["Prižiūri"]?.toLowerCase().includes('gedimas') && (!selectedClient["Komentaras"] || selectedClient["Komentaras"].trim() === "")) {
-    alert("Dėmesio: Įrašius 'gedimas', privaloma užpildyti komentarą!");
-    return;
-  }
-
-  try {
-    let e = { ...selectedClient };
-    if (e.Prižiūri?.toLowerCase().includes('gedimas') && !e.gedimo_pradzia) {
-      e.gedimo_pradzia = new Date().toISOString();
-    }
-
-    const res = await fetch(`${BASE_URL}/equipment?id=eq.${selectedClient.id}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(e)
-    });
-
-    if (res.ok) {
-      if (e.Prižiūri?.toLowerCase().includes('gedimas')) {
-        let t = await fetch(proxyUrl + targetUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${MY_RESEND_KEY}`,
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify({
-  from: 'MD Impex CRM <onboarding@resend.dev>',
-  to: ['valdasjanciauskas@gmail.com'],
-  subject: `🚨 SKUBUS IŠKVIETIMAS: Gedimas - ${e["Kliento pavadinimas"]}`,
-  html: `
-    <div style="font-family:Arial,sans-serif;padding:25px;line-height:1.6;max-width:600px;border:1px solid #e3e7eb;border-radius:8px;">
-      <h2 style="color:#e30613;margin-top:0;border-bottom:2px solid #e30613;padding-bottom:10px;">🚨 Užregistruotas skubus gedimas!</h2>
-      <table style="width:100%;border-collapse:collapse;margin-top:15px;">
-        <tr><td style="padding:8px 0;font-weight:bold;width:150px;color:#555;">Klientas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Kliento pavadinimas"]}</td></tr>
-        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Adresas:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Adresas"] || 'Nenurodyta'}</td></tr>
-        <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Įranga:</td><td style="padding:8px 0;font-size:15px;color:#000;">${e["Įrangos pavadinimas"] || 'Nenurodyta'}</td></tr>
-        <tr><td style="padding:15px 0 8px 0;font-weight:bold;color:#e30613;vertical-align:top;">Gedimo aprašymas:</td><td style="padding:15px 0 8px 0;font-size:15px;color:#e30613;font-weight:bold;background-color:#fff0f0;padding:10px;border-radius:4px;">${e["Komentaras"] || 'Nėra'}</td></tr>
-      </table>
-      
-      <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e3e7eb; text-align: center;">
-        <a href="https://service-crm-nine.vercel.app/client/${e.id}" style="background-color: #113c32; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-          👉 Peržiūrėti CRM sistemoje
-        </a>
-      </div>
-    </div>
-  `
-})
-        });
-
-        if (!t.ok) throw new Error("Laiško siuntimas nepavyko.");
-      }
-
-      setEquipment(equipment.map(item => item.id === selectedClient.id ? e : item));
-      alert("Išsaugota ir laiškas išsiųstas!");
-      setSelectedClient(null);
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Klaida: " + err.message);
-  }
-}}
-  style={{ marginTop: '20px', padding: '12px', background: '#113c32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
->
-  IŠSAUGOTI PAKEITIMUS
-</button>
-      </div>
 </div>
     </div>
   </div>
