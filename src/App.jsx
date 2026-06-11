@@ -881,15 +881,17 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 <div style={{ flex: '1 1 300px', borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
   {/* FOTOAPARATO MYGTUKAS */}
-  <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
-    📷 FOTOGRAFUOTI ARBA ĮKELTI
-    <input 
-  type="file" 
-  accept="image/*, camera" 
-  style={{ display: 'none' }} 
-  onChange={handleFileUpload} 
-/>
-  </label>
+  {/* 1. PASIRINKIMAS IŠ GALERIJOS */}
+<label style={{ ...stilius }}>
+  📂 Įkelti iš galerijos
+  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+</label>
+
+{/* 2. PASIRINKIMAS IŠ KAMEROS */}
+<label style={{ ...stilius }}>
+  📷 Fotografuoti
+  <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+</label>
 
   {/* 1. PATIKROS PROGRESAS (365 d.) */}
   <div>
