@@ -881,14 +881,14 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
 <div style={{ flex: '1 1 300px', borderLeft: '1px solid #eee', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
   
   {/* FOTOAPARATO MYGTUKAS */}
-  {/* 1. PASIRINKIMAS IŠ GALERIJOS */}
-<label style={{ ...stilius }}>
+ {/* 1. PASIRINKIMAS IŠ GALERIJOS */}
+<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}>
   📂 Įkelti iš galerijos
   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
 </label>
 
 {/* 2. PASIRINKIMAS IŠ KAMEROS */}
-<label style={{ ...stilius }}>
+<label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
   📷 Fotografuoti
   <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
 </label>
