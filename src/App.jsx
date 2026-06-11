@@ -883,7 +883,7 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
   {/* FOTOAPARATO MYGTUKAS */}
   <label style={{ display: 'block', padding: '12px', background: '#113c32', color: 'white', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontWeight: 'bold' }}>
     📷 FOTOGRAFUOTI ARBA ĮKELTI
-    <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFileUpload} />
+    <input type="file" accept="image/*"  style={{ display: 'none' }} onChange={handleFileUpload} />
   </label>
 
   {/* 1. PATIKROS PROGRESAS (365 d.) */}
