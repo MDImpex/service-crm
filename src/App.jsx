@@ -1029,6 +1029,27 @@ console.log("AR TURI /equipment?", `${BASE_URL}/equipment?id=eq.${id}`.includes(
       </div>
     ))}
   </div>
+  <button 
+    onClick={() => {
+        // Čia tavo esama išsaugojimo logika
+        handleSave(selectedClient.id, 'bendras', selectedClient); 
+    }}
+    style={{ 
+      marginTop: 'auto', // Tai nustums mygtuką į apačią
+      width: '100%', 
+      padding: '15px', 
+      background: '#113c32', 
+      color: 'white', 
+      border: 'none', 
+      borderRadius: '6px', 
+      fontWeight: 'bold',
+      fontSize: '14px',
+      marginTop: '20px',
+      cursor: 'pointer'
+    }}
+  >
+    IŠSAUGOTI PAKEITIMUS
+  </button>
 </div>
     </div>
   </div>
