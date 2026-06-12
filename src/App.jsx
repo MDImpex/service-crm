@@ -391,18 +391,24 @@ const calculateProgress = (gedimoData) => {
   })
 });
 
-  if (dbRes.ok) {
-     const savedFile = await dbRes.json();
-     
-     // Atnaujiname būseną iškart, nebekviečiame fetchFiles()
-     setKlientoFailai(prev => [...prev, ...savedFile]);
-     
-     alert("Failas įkeltas!");
-   } else {
-     const err = await dbRes.json();
-     console.error("DB įrašymo klaida:", err);
-     alert("Failas įkeltas, bet neįrašytas į DB: " + err.message);
-   }
+ if (dbRes.ok) {
+    // Sukuriame objektą patys, kad būtume tikri dėl jo struktūros
+    const naujasFailas = {
+      id: Date.now(), // Laikinas ID, kol nepersikraus puslapis
+      equipment_id: selectedClient.id,
+      failo_pavadinimas: file.name,
+      url: publicUrl
+    };
+
+    // Atnaujiname būseną su mūsų pačių sukonstruotu objektu
+    setKlientoFailai(prev => [...prev, naujasFailas]);
+    
+    // Papildomai, jei norime, galime iškviesti fetchFiles tyliai fone,
+    // kad po sekundės duomenys taptų „tikri“ iš DB
+    setTimeout(async () => {
+      if (typeof fetchFiles === 'function') await fetchFiles();
+    }, 1000);
+  }
 }
   } catch (err) {
     console.error(err);
