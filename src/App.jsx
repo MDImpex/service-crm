@@ -392,15 +392,17 @@ const calculateProgress = (gedimoData) => {
 });
 
   if (dbRes.ok) {
-    alert("Failas įkeltas ir įrašytas į DB!");
-    // BŪTINA: Atnaujiname sąrašą, kad pamatytum failą
-    // Jei tavo funkcija vadinasi kitaip, įrašyk ją čia
-    if (typeof fetchFiles === 'function') await fetchFiles();
-  } else {
-    const err = await dbRes.json();
-    console.error("DB įrašymo klaida:", err);
-    alert("Failas įkeltas, bet neįrašytas į DB: " + err.message);
-  }
+     const savedFile = await dbRes.json();
+     
+     // Atnaujiname būseną iškart, nebekviečiame fetchFiles()
+     setKlientoFailai(prev => [...prev, ...savedFile]);
+     
+     alert("Failas įkeltas!");
+   } else {
+     const err = await dbRes.json();
+     console.error("DB įrašymo klaida:", err);
+     alert("Failas įkeltas, bet neįrašytas į DB: " + err.message);
+   }
 }
   } catch (err) {
     console.error(err);
